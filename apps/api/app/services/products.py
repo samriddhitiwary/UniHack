@@ -4,9 +4,9 @@ import logging
 from uuid import UUID
 
 from app.core.exceptions import ProductNotFoundError
-from app.domain.products import Product
+from app.domain.products import Product, ProductStatus
 from app.repositories.products import ProductRepository
-from app.schemas.products import ProductCreate
+from app.schemas.products import ProductCreate, ProductListResult, ProductRecord
 
 logger = logging.getLogger(__name__)
 
@@ -40,3 +40,33 @@ class ProductService:
             raise ProductNotFoundError(product_id)
         logger.info("event=product.retrieved product_id=%s", product_id)
         return product
+
+    def list_products(
+        self,
+        *,
+        limit: int,
+        cursor: str | None = None,
+        status: ProductStatus | None = None,
+    ) -> ProductListResult:
+        logger.info(
+            "event=product.list.requested limit=%s status=%s has_cursor=%s",
+            limit,
+            status.value if status is not None else None,
+            cursor is not None,
+        )
+        if status is None:
+            page = self._repository.list_products(limit=limit, cursor=cursor)
+        else:
+            page = self._repository.list_by_status(status, limit=limit, cursor=cursor)
+        result = ProductListResult(
+            items=[ProductRecord.model_validate(product) for product in page.items],
+            next_cursor=page.next_cursor,
+        )
+        logger.info(
+            "event=product.list.completed limit=%s status=%s result_count=%s has_next_cursor=%s",
+            limit,
+            status.value if status is not None else None,
+            len(result.items),
+            result.next_cursor is not None,
+        )
+        return result

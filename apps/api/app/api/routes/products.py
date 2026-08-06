@@ -1,13 +1,15 @@
-"""Product create and retrieve API routes."""
+"""Product create, list, and retrieve API routes."""
 
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query
+from fastapi import status as http_status
 
 from app.api.dependencies.products import get_product_service
+from app.domain.products import ProductStatus
 from app.schemas.errors import ErrorResponse
-from app.schemas.products import ProductCreate, ProductRecord
+from app.schemas.products import ProductCreate, ProductListResult, ProductRecord
 from app.services.products import ProductService
 
 router = APIRouter(prefix="/products", tags=["Products"])
@@ -19,7 +21,7 @@ ERROR_503 = {"model": ErrorResponse, "description": "Product storage unavailable
 @router.post(
     "",
     response_model=ProductRecord,
-    status_code=status.HTTP_201_CREATED,
+    status_code=http_status.HTTP_201_CREATED,
     summary="Create a product",
     description="Create one foundational industrial product with application-managed identity.",
     responses={
@@ -33,6 +35,27 @@ def create_product(
     service: Annotated[ProductService, Depends(get_product_service)],
 ) -> ProductRecord:
     return ProductRecord.model_validate(service.create_product(request))
+
+
+@router.get(
+    "",
+    response_model=ProductListResult,
+    status_code=http_status.HTTP_200_OK,
+    summary="List products",
+    description="List products newest first with opaque cursor pagination.",
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid product cursor"},
+        422: ERROR_422,
+        503: ERROR_503,
+    },
+)
+def list_products(
+    service: Annotated[ProductService, Depends(get_product_service)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    cursor: Annotated[str | None, Query(min_length=1, max_length=4_096)] = None,
+    status: ProductStatus | None = None,
+) -> ProductListResult:
+    return service.list_products(limit=limit, cursor=cursor, status=status)
 
 
 @router.get(
