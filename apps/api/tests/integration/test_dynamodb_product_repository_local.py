@@ -49,10 +49,10 @@ def test_product_repository_contract_against_dynamodb_local() -> None:
         draft_products = repository.list_by_status(ProductStatus.DRAFT, limit=100)
         assert updated.product_id in {item.product_id for item in draft_products.items}
 
-        repository.delete(product.product_id)
+        repository.delete(product.product_id, expected_version=2)
         assert repository.get_by_id(product.product_id) is None
         with pytest.raises(ProductNotFoundError):
-            repository.delete(product.product_id)
+            repository.delete(product.product_id, expected_version=2)
     finally:
         with suppress(ProductNotFoundError):
-            repository.delete(product.product_id)
+            repository.delete(product.product_id, expected_version=2)

@@ -127,7 +127,7 @@ class DynamoDBProductRepository:
             return _to_product(cast(Mapping[str, AttributeValue], raw_item))
         except ClientError as exc:
             if _error_code(exc) == "ConditionalCheckFailedException":
-                self._raise_update_conflict(product.product_id, expected_version, exc)
+                self._raise_version_conflict(product.product_id, expected_version, exc)
             raise ProductRepositoryError("product could not be updated") from exc
         except BotoCoreError as exc:
             raise ProductRepositoryError("product could not be updated") from exc
@@ -158,22 +158,26 @@ class DynamoDBProductRepository:
             cursor_keys={"productId", "status", "createdAt"},
         )
 
-    def delete(self, product_id: UUID) -> None:
+    def delete(self, product_id: UUID, expected_version: int) -> None:
+        _validate_expected_version(expected_version)
         try:
             self._client.delete_item(
                 TableName=self._table_name,
                 Key=serialize_item({"productId": product_id}),
-                ConditionExpression="attribute_exists(#productId)",
-                ExpressionAttributeNames={"#productId": "productId"},
+                ConditionExpression=(
+                    "attribute_exists(#productId) AND #version = :expectedVersion"
+                ),
+                ExpressionAttributeNames={"#productId": "productId", "#version": "version"},
+                ExpressionAttributeValues=serialize_item({":expectedVersion": expected_version}),
             )
         except ClientError as exc:
             if _error_code(exc) == "ConditionalCheckFailedException":
-                raise ProductNotFoundError(product_id) from exc
+                self._raise_version_conflict(product_id, expected_version, exc)
             raise ProductRepositoryError("product could not be deleted") from exc
         except BotoCoreError as exc:
             raise ProductRepositoryError("product could not be deleted") from exc
 
-    def _raise_update_conflict(
+    def _raise_version_conflict(
         self, product_id: UUID, expected_version: int, original: ClientError
     ) -> None:
         current = self.get_by_id(product_id)
@@ -231,3 +235,10 @@ def _error_code(exc: ClientError) -> str:
 def _validate_limit(limit: int) -> None:
     if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= MAX_PAGE_SIZE:
         raise ValueError(f"limit must be between 1 and {MAX_PAGE_SIZE}")
+
+
+def _validate_expected_version(expected_version: int) -> None:
+    if isinstance(expected_version, bool) or not isinstance(expected_version, int):
+        raise ValueError("expected_version must be a positive integer")
+    if expected_version < 1:
+        raise ValueError("expected_version must be a positive integer")

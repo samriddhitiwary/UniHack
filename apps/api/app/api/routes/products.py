@@ -1,4 +1,4 @@
-"""Product create, list, retrieve, and update API routes."""
+"""Product create, list, retrieve, update, and delete API routes."""
 
 from typing import Annotated
 from uuid import UUID
@@ -95,3 +95,23 @@ def update_product(
     service: Annotated[ProductService, Depends(get_product_service)],
 ) -> ProductRecord:
     return ProductRecord.model_validate(service.update_product(product_id, request))
+
+
+@router.delete(
+    "/{product_id}",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+    summary="Delete a product",
+    description="Delete an existing product only when its current version matches.",
+    responses={
+        404: {"model": ErrorResponse, "description": "Product not found"},
+        409: {"model": ErrorResponse, "description": "Product version conflict"},
+        422: ERROR_422,
+        503: ERROR_503,
+    },
+)
+def delete_product(
+    product_id: UUID,
+    version: Annotated[int, Query(ge=1)],
+    service: Annotated[ProductService, Depends(get_product_service)],
+) -> None:
+    service.delete_product(product_id, version)

@@ -107,3 +107,29 @@ class ProductService:
             ",".join(sorted(updated_fields)),
         )
         return stored
+
+    def delete_product(self, product_id: UUID, expected_version: int) -> None:
+        logger.info(
+            "event=product.delete.requested product_id=%s expected_version=%s",
+            product_id,
+            expected_version,
+        )
+        current = self._repository.get_by_id(product_id)
+        if current is None:
+            logger.info("event=product.delete_not_found product_id=%s", product_id)
+            raise ProductNotFoundError(product_id)
+        try:
+            self._repository.delete(product_id, expected_version)
+        except ProductVersionConflictError:
+            logger.info(
+                "event=product.delete_version_conflict product_id=%s expected_version=%s",
+                product_id,
+                expected_version,
+            )
+            raise
+        logger.info(
+            "event=product.deleted product_id=%s expected_version=%s category=%s",
+            product_id,
+            expected_version,
+            current.category.value,
+        )

@@ -24,7 +24,7 @@ class ProductNotFoundError(ProductRepositoryError):
 
 
 class ProductVersionConflictError(ProductRepositoryError):
-    """Raised when optimistic concurrency rejects a stale update."""
+    """Raised when optimistic concurrency rejects a stale product mutation."""
 
 
 class InvalidProductCursorError(ProductRepositoryError):

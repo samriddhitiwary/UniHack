@@ -27,15 +27,18 @@ class MemoryProductRepository:
         product: Product | None = None,
         error: Exception | None = None,
         update_error: Exception | None = None,
+        delete_error: Exception | None = None,
         page: ProductPage | None = None,
     ) -> None:
         self.product = product
         self.error = error
         self.update_error = update_error
+        self.delete_error = delete_error
         self.page = page or ProductPage(items=(), next_cursor=None)
         self.list_calls: list[tuple[int, str | None]] = []
         self.status_list_calls: list[tuple[ProductStatus, int, str | None]] = []
         self.update_calls: list[tuple[Product, int]] = []
+        self.delete_calls: list[tuple[UUID, int]] = []
 
     def create(self, product: Product) -> Product:
         if self.error is not None:
@@ -74,6 +77,12 @@ class MemoryProductRepository:
             raise self.update_error
         self.product = replace(product, updated_at=UPDATED_AT, version=expected_version + 1)
         return self.product
+
+    def delete(self, product_id: UUID, expected_version: int) -> None:
+        self.delete_calls.append((product_id, expected_version))
+        if self.delete_error is not None:
+            raise self.delete_error
+        self.product = None
 
 
 def _override(repository: MemoryProductRepository) -> None:
@@ -432,6 +441,97 @@ def test_patch_unexpected_failure_returns_safe_500() -> None:
         app.dependency_overrides.clear()
 
 
+def test_delete_product_returns_empty_204_and_product_cannot_be_retrieved(
+    client: TestClient,
+) -> None:
+    repository = MemoryProductRepository(product=make_product())
+    _override(repository)
+
+    response = client.delete(f"/api/v1/products/{PRODUCT_ID}?version=1")
+
+    assert response.status_code == 204
+    assert response.content == b""
+    assert response.headers["X-Request-ID"]
+    assert repository.delete_calls == [(PRODUCT_ID, 1)]
+    retrieve = client.get(f"/api/v1/products/{PRODUCT_ID}")
+    assert retrieve.status_code == 404
+    _assert_error(retrieve.json(), "PRODUCT_NOT_FOUND")
+
+
+@pytest.mark.parametrize("query", ["", "?version=0", "?version=-1", "?version=abc", "?version="])
+def test_delete_rejects_missing_or_invalid_version(client: TestClient, query: str) -> None:
+    repository = MemoryProductRepository(product=make_product())
+    _override(repository)
+    response = client.delete(f"/api/v1/products/{PRODUCT_ID}{query}")
+    assert response.status_code == 422
+    _assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert repository.delete_calls == []
+
+
+def test_delete_rejects_invalid_uuid_before_service(client: TestClient) -> None:
+    repository = MemoryProductRepository(product=make_product())
+    _override(repository)
+    response = client.delete("/api/v1/products/not-a-uuid?version=1")
+    assert response.status_code == 422
+    _assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert repository.delete_calls == []
+
+
+def test_delete_missing_product_returns_safe_404(client: TestClient) -> None:
+    repository = MemoryProductRepository()
+    _override(repository)
+    response = client.delete(f"/api/v1/products/{PRODUCT_ID}?version=1")
+    assert response.status_code == 404
+    _assert_error(response.json(), "PRODUCT_NOT_FOUND")
+    assert repository.delete_calls == []
+
+
+def test_delete_stale_version_returns_safe_409_without_deleting(client: TestClient) -> None:
+    product = make_product(version=2)
+    repository = MemoryProductRepository(
+        product=product,
+        delete_error=ProductVersionConflictError("condition expression detail"),
+    )
+    _override(repository)
+    response = client.delete(f"/api/v1/products/{PRODUCT_ID}?version=1")
+    assert response.status_code == 409
+    _assert_error(response.json(), "PRODUCT_VERSION_CONFLICT")
+    assert "condition expression detail" not in response.text
+    assert repository.product == product
+
+
+def test_delete_repository_failure_returns_safe_503(client: TestClient) -> None:
+    repository = MemoryProductRepository(
+        product=make_product(), delete_error=ProductRepositoryError("secret-table-name")
+    )
+    _override(repository)
+    response = client.delete(f"/api/v1/products/{PRODUCT_ID}?version=1")
+    assert response.status_code == 503
+    _assert_error(response.json(), "PRODUCT_STORAGE_UNAVAILABLE")
+    assert "secret-table-name" not in response.text
+
+
+def test_delete_unexpected_failure_returns_safe_500() -> None:
+    repository = MemoryProductRepository(
+        product=make_product(), delete_error=RuntimeError("internal delete secret")
+    )
+    _override(repository)
+    try:
+        with TestClient(app, raise_server_exceptions=False) as safe_client:
+            response = safe_client.delete(f"/api/v1/products/{PRODUCT_ID}?version=1")
+        assert response.status_code == 500
+        _assert_error(response.json(), "INTERNAL_SERVER_ERROR")
+        assert "internal delete secret" not in response.text
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_collection_delete_is_not_available(client: TestClient) -> None:
+    _override(MemoryProductRepository(product=make_product()))
+    response = client.delete("/api/v1/products?version=1")
+    assert response.status_code == 405
+
+
 def test_put_product_is_not_available(client: TestClient) -> None:
     _override(MemoryProductRepository(product=make_product()))
     response = client.put(f"/api/v1/products/{PRODUCT_ID}", json={"version": 1, "name": "Updated"})
@@ -455,7 +555,7 @@ def test_openapi_documents_only_approved_product_operations(client: TestClient) 
     collection = schema["paths"]["/api/v1/products"]
     member = schema["paths"]["/api/v1/products/{product_id}"]
     assert set(collection) == {"post", "get"}
-    assert set(member) == {"get", "patch"}
+    assert set(member) == {"get", "patch", "delete"}
     assert collection["post"]["responses"]["201"]
     assert collection["post"]["responses"]["409"]
     assert collection["post"]["responses"]["422"]
@@ -487,6 +587,20 @@ def test_openapi_documents_only_approved_product_operations(client: TestClient) 
     assert member["patch"]["responses"]["422"]
     assert member["patch"]["responses"]["503"]
     assert member["patch"]["parameters"][0]["schema"]["format"] == "uuid"
+    assert member["delete"]["responses"]["204"] == {"description": "Successful Response"}
+    assert member["delete"]["responses"]["404"]
+    assert member["delete"]["responses"]["409"]
+    assert member["delete"]["responses"]["422"]
+    assert member["delete"]["responses"]["503"]
+    delete_parameters = {
+        parameter["name"]: parameter for parameter in member["delete"]["parameters"]
+    }
+    assert set(delete_parameters) == {"product_id", "version"}
+    assert delete_parameters["product_id"]["in"] == "path"
+    assert delete_parameters["product_id"]["schema"]["format"] == "uuid"
+    assert delete_parameters["version"]["in"] == "query"
+    assert delete_parameters["version"]["required"] is True
+    assert delete_parameters["version"]["schema"]["minimum"] == 1
     update_schema = schema["components"]["schemas"]["ProductUpdate"]
     assert update_schema["required"] == ["version"]
     assert set(update_schema["properties"]) == {

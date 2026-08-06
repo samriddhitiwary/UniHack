@@ -18,10 +18,10 @@ Browser -> React/Vite application
 
 The frontend owns presentation and browser-side state. The API owns validated configuration and future application behavior. The product domain model is independent of Boto3. Its repository protocol returns domain entities, while the DynamoDB implementation owns item naming, serialization, conditional writes, index queries, and cursors.
 
-The local products table supports repository development. SPEC-005 exposes create, list, retrieve, and partial-update routes through this dependency chain:
+The local products table supports repository development. SPEC-006 exposes create, list, retrieve, partial-update, and conditional-delete routes through this dependency chain:
 
 ```text
 Product route -> ProductService -> ProductRepository protocol -> DynamoDBProductRepository
 ```
 
-FastAPI providers construct the configured repository and service, so tests can replace the service without AWS. Routes never import Boto3 or instantiate repositories. The list service selects the existing creation-time or status access pattern, while cursor decoding and newest-first DynamoDB queries remain repository responsibilities. For PATCH, the service retrieves the immutable entity and merges only explicitly supplied editable fields; the repository owns conditional version comparison, version increment, and update timestamp. There is no product deletion, PUT replacement, or frontend product workflow; only DynamoDB infrastructure code may call Boto3.
+FastAPI providers construct the configured repository and service, so tests can replace the service without AWS. Routes never import Boto3 or instantiate repositories. The list service selects the existing creation-time or status access pattern, while cursor decoding and newest-first DynamoDB queries remain repository responsibilities. For PATCH, the service retrieves the immutable entity and merges only explicitly supplied editable fields; the repository owns conditional version comparison, version increment, and update timestamp. DELETE also performs a service pre-read, then the repository atomically requires the expected version to prevent a stale client from deleting newer data. There is no soft delete, restore, cascade, bulk operation, PUT replacement, or frontend product workflow; only DynamoDB infrastructure code may call Boto3.

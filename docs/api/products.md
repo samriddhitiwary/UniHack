@@ -1,6 +1,6 @@
 # Product API
 
-SPEC-005 exposes exactly four product operations. DynamoDB Local and the products table must be available before using the real API:
+SPEC-006 exposes exactly five product operations. DynamoDB Local and the products table must be available before using the real API:
 
 ```powershell
 docker compose up -d dynamodb-local
@@ -94,6 +94,18 @@ Editable fields are `name`, `manufacturer`, `modelNumber`, `category`, `status`,
 
 `productId`, `createdAt`, `updatedAt`, `sourceCount`, and `entityType` are immutable and rejected if supplied. After a successful conditional write, the repository increments the version by exactly one and refreshes `updatedAt`; `productId`, `createdAt`, and `sourceCount` remain unchanged.
 
+## Delete a product
+
+`DELETE /api/v1/products/{product_id}?version={version}` permanently deletes an existing product only when the required positive query `version` matches the stored version.
+
+```http
+DELETE /api/v1/products/550e8400-e29b-41d4-a716-446655440000?version=3
+```
+
+A successful delete returns `HTTP/1.1 204 No Content` with an empty response body. The service first confirms the product exists, and the repository still performs an atomic version-conditioned delete to protect against concurrent changes. An absent product returns 404, while a stale version returns 409 and leaves the newer product untouched.
+
+Deletion is not soft deletion and does not cascade to sources, files, or external storage. Restore, bulk deletion, and frontend deletion are not available.
+
 ## Errors
 
 | Status | Code | Meaning |
@@ -121,4 +133,4 @@ Errors use this stable envelope and include the same generated ID in the `X-Requ
 }
 ```
 
-The generated OpenAPI document at `/openapi.json` is the authoritative schema. Product deletion and PUT replacement are not implemented.
+The generated OpenAPI document at `/openapi.json` is the authoritative schema. Soft deletion, restore, bulk deletion, and PUT replacement are not implemented.

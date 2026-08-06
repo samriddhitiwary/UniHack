@@ -197,24 +197,65 @@ def test_listing_rejects_invalid_limit_and_wrong_cursor(dynamodb_client: BaseCli
         repository.list_products(cursor=wrong_cursor)
 
 
-def test_delete_product_and_missing_delete(dynamodb_client: BaseClient) -> None:
-    expected = {
-        "TableName": TABLE_NAME,
-        "Key": serialize_item({"productId": PRODUCT_ID}),
-        "ConditionExpression": "attribute_exists(#productId)",
-        "ExpressionAttributeNames": {"#productId": "productId"},
-    }
+def test_delete_product_uses_expected_version(dynamodb_client: BaseClient) -> None:
+    expected = _delete_request(expected_version=2)
     with Stubber(dynamodb_client) as stubber:
         stubber.add_response("delete_item", {}, expected)
+        repository = DynamoDBProductRepository(dynamodb_client, TABLE_NAME)
+        repository.delete(PRODUCT_ID, expected_version=2)
+
+
+def test_stale_delete_raises_version_conflict(dynamodb_client: BaseClient) -> None:
+    product = make_product(version=2)
+    expected = _delete_request(expected_version=1)
+    with Stubber(dynamodb_client) as stubber:
         stubber.add_client_error(
             "delete_item",
             service_error_code="ConditionalCheckFailedException",
             expected_params=expected,
         )
+        stubber.add_response(
+            "get_item", {"Item": serialize_item(product_to_item(product))}, _get_request()
+        )
         repository = DynamoDBProductRepository(dynamodb_client, TABLE_NAME)
-        repository.delete(PRODUCT_ID)
+        with pytest.raises(ProductVersionConflictError):
+            repository.delete(PRODUCT_ID, expected_version=1)
+
+
+def test_missing_delete_raises_not_found(dynamodb_client: BaseClient) -> None:
+    expected = _delete_request(expected_version=1)
+    with Stubber(dynamodb_client) as stubber:
+        stubber.add_client_error(
+            "delete_item",
+            service_error_code="ConditionalCheckFailedException",
+            expected_params=expected,
+        )
+        stubber.add_response("get_item", {}, _get_request())
+        repository = DynamoDBProductRepository(dynamodb_client, TABLE_NAME)
         with pytest.raises(ProductNotFoundError):
-            repository.delete(PRODUCT_ID)
+            repository.delete(PRODUCT_ID, expected_version=1)
+
+
+@pytest.mark.parametrize("expected_version", [0, -1, True, 1.5])
+def test_delete_rejects_invalid_expected_version(
+    dynamodb_client: BaseClient, expected_version: object
+) -> None:
+    repository = DynamoDBProductRepository(dynamodb_client, TABLE_NAME)
+    with pytest.raises(ValueError):
+        repository.delete(PRODUCT_ID, expected_version)  # type: ignore[arg-type]
+
+
+def test_delete_boto_failure_is_wrapped(dynamodb_client: BaseClient) -> None:
+    with Stubber(dynamodb_client) as stubber:
+        stubber.add_client_error(
+            "delete_item",
+            service_error_code="InternalServerError",
+            expected_params=_delete_request(expected_version=1),
+        )
+        repository = DynamoDBProductRepository(dynamodb_client, TABLE_NAME)
+        with pytest.raises(ProductRepositoryError) as captured:
+            repository.delete(PRODUCT_ID, expected_version=1)
+        assert captured.value.__cause__ is not None
 
 
 def test_boto_failure_is_wrapped(dynamodb_client: BaseClient) -> None:
@@ -285,6 +326,16 @@ def _update_request(product: Product, expected_version: int) -> dict[str, object
             }
         ),
         "ReturnValues": "ALL_NEW",
+    }
+
+
+def _delete_request(expected_version: int) -> dict[str, object]:
+    return {
+        "TableName": TABLE_NAME,
+        "Key": serialize_item({"productId": PRODUCT_ID}),
+        "ConditionExpression": "attribute_exists(#productId) AND #version = :expectedVersion",
+        "ExpressionAttributeNames": {"#productId": "productId", "#version": "version"},
+        "ExpressionAttributeValues": serialize_item({":expectedVersion": expected_version}),
     }
 
 

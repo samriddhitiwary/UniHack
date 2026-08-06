@@ -27,17 +27,20 @@ class FakeProductRepository:
         product: Product | None = None,
         error: Exception | None = None,
         update_error: Exception | None = None,
+        delete_error: Exception | None = None,
         page: ProductPage | None = None,
     ) -> None:
         self.product = product
         self.error = error
         self.update_error = update_error
+        self.delete_error = delete_error
         self.page = page or ProductPage(items=(), next_cursor=None)
         self.created: list[Product] = []
         self.requested_ids = []
         self.list_calls: list[tuple[int, str | None]] = []
         self.status_list_calls: list[tuple[ProductStatus, int, str | None]] = []
         self.update_calls: list[tuple[Product, int]] = []
+        self.delete_calls: list[tuple[object, int]] = []
 
     def create(self, product: Product) -> Product:
         if self.error is not None:
@@ -74,6 +77,11 @@ class FakeProductRepository:
         if self.update_error is not None:
             raise self.update_error
         return replace(product, updated_at=UPDATED_AT, version=expected_version + 1)
+
+    def delete(self, product_id: object, expected_version: int) -> None:
+        self.delete_calls.append((product_id, expected_version))
+        if self.delete_error is not None:
+            raise self.delete_error
 
 
 def _service(repository: FakeProductRepository) -> ProductService:
@@ -251,6 +259,38 @@ def test_update_product_preserves_controlled_update_errors(
             ProductUpdate(version=1, description=None),
         )
     assert captured.value is error
+
+
+def test_delete_product_retrieves_then_deletes_once_with_expected_version() -> None:
+    repository = FakeProductRepository(product=make_product())
+
+    result = _service(repository).delete_product(PRODUCT_ID, expected_version=3)
+
+    assert result is None
+    assert repository.requested_ids == [PRODUCT_ID]
+    assert repository.delete_calls == [(PRODUCT_ID, 3)]
+
+
+def test_delete_product_missing_record_raises_not_found_without_delete() -> None:
+    repository = FakeProductRepository()
+    with pytest.raises(ProductNotFoundError):
+        _service(repository).delete_product(PRODUCT_ID, expected_version=1)
+    assert repository.delete_calls == []
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    [ProductVersionConflictError, ProductRepositoryError],
+)
+def test_delete_product_preserves_controlled_delete_errors(
+    error_type: type[ProductRepositoryError],
+) -> None:
+    error = error_type("repository detail")
+    repository = FakeProductRepository(product=make_product(), delete_error=error)
+    with pytest.raises(error_type) as captured:
+        _service(repository).delete_product(PRODUCT_ID, expected_version=1)
+    assert captured.value is error
+    assert repository.delete_calls == [(PRODUCT_ID, 1)]
 
 
 def test_service_module_has_no_fastapi_dependency() -> None:
