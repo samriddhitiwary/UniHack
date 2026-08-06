@@ -1,4 +1,4 @@
-"""Create SPEC-002 DynamoDB Local tables without deleting existing data."""
+"""Create configured DynamoDB Local tables without deleting existing data."""
 
 import logging
 import time
@@ -10,6 +10,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 CREATED_AT_INDEX = "CreatedAtIndex"
 STATUS_CREATED_AT_INDEX = "StatusCreatedAtIndex"
+PRODUCT_CREATED_AT_INDEX = "ProductCreatedAtIndex"
 logger = logging.getLogger(__name__)
 
 
@@ -65,6 +66,52 @@ def create_products_table() -> bool:
     return created
 
 
+def create_sources_table() -> bool:
+    """Create the configured product-sources table; return True only when new."""
+    settings = get_settings()
+    if not settings.dynamodb_endpoint_url:
+        raise RuntimeError("DYNAMODB_ENDPOINT_URL is required for local table creation")
+    client = create_dynamodb_client(settings)
+    wait_for_dynamodb(client)
+    table_name = settings.table_name("sources")
+    created = False
+    try:
+        client.create_table(
+            TableName=table_name,
+            AttributeDefinitions=[
+                {"AttributeName": "productId", "AttributeType": "S"},
+                {"AttributeName": "sourceId", "AttributeType": "S"},
+                {"AttributeName": "createdAt", "AttributeType": "S"},
+            ],
+            KeySchema=[
+                {"AttributeName": "productId", "KeyType": "HASH"},
+                {"AttributeName": "sourceId", "KeyType": "RANGE"},
+            ],
+            GlobalSecondaryIndexes=[
+                {
+                    "IndexName": PRODUCT_CREATED_AT_INDEX,
+                    "KeySchema": [
+                        {"AttributeName": "productId", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                }
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        created = True
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") != "ResourceInUseException":
+            raise
+    client.get_waiter("table_exists").wait(TableName=table_name)
+    logger.info(
+        "Sources table %s is %s",
+        table_name,
+        "created" if created else "already present",
+    )
+    return created
+
+
 def wait_for_dynamodb(
     client: BaseClient, *, attempts: int = 20, delay: float = 0.25
 ) -> None:
@@ -82,6 +129,7 @@ def wait_for_dynamodb(
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     create_products_table()
+    create_sources_table()
     return 0
 
 

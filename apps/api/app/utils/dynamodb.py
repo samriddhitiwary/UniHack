@@ -1,4 +1,4 @@
-"""Central DynamoDB type and product item serialization."""
+"""Central DynamoDB primitive and domain-item serialization."""
 
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, is_dataclass
@@ -11,7 +11,8 @@ from uuid import UUID
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from pydantic import BaseModel
 
-from app.core.exceptions import ProductSerializationError
+from app.core.exceptions import ProductSerializationError, ProductSourceSerializationError
+from app.domain.product_sources import ProductSource, ProductSourceStatus, ProductSourceType
 from app.domain.products.entities import Product
 from app.domain.products.enums import ProductCategory, ProductStatus
 
@@ -121,6 +122,53 @@ def product_from_item(item: Mapping[str, object]) -> Product:
         raise ProductSerializationError("DynamoDB item is not a valid product") from exc
 
 
+def product_source_to_item(source: ProductSource) -> dict[str, object]:
+    return {
+        "productId": source.product_id,
+        "sourceId": source.source_id,
+        "sourceType": source.source_type,
+        "status": source.status,
+        "originalFilename": source.original_filename,
+        "storageKey": source.storage_key,
+        "mimeType": source.mime_type,
+        "fileSizeBytes": source.file_size_bytes,
+        "checksumSha256": source.checksum_sha256,
+        "displayName": source.display_name,
+        "textContent": source.text_content,
+        "errorMessage": source.error_message,
+        "version": source.version,
+        "createdAt": source.created_at,
+        "updatedAt": source.updated_at,
+    }
+
+
+def product_source_from_item(item: Mapping[str, object]) -> ProductSource:
+    try:
+        return ProductSource(
+            source_id=UUID(str(item["sourceId"])),
+            product_id=UUID(str(item["productId"])),
+            source_type=ProductSourceType(str(item["sourceType"])),
+            status=ProductSourceStatus(str(item["status"])),
+            original_filename=_optional_string(item.get("originalFilename")),
+            storage_key=_optional_string(item.get("storageKey")),
+            mime_type=_optional_string(item.get("mimeType")),
+            file_size_bytes=_optional_integer(item.get("fileSizeBytes"), "fileSizeBytes"),
+            checksum_sha256=_optional_string(item.get("checksumSha256")),
+            display_name=_optional_string(item.get("displayName")),
+            text_content=_optional_string(item.get("textContent")),
+            error_message=_optional_string(item.get("errorMessage")),
+            version=_integer(item["version"], "version"),
+            created_at=parse_utc(item["createdAt"]),
+            updated_at=parse_utc(item["updatedAt"]),
+        )
+    except ProductSourceSerializationError:
+        raise
+    except (KeyError, TypeError, ValueError, ProductSerializationError) as exc:
+        raise ProductSourceSerializationError(
+            "DynamoDB item is not a valid product source"
+        ) from exc
+
+
 def _optional_string(value: object) -> str | None:
     if value is None:
         return None
@@ -142,3 +190,9 @@ def _integer(value: object, field: str) -> int:
     if Decimal(integer) != value:
         raise ValueError(f"{field} must be an integer")
     return integer
+
+
+def _optional_integer(value: object, field: str) -> int | None:
+    if value is None:
+        return None
+    return _integer(value, field)

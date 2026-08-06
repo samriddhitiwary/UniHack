@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-006: Product API — Delete Product**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-007: Product Source Domain Model and DynamoDB Access Patterns**.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ npm --prefix=apps/web run dev
 
 Open the web app at <http://localhost:5173>. API liveness is at <http://localhost:8000/api/v1/health>; readiness is at <http://localhost:8000/api/v1/health/ready>.
 
-The table command is idempotent: it creates `{DYNAMODB_TABLE_PREFIX}-products` with `CreatedAtIndex` and `StatusCreatedAtIndex`, or reports that the table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
+The table command is idempotent: it creates `{DYNAMODB_TABLE_PREFIX}-products` with `CreatedAtIndex` and `StatusCreatedAtIndex`, plus `{DYNAMODB_TABLE_PREFIX}-sources` with `ProductCreatedAtIndex`, or reports that either table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
 
 ## Quality checks
 
@@ -55,7 +55,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains the foundational product entity, validation schemas, DynamoDB repository, serialization, opaque cursors, and local products-table script. It exposes product creation, newest-first paginated listing with optional status filtering, retrieval, optimistic partial updates, and version-conditioned deletion; no soft delete, restore, bulk operation, PUT replacement, or frontend product pages exist. Uploads, file processing, AI logic, review workflows, authentication, real AWS resources, and deployment pipelines remain unimplemented.
+The backend contains foundational product and product-source metadata entities, validation schemas, DynamoDB repositories, serialization, scoped opaque cursors, and the local table script. Product APIs support creation, listing, retrieval, optimistic updates, and deletion. Product-source metadata supports repository-only conditional creation, composite-key retrieval, newest-first listing, optimistic updates, and deletion. No source API, upload/storage, extraction, processing, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -79,6 +79,7 @@ Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete retu
 - [SPEC-004](docs/specs/SPEC-004-product-api-list-products.md)
 - [SPEC-005](docs/specs/SPEC-005-product-api-update-product.md)
 - [SPEC-006](docs/specs/SPEC-006-product-api-delete-product.md)
+- [SPEC-007](docs/specs/SPEC-007-product-source-domain-model-and-dynamodb-access-patterns.md)
 - [Product API](docs/api/products.md)
 - [System overview](docs/architecture/system-overview.md)
 - [DynamoDB data model](docs/architecture/dynamodb-data-model.md)
