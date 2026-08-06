@@ -70,6 +70,7 @@ Desktop.ini
 *.rej
 
 # Local runtime data (keep directories through .gitkeep)
+storage/products/
 storage/uploads/*
 !storage/uploads/.gitkeep
 storage/processed/*

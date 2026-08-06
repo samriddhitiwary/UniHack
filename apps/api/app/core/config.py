@@ -50,12 +50,27 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 
+    @field_validator("local_storage_root", mode="before")
+    @classmethod
+    def local_storage_root_is_not_blank(cls, value: object) -> object:
+        """Reject a blank path, which would otherwise select the process directory."""
+        if isinstance(value, str) and not value.strip():
+            raise ValueError("local_storage_root must not be blank")
+        return value
+
     def table_name(self, resource: str) -> str:
         """Derive a future table name without embedding names in repositories."""
         normalized = resource.strip().lower()
         if not normalized or not normalized.replace("-", "").isalnum():
             raise ValueError("resource must contain only letters, numbers, or hyphens")
         return f"{self.dynamodb_table_prefix}-{normalized}"
+
+    def local_storage_path(self) -> Path:
+        """Resolve relative storage roots from the API project directory."""
+        root = self.local_storage_root.expanduser()
+        if not root.is_absolute():
+            root = Path(__file__).resolve().parents[2] / root
+        return root.resolve()
 
 
 @lru_cache

@@ -1,1 +1,6 @@
-"""Object storage is intentionally deferred beyond SPEC-001."""
+"""Provider-independent object storage contracts and implementations."""
+
+from app.storage.models import StoredObject
+from app.storage.protocol import ObjectStorage
+
+__all__ = ["ObjectStorage", "StoredObject"]

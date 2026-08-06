@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-007: Product Source Domain Model and DynamoDB Access Patterns**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-008: Local Object Storage Foundation**.
 
 ## Prerequisites
 
@@ -37,6 +37,8 @@ Open the web app at <http://localhost:5173>. API liveness is at <http://localhos
 
 The table command is idempotent: it creates `{DYNAMODB_TABLE_PREFIX}-products` with `CreatedAtIndex` and `StatusCreatedAtIndex`, plus `{DYNAMODB_TABLE_PREFIX}-sources` with `ProductCreatedAtIndex`, or reports that either table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
 
+`STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no upload route or S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
+
 ## Quality checks
 
 ```powershell
@@ -55,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains foundational product and product-source metadata entities, validation schemas, DynamoDB repositories, serialization, scoped opaque cursors, and the local table script. Product APIs support creation, listing, retrieval, optimistic updates, and deletion. Product-source metadata supports repository-only conditional creation, composite-key retrieval, newest-first listing, optimistic updates, and deletion. No source API, upload/storage, extraction, processing, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains foundational product and product-source metadata entities, validation schemas, DynamoDB repositories, serialization, scoped opaque cursors, the local table script, and a provider-independent object-storage contract with a secure local development backend. Product APIs support creation, listing, retrieval, optimistic updates, and deletion. Product-source metadata supports repository-only conditional creation, composite-key retrieval, newest-first listing, optimistic updates, and deletion. No source API, file-upload workflow, S3, extraction, processing, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -80,9 +82,11 @@ Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete retu
 - [SPEC-005](docs/specs/SPEC-005-product-api-update-product.md)
 - [SPEC-006](docs/specs/SPEC-006-product-api-delete-product.md)
 - [SPEC-007](docs/specs/SPEC-007-product-source-domain-model-and-dynamodb-access-patterns.md)
+- [SPEC-008](docs/specs/SPEC-008-local-object-storage-foundation.md)
 - [Product API](docs/api/products.md)
 - [System overview](docs/architecture/system-overview.md)
 - [DynamoDB data model](docs/architecture/dynamodb-data-model.md)
+- [Object storage](docs/architecture/object-storage.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

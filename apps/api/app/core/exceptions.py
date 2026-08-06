@@ -57,3 +57,35 @@ class InvalidProductSourceCursorError(ProductSourceRepositoryError):
 
 class ProductSourceSerializationError(ProductSourceRepositoryError):
     """Raised when source data cannot safely cross the DynamoDB boundary."""
+
+
+class ObjectStorageError(Exception):
+    """Base error for object-storage failures."""
+
+
+class InvalidObjectKeyError(ObjectStorageError):
+    """Raised when a logical object key is unsafe or malformed."""
+
+
+class UnsupportedObjectExtensionError(ObjectStorageError):
+    """Raised when a generated key is requested for an unapproved extension."""
+
+
+class ObjectAlreadyExistsError(ObjectStorageError):
+    """Raised when saving would replace an existing object."""
+
+
+class ObjectNotFoundError(ObjectStorageError):
+    """Raised when an object operation targets no regular stored object."""
+
+
+class ObjectSizeExceededError(ObjectStorageError):
+    """Raised when streamed object bytes exceed the caller's limit."""
+
+
+class ObjectMetadataError(ObjectStorageError):
+    """Raised when stored object metadata is absent, malformed, or inconsistent."""
+
+
+class ObjectStorageConfigurationError(ObjectStorageError):
+    """Raised when object storage cannot be constructed from configuration."""

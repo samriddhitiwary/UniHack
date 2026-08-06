@@ -33,3 +33,11 @@ Future source service -> ProductSourceRepository protocol -> DynamoDBProductSour
 ```
 
 The source table groups records by product, lists them newest first through `ProductCreatedAtIndex`, and protects mutations with versions. Scoped opaque cursors prevent source-list cursors from crossing products or being reused as product-list cursors. No source service, API route, upload/storage implementation, extraction, processing job, or frontend source workflow exists yet.
+
+SPEC-008 adds an independent backend-only object-storage foundation:
+
+```text
+Future source service -> ObjectStorage protocol -> LocalObjectStorage (development)
+```
+
+Logical keys, rather than filesystem paths, identify objects. The local backend streams bytes through bounded chunks, enforces the caller's maximum size, calculates SHA-256, prevents overwrite, and stores validated metadata sidecars. Every operation validates path safety and resolved-root containment. The settings-driven provider currently accepts only `local`; S3 remains a future backend. This layer does not create source records and is not exposed through an API.

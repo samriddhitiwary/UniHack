@@ -1,6 +1,9 @@
 """Configuration contract tests."""
 
+from pathlib import Path
+
 import pytest
+from pydantic import ValidationError
 
 from app.core.config import Settings
 
@@ -24,3 +27,14 @@ def test_invalid_table_resource_is_rejected() -> None:
 def test_comma_separated_cors_origins_are_supported() -> None:
     settings = Settings(cors_allowed_origins="https://one.example,https://two.example")
     assert settings.cors_allowed_origins == ["https://one.example", "https://two.example"]
+
+
+def test_relative_local_storage_root_resolves_from_api_project() -> None:
+    settings = Settings(local_storage_root="../../storage")
+    expected = Path(__file__).resolve().parents[4] / "storage"
+    assert settings.local_storage_path() == expected.resolve()
+
+
+def test_blank_local_storage_root_is_rejected() -> None:
+    with pytest.raises(ValidationError, match="local_storage_root must not be blank"):
+        Settings(local_storage_root="")

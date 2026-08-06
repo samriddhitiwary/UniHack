@@ -2,7 +2,16 @@
 
 Copy all three `.env.example` files, install dependencies as shown in the root README, and start DynamoDB Local with `docker compose up -d dynamodb-local`.
 
-Create the SPEC-002 local products table with:
+The API storage settings are:
+
+```env
+STORAGE_BACKEND=local
+LOCAL_STORAGE_ROOT=../../storage
+```
+
+Relative storage paths resolve from `apps/api`, making the example root the repository's `storage` directory. The directory is created when the storage dependency is first requested. Generated runtime objects under `storage/products` are ignored by Git. A path that points to a file fails configuration instead of using the process directory. Local object persistence is development-only and must not be treated as durable Lambda storage. `s3` is not implemented and is rejected explicitly.
+
+Create the local products and product-sources tables with:
 
 ```powershell
 uv run --project apps/api python scripts/dynamodb/create_tables.py
@@ -14,7 +23,6 @@ Useful PowerShell commands:
 
 ```powershell
 docker compose logs -f dynamodb-local
-docker compose down
 docker compose down
 uv run --project apps/api pytest apps/api/tests
 npm --prefix apps/web test -- --run
