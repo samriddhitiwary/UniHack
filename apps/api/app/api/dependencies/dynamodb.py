@@ -36,6 +36,12 @@ def create_dynamodb_client(settings: Settings) -> BaseClient:
 
 
 @lru_cache
+def get_dynamodb_client() -> BaseClient:
+    """Return the reusable deployment-aware DynamoDB client."""
+    return create_dynamodb_client(get_settings())
+
+
+@lru_cache
 def get_dynamodb_health() -> DynamoDBHealth:
     """Return a process-wide reusable health dependency."""
-    return DynamoDBHealth(create_dynamodb_client(get_settings()))
+    return DynamoDBHealth(get_dynamodb_client())

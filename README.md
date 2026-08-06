@@ -55,12 +55,25 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend now contains the foundational product entity, validation schemas, DynamoDB repository, serialization, opaque cursors, and local products-table script. No product API routes or frontend product pages exist. Uploads, file processing, AI logic, review workflows, authentication, real AWS resources, and deployment pipelines remain unimplemented.
+The backend contains the foundational product entity, validation schemas, DynamoDB repository, serialization, opaque cursors, and local products-table script. It exposes only product creation and retrieval; no product list, update, delete, or frontend product pages exist. Uploads, file processing, AI logic, review workflows, authentication, real AWS resources, and deployment pipelines remain unimplemented.
+
+## Product API
+
+With DynamoDB Local and the products table running:
+
+```text
+POST /api/v1/products
+GET  /api/v1/products/{product_id}
+```
+
+Create returns HTTP 201 and retrieve returns HTTP 200. Requests and responses use camelCase JSON. See the [Product API documentation](docs/api/products.md) for examples and stable error codes.
 
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
 - [SPEC-002](docs/specs/SPEC-002-product-domain-model-and-dynamodb-access-patterns.md)
+- [SPEC-003](docs/specs/SPEC-003-product-api-create-and-retrieve.md)
+- [Product API](docs/api/products.md)
 - [System overview](docs/architecture/system-overview.md)
 - [DynamoDB data model](docs/architecture/dynamodb-data-model.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)

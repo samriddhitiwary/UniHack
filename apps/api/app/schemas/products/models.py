@@ -17,8 +17,19 @@ from app.domain.products.enums import ProductCategory, ProductStatus
 Name = Annotated[str, Field(min_length=NAME_MIN_LENGTH, max_length=NAME_MAX_LENGTH)]
 
 
+def to_camel(value: str) -> str:
+    first, *rest = value.split("_")
+    return first + "".join(word.capitalize() for word in rest)
+
+
 class ProductSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        extra="forbid",
+        populate_by_name=True,
+        serialize_by_alias=True,
+        str_strip_whitespace=True,
+    )
 
     @field_validator(
         "manufacturer", "model_number", "description", mode="before", check_fields=False

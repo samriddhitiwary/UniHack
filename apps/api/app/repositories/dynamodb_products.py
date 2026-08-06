@@ -55,9 +55,7 @@ class DynamoDBProductRepository:
             )
         except ClientError as exc:
             if _error_code(exc) == "ConditionalCheckFailedException":
-                raise ProductAlreadyExistsError(
-                    f"product {product.product_id} already exists"
-                ) from exc
+                raise ProductAlreadyExistsError(product.product_id) from exc
             raise ProductRepositoryError("product could not be created") from exc
         except BotoCoreError as exc:
             raise ProductRepositoryError("product could not be created") from exc
@@ -170,7 +168,7 @@ class DynamoDBProductRepository:
             )
         except ClientError as exc:
             if _error_code(exc) == "ConditionalCheckFailedException":
-                raise ProductNotFoundError(f"product {product_id} does not exist") from exc
+                raise ProductNotFoundError(product_id) from exc
             raise ProductRepositoryError("product could not be deleted") from exc
         except BotoCoreError as exc:
             raise ProductRepositoryError("product could not be deleted") from exc
@@ -180,7 +178,7 @@ class DynamoDBProductRepository:
     ) -> None:
         current = self.get_by_id(product_id)
         if current is None:
-            raise ProductNotFoundError(f"product {product_id} does not exist") from original
+            raise ProductNotFoundError(product_id) from original
         raise ProductVersionConflictError(
             f"product {product_id} is not at expected version {expected_version}"
         ) from original
