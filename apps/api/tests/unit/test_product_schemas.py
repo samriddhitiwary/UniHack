@@ -30,17 +30,46 @@ def test_product_create_rejects_system_fields(system_field: str) -> None:
 
 
 def test_product_update_is_partial_and_tracks_explicit_null() -> None:
-    schema = ProductUpdate(manufacturer=" ", status=ProductStatus.PROCESSING)
+    schema = ProductUpdate(version=2, manufacturer=" ", status=ProductStatus.PROCESSING)
     assert schema.manufacturer is None
     assert schema.status is ProductStatus.PROCESSING
-    assert schema.model_fields_set == {"manufacturer", "status"}
+    assert schema.model_fields_set == {"version", "manufacturer", "status"}
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"name": "Updated name"},
+        {"version": 0, "name": "Updated name"},
+        {"version": -1, "name": "Updated name"},
+        {"version": "abc", "name": "Updated name"},
+        {"version": None, "name": "Updated name"},
+        {"version": True, "name": "Updated name"},
+        {"version": 1},
+        {"version": 1, "name": None},
+        {"version": 1, "category": None},
+        {"version": 1, "status": None},
+    ],
+)
+def test_product_update_requires_version_editable_field_and_valid_non_null_values(
+    payload: dict[str, object],
+) -> None:
+    with pytest.raises(ValidationError):
+        ProductUpdate.model_validate(payload)
+
+
+@pytest.mark.parametrize("field", ["manufacturer", "modelNumber", "description"])
+def test_product_update_allows_explicit_null_for_nullable_fields(field: str) -> None:
+    update = ProductUpdate.model_validate({"version": 3, field: None})
+    expected_field = "model_number" if field == "modelNumber" else field
+    assert update.model_fields_set == {"version", expected_field}
 
 
 def test_schemas_reject_invalid_category_and_unknown_fields() -> None:
     with pytest.raises(ValidationError):
         ProductCreate(name="Valid product", category="FUTURE_CATEGORY")
     with pytest.raises(ValidationError):
-        ProductUpdate(unknown="value")
+        ProductUpdate(version=1, name="Valid name", unknown="value")
 
 
 def test_product_record_rejects_naive_timestamps() -> None:

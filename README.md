@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-004: Product API — List Products**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-005: Product API — Update Product**.
 
 ## Prerequisites
 
@@ -55,7 +55,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains the foundational product entity, validation schemas, DynamoDB repository, serialization, opaque cursors, and local products-table script. It exposes product creation, newest-first paginated listing with optional status filtering, and retrieval; no product update, delete, or frontend product pages exist. Uploads, file processing, AI logic, review workflows, authentication, real AWS resources, and deployment pipelines remain unimplemented.
+The backend contains the foundational product entity, validation schemas, DynamoDB repository, serialization, opaque cursors, and local products-table script. It exposes product creation, newest-first paginated listing with optional status filtering, retrieval, and optimistic partial updates; no product deletion, PUT replacement, or frontend product pages exist. Uploads, file processing, AI logic, review workflows, authentication, real AWS resources, and deployment pipelines remain unimplemented.
 
 ## Product API
 
@@ -65,9 +65,10 @@ With DynamoDB Local and the products table running:
 POST /api/v1/products
 GET  /api/v1/products?limit=20&status=DRAFT
 GET  /api/v1/products/{product_id}
+PATCH /api/v1/products/{product_id}
 ```
 
-Create returns HTTP 201; list and retrieve return HTTP 200. The list limit defaults to 20 and is bounded at 100, and continuation cursors are opaque. Requests and responses use camelCase JSON. See the [Product API documentation](docs/api/products.md) for examples and stable error codes.
+Create returns HTTP 201; list, retrieve, and update return HTTP 200. PATCH requires the client’s current positive version and at least one editable field. The list limit defaults to 20 and is bounded at 100, and continuation cursors are opaque. Requests and responses use camelCase JSON. See the [Product API documentation](docs/api/products.md) for examples and stable error codes.
 
 ## Documentation
 
@@ -75,6 +76,7 @@ Create returns HTTP 201; list and retrieve return HTTP 200. The list limit defau
 - [SPEC-002](docs/specs/SPEC-002-product-domain-model-and-dynamodb-access-patterns.md)
 - [SPEC-003](docs/specs/SPEC-003-product-api-create-and-retrieve.md)
 - [SPEC-004](docs/specs/SPEC-004-product-api-list-products.md)
+- [SPEC-005](docs/specs/SPEC-005-product-api-update-product.md)
 - [Product API](docs/api/products.md)
 - [System overview](docs/architecture/system-overview.md)
 - [DynamoDB data model](docs/architecture/dynamodb-data-model.md)

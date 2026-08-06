@@ -1,4 +1,4 @@
-"""Product create, list, and retrieve API routes."""
+"""Product create, list, retrieve, and update API routes."""
 
 from typing import Annotated
 from uuid import UUID
@@ -9,7 +9,7 @@ from fastapi import status as http_status
 from app.api.dependencies.products import get_product_service
 from app.domain.products import ProductStatus
 from app.schemas.errors import ErrorResponse
-from app.schemas.products import ProductCreate, ProductListResult, ProductRecord
+from app.schemas.products import ProductCreate, ProductListResult, ProductRecord, ProductUpdate
 from app.services.products import ProductService
 
 router = APIRouter(prefix="/products", tags=["Products"])
@@ -74,3 +74,24 @@ def retrieve_product(
     service: Annotated[ProductService, Depends(get_product_service)],
 ) -> ProductRecord:
     return ProductRecord.model_validate(service.get_product(product_id))
+
+
+@router.patch(
+    "/{product_id}",
+    response_model=ProductRecord,
+    status_code=http_status.HTTP_200_OK,
+    summary="Update a product",
+    description="Partially update an existing product using optimistic concurrency.",
+    responses={
+        404: {"model": ErrorResponse, "description": "Product not found"},
+        409: {"model": ErrorResponse, "description": "Product version conflict"},
+        422: ERROR_422,
+        503: ERROR_503,
+    },
+)
+def update_product(
+    product_id: UUID,
+    request: ProductUpdate,
+    service: Annotated[ProductService, Depends(get_product_service)],
+) -> ProductRecord:
+    return ProductRecord.model_validate(service.update_product(product_id, request))

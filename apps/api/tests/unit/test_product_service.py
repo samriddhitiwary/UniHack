@@ -1,6 +1,7 @@
 """Product application service tests."""
 
 import inspect
+from dataclasses import replace
 from typing import cast
 
 import pytest
@@ -10,13 +11,14 @@ from app.core.exceptions import (
     ProductAlreadyExistsError,
     ProductNotFoundError,
     ProductRepositoryError,
+    ProductVersionConflictError,
 )
 from app.domain.products import Product, ProductCategory, ProductPage, ProductStatus
 from app.repositories.products import ProductRepository
-from app.schemas.products import ProductCreate
+from app.schemas.products import ProductCreate, ProductUpdate
 from app.services import products as products_module
 from app.services.products import ProductService
-from tests.fixtures.products import PRODUCT_ID, make_product
+from tests.fixtures.products import PRODUCT_ID, UPDATED_AT, make_product
 
 
 class FakeProductRepository:
@@ -24,15 +26,18 @@ class FakeProductRepository:
         self,
         product: Product | None = None,
         error: Exception | None = None,
+        update_error: Exception | None = None,
         page: ProductPage | None = None,
     ) -> None:
         self.product = product
         self.error = error
+        self.update_error = update_error
         self.page = page or ProductPage(items=(), next_cursor=None)
         self.created: list[Product] = []
         self.requested_ids = []
         self.list_calls: list[tuple[int, str | None]] = []
         self.status_list_calls: list[tuple[ProductStatus, int, str | None]] = []
+        self.update_calls: list[tuple[Product, int]] = []
 
     def create(self, product: Product) -> Product:
         if self.error is not None:
@@ -63,6 +68,12 @@ class FakeProductRepository:
         if self.error is not None:
             raise self.error
         return self.page
+
+    def update(self, product: Product, expected_version: int) -> Product:
+        self.update_calls.append((product, expected_version))
+        if self.update_error is not None:
+            raise self.update_error
+        return replace(product, updated_at=UPDATED_AT, version=expected_version + 1)
 
 
 def _service(repository: FakeProductRepository) -> ProductService:
@@ -157,6 +168,88 @@ def test_list_products_preserves_controlled_repository_errors(
     with pytest.raises(error_type) as captured:
         service.list_products(limit=20)
 
+    assert captured.value is error
+
+
+def test_update_product_merges_only_supplied_field_and_preserves_immutable_values() -> None:
+    current = make_product()
+    repository = FakeProductRepository(product=current)
+
+    updated = _service(repository).update_product(
+        PRODUCT_ID,
+        ProductUpdate(version=1, name="  Updated pump  "),
+    )
+
+    candidate, expected_version = repository.update_calls[0]
+    assert repository.requested_ids == [PRODUCT_ID]
+    assert expected_version == 1
+    assert candidate.name == "Updated pump"
+    assert candidate.manufacturer == current.manufacturer
+    assert candidate.category is current.category
+    assert candidate.status is current.status
+    assert candidate.product_id == current.product_id
+    assert candidate.created_at == current.created_at
+    assert candidate.source_count == current.source_count
+    assert current.name == "PX-400 Centrifugal Pump"
+    assert updated.version == 2
+    assert updated.updated_at == UPDATED_AT
+
+
+def test_update_product_merges_multiple_fields_and_clears_nullable_field() -> None:
+    repository = FakeProductRepository(product=make_product())
+    request = ProductUpdate(
+        version=1,
+        manufacturer=None,
+        modelNumber="PX-500",
+        category=ProductCategory.INDUCTION_MOTOR,
+        status=ProductStatus.PROCESSING,
+        description="Updated description",
+    )
+
+    updated = _service(repository).update_product(PRODUCT_ID, request)
+
+    assert updated.manufacturer is None
+    assert updated.model_number == "PX-500"
+    assert updated.category is ProductCategory.INDUCTION_MOTOR
+    assert updated.status is ProductStatus.PROCESSING
+    assert updated.description == "Updated description"
+
+
+def test_update_product_accepts_same_value_and_still_updates() -> None:
+    current = make_product()
+    repository = FakeProductRepository(product=current)
+    updated = _service(repository).update_product(
+        PRODUCT_ID,
+        ProductUpdate(version=1, name=current.name),
+    )
+    assert len(repository.update_calls) == 1
+    assert updated.version == 2
+
+
+def test_update_product_missing_record_raises_not_found_without_update() -> None:
+    repository = FakeProductRepository()
+    with pytest.raises(ProductNotFoundError):
+        _service(repository).update_product(
+            PRODUCT_ID,
+            ProductUpdate(version=1, status=ProductStatus.FAILED),
+        )
+    assert repository.update_calls == []
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    [ProductVersionConflictError, ProductRepositoryError],
+)
+def test_update_product_preserves_controlled_update_errors(
+    error_type: type[ProductRepositoryError],
+) -> None:
+    error = error_type("repository detail")
+    repository = FakeProductRepository(product=make_product(), update_error=error)
+    with pytest.raises(error_type) as captured:
+        _service(repository).update_product(
+            PRODUCT_ID,
+            ProductUpdate(version=1, description=None),
+        )
     assert captured.value is error
 
 

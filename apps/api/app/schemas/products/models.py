@@ -1,9 +1,10 @@
 """Pydantic schemas for product construction and persistence boundaries."""
 
-from typing import Annotated
+from typing import Annotated, ClassVar, Self
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic.json_schema import SkipJsonSchema
 
 from app.domain.products.entities import (
     DESCRIPTION_MAX_LENGTH,
@@ -50,12 +51,29 @@ class ProductCreate(ProductSchema):
 
 
 class ProductUpdate(ProductSchema):
-    name: Name | None = None
+    editable_fields: ClassVar[frozenset[str]] = frozenset(
+        {"name", "manufacturer", "model_number", "category", "status", "description"}
+    )
+    non_nullable_fields: ClassVar[frozenset[str]] = frozenset({"name", "category", "status"})
+
+    version: int = Field(ge=1, strict=True)
+    name: Name | SkipJsonSchema[None] = None
     manufacturer: str | None = Field(default=None, max_length=MANUFACTURER_MAX_LENGTH)
     model_number: str | None = Field(default=None, max_length=MODEL_NUMBER_MAX_LENGTH)
-    category: ProductCategory | None = None
-    status: ProductStatus | None = None
+    category: ProductCategory | SkipJsonSchema[None] = None
+    status: ProductStatus | SkipJsonSchema[None] = None
     description: str | None = Field(default=None, max_length=DESCRIPTION_MAX_LENGTH)
+
+    @model_validator(mode="after")
+    def validate_supplied_fields(self) -> Self:
+        supplied_updates = self.model_fields_set & self.editable_fields
+        if not supplied_updates:
+            raise ValueError("at least one editable product field is required")
+        if any(
+            getattr(self, field) is None for field in supplied_updates & self.non_nullable_fields
+        ):
+            raise ValueError("name, category, and status cannot be null")
+        return self
 
 
 class ProductRecord(ProductSchema):

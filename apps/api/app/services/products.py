@@ -1,12 +1,13 @@
 """Product application service."""
 
 import logging
+from dataclasses import replace
 from uuid import UUID
 
-from app.core.exceptions import ProductNotFoundError
+from app.core.exceptions import ProductNotFoundError, ProductVersionConflictError
 from app.domain.products import Product, ProductStatus
 from app.repositories.products import ProductRepository
-from app.schemas.products import ProductCreate, ProductListResult, ProductRecord
+from app.schemas.products import ProductCreate, ProductListResult, ProductRecord, ProductUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -70,3 +71,39 @@ class ProductService:
             result.next_cursor is not None,
         )
         return result
+
+    def update_product(self, product_id: UUID, request: ProductUpdate) -> Product:
+        updated_fields = request.model_fields_set & request.editable_fields
+        logger.info(
+            "event=product.update.requested product_id=%s expected_version=%s fields=%s",
+            product_id,
+            request.version,
+            ",".join(sorted(updated_fields)),
+        )
+        current = self._repository.get_by_id(product_id)
+        if current is None:
+            logger.info("event=product.update_not_found product_id=%s", product_id)
+            raise ProductNotFoundError(product_id)
+        changes = request.model_dump(
+            include=updated_fields,
+            exclude_unset=True,
+            by_alias=False,
+        )
+        candidate = replace(current, **changes)
+        try:
+            stored = self._repository.update(candidate, expected_version=request.version)
+        except ProductVersionConflictError:
+            logger.info(
+                "event=product.update_version_conflict product_id=%s expected_version=%s",
+                product_id,
+                request.version,
+            )
+            raise
+        logger.info(
+            "event=product.updated product_id=%s version=%s status=%s fields=%s",
+            stored.product_id,
+            stored.version,
+            stored.status.value,
+            ",".join(sorted(updated_fields)),
+        )
+        return stored

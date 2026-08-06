@@ -12,6 +12,7 @@ from app.core.exceptions import (
     ProductAlreadyExistsError,
     ProductNotFoundError,
     ProductRepositoryError,
+    ProductVersionConflictError,
 )
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ def register_exception_handlers(application: FastAPI) -> None:
     application.add_exception_handler(ProductNotFoundError, product_not_found_handler)
     application.add_exception_handler(ProductAlreadyExistsError, product_already_exists_handler)
     application.add_exception_handler(InvalidProductCursorError, invalid_product_cursor_handler)
+    application.add_exception_handler(ProductVersionConflictError, product_version_conflict_handler)
     application.add_exception_handler(ProductRepositoryError, product_repository_handler)
     application.add_exception_handler(RequestValidationError, request_validation_handler)
     application.add_exception_handler(Exception, unexpected_error_handler)
@@ -55,6 +57,19 @@ async def invalid_product_cursor_handler(request: Request, exc: Exception) -> JS
         status_code=400,
         code="INVALID_PRODUCT_CURSOR",
         message="The product cursor is invalid.",
+    )
+
+
+async def product_version_conflict_handler(request: Request, exc: Exception) -> JSONResponse:
+    _expect_exception(exc, ProductVersionConflictError)
+    return _error_response(
+        request,
+        status_code=409,
+        code="PRODUCT_VERSION_CONFLICT",
+        message=(
+            "The product was modified by another request. "
+            "Retrieve the latest version and try again."
+        ),
     )
 
 

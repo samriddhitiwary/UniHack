@@ -1,5 +1,6 @@
 """Product create/retrieve API and OpenAPI contract tests."""
 
+from dataclasses import replace
 from typing import cast
 from uuid import UUID
 
@@ -11,12 +12,13 @@ from app.core.exceptions import (
     InvalidProductCursorError,
     ProductAlreadyExistsError,
     ProductRepositoryError,
+    ProductVersionConflictError,
 )
 from app.domain.products import Product, ProductPage, ProductStatus
 from app.main import app
 from app.repositories.products import ProductRepository
 from app.services.products import ProductService
-from tests.fixtures.products import PRODUCT_ID, SECOND_PRODUCT_ID, make_product
+from tests.fixtures.products import PRODUCT_ID, SECOND_PRODUCT_ID, UPDATED_AT, make_product
 
 
 class MemoryProductRepository:
@@ -24,13 +26,16 @@ class MemoryProductRepository:
         self,
         product: Product | None = None,
         error: Exception | None = None,
+        update_error: Exception | None = None,
         page: ProductPage | None = None,
     ) -> None:
         self.product = product
         self.error = error
+        self.update_error = update_error
         self.page = page or ProductPage(items=(), next_cursor=None)
         self.list_calls: list[tuple[int, str | None]] = []
         self.status_list_calls: list[tuple[ProductStatus, int, str | None]] = []
+        self.update_calls: list[tuple[Product, int]] = []
 
     def create(self, product: Product) -> Product:
         if self.error is not None:
@@ -62,6 +67,13 @@ class MemoryProductRepository:
         if self.error is not None:
             raise self.error
         return self.page
+
+    def update(self, product: Product, expected_version: int) -> Product:
+        self.update_calls.append((product, expected_version))
+        if self.update_error is not None:
+            raise self.update_error
+        self.product = replace(product, updated_at=UPDATED_AT, version=expected_version + 1)
+        return self.product
 
 
 def _override(repository: MemoryProductRepository) -> None:
@@ -261,6 +273,171 @@ def test_list_products_maps_repository_failure_to_safe_503(client: TestClient) -
     assert "secret-table-name" not in response.text
 
 
+@pytest.mark.parametrize(
+    ("field", "value", "expected"),
+    [
+        ("name", "  Updated pump  ", "Updated pump"),
+        ("manufacturer", None, None),
+        ("modelNumber", None, None),
+        ("category", "INDUCTION_MOTOR", "INDUCTION_MOTOR"),
+        ("status", "PROCESSING", "PROCESSING"),
+        ("description", "Updated description", "Updated description"),
+    ],
+)
+def test_patch_updates_each_editable_field(
+    client: TestClient, field: str, value: object, expected: object
+) -> None:
+    repository = MemoryProductRepository(product=make_product())
+    _override(repository)
+
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}",
+        json={"version": 1, field: value},
+    )
+
+    assert response.status_code == 200
+    assert response.json()[field] == expected
+    assert repository.update_calls[0][1] == 1
+
+
+def test_patch_updates_multiple_fields_and_preserves_system_fields(client: TestClient) -> None:
+    current = make_product()
+    repository = MemoryProductRepository(product=current)
+    _override(repository)
+
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}",
+        json={
+            "version": 1,
+            "manufacturer": None,
+            "modelNumber": "PX-500",
+            "category": "INDUCTION_MOTOR",
+            "status": "REVIEW_REQUIRED",
+            "description": "Revised description",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["name"] == current.name
+    assert body["manufacturer"] is None
+    assert body["modelNumber"] == "PX-500"
+    assert body["category"] == "INDUCTION_MOTOR"
+    assert body["status"] == "REVIEW_REQUIRED"
+    assert body["description"] == "Revised description"
+    assert body["productId"] == str(current.product_id)
+    assert body["createdAt"] == "2026-08-06T11:30:00Z"
+    assert body["sourceCount"] == current.source_count
+    assert body["version"] == 2
+    assert body["updatedAt"] == "2026-08-06T12:00:00Z"
+    assert "entityType" not in body
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"version": 1},
+        {"name": "Updated name"},
+        {"version": 0, "name": "Updated name"},
+        {"version": -1, "name": "Updated name"},
+        {"version": "abc", "name": "Updated name"},
+        {"version": None, "name": "Updated name"},
+        {"version": True, "name": "Updated name"},
+        {"version": 1, "name": ""},
+        {"version": 1, "name": None},
+        {"version": 1, "category": "UNKNOWN"},
+        {"version": 1, "category": None},
+        {"version": 1, "status": "UNKNOWN"},
+        {"version": 1, "status": None},
+        {"version": 1, "description": "x" * 4_001},
+        {"version": 1, "unknownField": "value"},
+    ],
+)
+def test_patch_rejects_invalid_requests(client: TestClient, payload: dict[str, object]) -> None:
+    repository = MemoryProductRepository(product=make_product())
+    _override(repository)
+    response = client.patch(f"/api/v1/products/{PRODUCT_ID}", json=payload)
+    assert response.status_code == 422
+    _assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert repository.update_calls == []
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["productId", "createdAt", "updatedAt", "sourceCount", "entityType"],
+)
+def test_patch_rejects_immutable_fields(client: TestClient, field: str) -> None:
+    repository = MemoryProductRepository(product=make_product())
+    _override(repository)
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}",
+        json={"version": 1, "name": "Updated name", field: "forbidden"},
+    )
+    assert response.status_code == 422
+    _assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert repository.update_calls == []
+
+
+def test_patch_missing_product_returns_safe_404(client: TestClient) -> None:
+    _override(MemoryProductRepository())
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}", json={"version": 1, "status": "FAILED"}
+    )
+    assert response.status_code == 404
+    _assert_error(response.json(), "PRODUCT_NOT_FOUND")
+
+
+def test_patch_stale_version_returns_safe_409(client: TestClient) -> None:
+    repository = MemoryProductRepository(
+        product=make_product(),
+        update_error=ProductVersionConflictError("condition expression detail"),
+    )
+    _override(repository)
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}", json={"version": 1, "status": "FAILED"}
+    )
+    assert response.status_code == 409
+    _assert_error(response.json(), "PRODUCT_VERSION_CONFLICT")
+    assert "condition expression detail" not in response.text
+
+
+def test_patch_repository_failure_returns_safe_503(client: TestClient) -> None:
+    repository = MemoryProductRepository(
+        product=make_product(), update_error=ProductRepositoryError("secret-table-name")
+    )
+    _override(repository)
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}", json={"version": 1, "status": "FAILED"}
+    )
+    assert response.status_code == 503
+    _assert_error(response.json(), "PRODUCT_STORAGE_UNAVAILABLE")
+    assert "secret-table-name" not in response.text
+
+
+def test_patch_unexpected_failure_returns_safe_500() -> None:
+    repository = MemoryProductRepository(
+        product=make_product(), update_error=RuntimeError("internal update secret")
+    )
+    _override(repository)
+    try:
+        with TestClient(app, raise_server_exceptions=False) as safe_client:
+            response = safe_client.patch(
+                f"/api/v1/products/{PRODUCT_ID}",
+                json={"version": 1, "status": "FAILED"},
+            )
+        assert response.status_code == 500
+        _assert_error(response.json(), "INTERNAL_SERVER_ERROR")
+        assert "internal update secret" not in response.text
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_put_product_is_not_available(client: TestClient) -> None:
+    _override(MemoryProductRepository(product=make_product()))
+    response = client.put(f"/api/v1/products/{PRODUCT_ID}", json={"version": 1, "name": "Updated"})
+    assert response.status_code == 405
+
+
 def test_unexpected_failure_returns_safe_500() -> None:
     _override(MemoryProductRepository(error=RuntimeError("internal secret")))
     try:
@@ -278,7 +455,7 @@ def test_openapi_documents_only_approved_product_operations(client: TestClient) 
     collection = schema["paths"]["/api/v1/products"]
     member = schema["paths"]["/api/v1/products/{product_id}"]
     assert set(collection) == {"post", "get"}
-    assert set(member) == {"get"}
+    assert set(member) == {"get", "patch"}
     assert collection["post"]["responses"]["201"]
     assert collection["post"]["responses"]["409"]
     assert collection["post"]["responses"]["422"]
@@ -304,6 +481,32 @@ def test_openapi_documents_only_approved_product_operations(client: TestClient) 
     assert member["get"]["responses"]["422"]
     assert member["get"]["responses"]["503"]
     assert member["get"]["parameters"][0]["schema"]["format"] == "uuid"
+    assert member["patch"]["responses"]["200"]
+    assert member["patch"]["responses"]["404"]
+    assert member["patch"]["responses"]["409"]
+    assert member["patch"]["responses"]["422"]
+    assert member["patch"]["responses"]["503"]
+    assert member["patch"]["parameters"][0]["schema"]["format"] == "uuid"
+    update_schema = schema["components"]["schemas"]["ProductUpdate"]
+    assert update_schema["required"] == ["version"]
+    assert set(update_schema["properties"]) == {
+        "version",
+        "name",
+        "manufacturer",
+        "modelNumber",
+        "category",
+        "status",
+        "description",
+    }
+    for field in ("name", "category", "status"):
+        assert not any(
+            option.get("type") == "null"
+            for option in update_schema["properties"][field].get("anyOf", [])
+        )
+    for field in ("manufacturer", "modelNumber", "description"):
+        assert any(
+            option.get("type") == "null" for option in update_schema["properties"][field]["anyOf"]
+        )
     category_schema = schema["components"]["schemas"]["ProductCategory"]
     assert category_schema["enum"] == ["UNCLASSIFIED", "CENTRIFUGAL_PUMP", "INDUCTION_MOTOR"]
     status_schema = schema["components"]["schemas"]["ProductStatus"]
