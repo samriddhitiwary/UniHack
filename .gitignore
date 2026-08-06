@@ -1,0 +1,96 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+apps/*/.env
+apps/*/.env.*
+!apps/*/.env.example
+!apps/*/.env.*.example
+.envrc
+.direnv/
+*.key
+*.pem
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+.pyre/
+.pytype/
+.uv-cache/
+.venv/
+*.egg-info/
+dist/
+build/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+junit.xml
+.python-version
+
+# JavaScript
+node_modules/
+coverage/
+apps/web/dist/
+.vite/
+.eslintcache
+.npm/
+.pnpm-store/
+.yarn/
+*.log
+
+# Editors and operating systems
+.idea/
+.vscode/
+.vs/
+.codex/
+.agents/
+*.suo
+*.user
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# Local runtime data (keep directories through .gitkeep)
+storage/uploads/*
+!storage/uploads/.gitkeep
+storage/processed/*
+!storage/processed/.gitkeep
+storage/exports/*
+!storage/exports/.gitkeep
+
+# DynamoDB Local
+infrastructure/docker/dynamodb/
+*.db
+*.sqlite
+*.sqlite3
+
+# Local container and serverless overrides
+docker-compose.override.yml
+.aws-sam/
+.serverless/
+
+# Infrastructure state and local plans (source configuration remains trackable)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
