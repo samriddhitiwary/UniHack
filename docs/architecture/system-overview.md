@@ -93,3 +93,13 @@ Future job service -> ProcessingJobRepository protocol -> DynamoDBProcessingJobR
 ```
 
 One immutable record represents one future attempt for one product source. The repository conditionally creates jobs, retrieves by `jobId`, lists newest first by product or product/source with separately scoped opaque cursors, and conditionally updates status metadata by expected version. The processing-jobs table uses `ProductCreatedAtIndex` and `SourceCreatedAtIndex`; the latter partitions on server-derived `productId#sourceId`. No API route, worker, queue, polling, retry execution, parser, extractor, OCR, or AI call exists.
+
+SPEC-015 exposes only processing-job creation and reads:
+
+```text
+Processing-job routes -> ProcessingJobService -> ProductRepository (parent check)
+                                         |----> ProductSourceRepository (scoped source check)
+                                         `----> ProcessingJobRepository (create/get/query)
+```
+
+Create accepts only a job type, validates product/source ownership and the centralized compatibility matrix, then persists one PENDING job. Product and source lists validate their parents before using the existing descending GSIs and separately scoped opaque cursors. Routes depend only on the service; the service imports neither FastAPI nor Boto3. No PATCH, DELETE, global list, start, cancel, retry, worker, scheduler, queue, parser, extraction, OCR, or AI execution is exposed.

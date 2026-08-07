@@ -231,7 +231,7 @@ class DynamoDBProcessingJobRepository:
             if _error_code(exc) == "ConditionalCheckFailedException":
                 current = self.get_by_id(job.job_id)
                 if current is None:
-                    raise ProcessingJobNotFoundError("processing job does not exist") from exc
+                    raise ProcessingJobNotFoundError(job.job_id) from exc
                 raise ProcessingJobVersionConflictError("processing job version is stale") from exc
             raise ProcessingJobRepositoryError("processing job could not be updated") from exc
         except BotoCoreError as exc:

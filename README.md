@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-014: Product Source Processing Job Domain and Persistence**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-015: Processing Job API — Create, Retrieve and List Jobs**.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains product, product-source, and processing-job domain/persistence foundations plus provider-independent object storage. Product and product-source APIs cover their completed workflows. Processing jobs are persistence-only records with controlled statuses, scoped pagination, and optimistic concurrency; no job API or execution exists. Content/file replacement, bulk deletion, restore, and download are not exposed. No S3, extraction, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains product, product-source, and processing-job foundations plus provider-independent object storage. Product and product-source APIs cover their completed workflows. Processing-job APIs create compatible PENDING records, retrieve one job, and list jobs by product or source; they do not start or execute work. Content/file replacement, bulk deletion, restore, and download are not exposed. No S3, extraction, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -75,6 +75,10 @@ GET  /api/v1/products/{product_id}/sources?limit=20
 GET  /api/v1/products/{product_id}/sources/{source_id}
 PATCH /api/v1/products/{product_id}/sources/{source_id}
 DELETE /api/v1/products/{product_id}/sources/{source_id}?version=1
+POST /api/v1/products/{product_id}/sources/{source_id}/jobs
+GET  /api/v1/processing-jobs/{job_id}
+GET  /api/v1/products/{product_id}/processing-jobs?limit=20
+GET  /api/v1/products/{product_id}/sources/{source_id}/jobs?limit=20
 ```
 
 Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete returns an empty HTTP 204. PATCH and DELETE use the client’s current positive version for optimistic concurrency. The list limit defaults to 20 and is bounded at 100, and continuation cursors are opaque. Requests and responses use camelCase JSON. See the [Product API documentation](docs/api/products.md) for examples and stable error codes.
@@ -88,6 +92,8 @@ Source listing verifies the parent and returns metadata newest first with a limi
 Source PATCH requires the last retrieved positive `version` and at least one of `displayName`, `status`, or `errorMessage`. It preserves omitted and immutable fields, distinguishes explicit null from omission, enforces direct status transitions, and returns `409` for stale versions or invalid transitions. It does not replace content, access object storage, or start processing.
 
 Source DELETE requires the last retrieved positive `version`. It validates the parent and product-scoped source, rejects obvious stale requests before storage access, deletes file-backed objects through `ObjectStorage`, skips storage for TEXT, and conditionally deletes metadata. Success is an empty 204. The object-first strategy avoids successful metadata deletion leaving an orphan, but a final database conflict/failure can occur after bytes are removed; this risk is logged and not reported as success.
+
+Processing-job creation accepts only `jobType`, verifies the product and product-scoped source, enforces source/job compatibility, and returns one PENDING record with HTTP 201. Retrieval and both newest-first lists return HTTP 200. List limits default to 20 and use opaque identity-bound cursors. See the [Processing Job API documentation](docs/api/processing-jobs.md). No job starts automatically, and there are no update, cancel, retry, worker, extraction, or AI operations.
 
 ## Documentation
 
@@ -105,8 +111,10 @@ Source DELETE requires the last retrieved positive `version`. It validates the p
 - [SPEC-012](docs/specs/SPEC-012-product-source-api-update-source-metadata-and-status.md)
 - [SPEC-013](docs/specs/SPEC-013-product-source-api-delete-source-and-stored-object.md)
 - [SPEC-014](docs/specs/SPEC-014-product-source-processing-job-domain-and-persistence.md)
+- [SPEC-015](docs/specs/SPEC-015-processing-job-api-create-retrieve-and-list-jobs.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
+- [Processing Job API](docs/api/processing-jobs.md)
 - [System overview](docs/architecture/system-overview.md)
 - [DynamoDB data model](docs/architecture/dynamodb-data-model.md)
 - [Object storage](docs/architecture/object-storage.md)

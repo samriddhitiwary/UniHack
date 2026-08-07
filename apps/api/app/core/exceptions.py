@@ -101,6 +101,10 @@ class ProcessingJobAlreadyExistsError(ProcessingJobRepositoryError):
 class ProcessingJobNotFoundError(ProcessingJobRepositoryError):
     """Raised when a conditional job mutation finds no record."""
 
+    def __init__(self, job_id: UUID | str) -> None:
+        self.job_id = str(job_id)
+        super().__init__("processing job does not exist")
+
 
 class ProcessingJobVersionConflictError(ProcessingJobRepositoryError):
     """Raised when optimistic concurrency rejects a stale job mutation."""
@@ -122,6 +126,15 @@ class InvalidProcessingJobStatusTransitionError(Exception):
         self.current_status = current_status
         self.requested_status = requested_status
         super().__init__("processing-job status transition is not allowed")
+
+
+class ProcessingJobTypeNotSupportedForSourceError(Exception):
+    """Raised when a source cannot use the requested processing-job category."""
+
+    def __init__(self, source_type: str, job_type: str) -> None:
+        self.source_type = source_type
+        self.job_type = job_type
+        super().__init__("processing-job type is not supported for source type")
 
 
 class InvalidProductSourceCursorError(ProductSourceRepositoryError):

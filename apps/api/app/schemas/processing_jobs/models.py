@@ -61,6 +61,18 @@ class ProcessingJobCreate(ProcessingJobSchema):
         return self
 
 
+class ProcessingJobCreateRequest(ProcessingJobSchema):
+    """Strict API body; product/source identity comes only from the route path."""
+
+    model_config = ConfigDict(
+        populate_by_name=False,
+        validate_by_alias=True,
+        validate_by_name=False,
+    )
+
+    job_type: ProcessingJobType
+
+
 class ProcessingJobUpdate(ProcessingJobSchema):
     editable_fields: ClassVar[frozenset[str]] = frozenset(
         {"status", "progress_percent", "error_code", "error_message", "result_reference"}

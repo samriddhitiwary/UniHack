@@ -2,6 +2,7 @@
 
 from app.schemas.processing_jobs.models import (
     ProcessingJobCreate,
+    ProcessingJobCreateRequest,
     ProcessingJobListResult,
     ProcessingJobRecord,
     ProcessingJobUpdate,
@@ -9,6 +10,7 @@ from app.schemas.processing_jobs.models import (
 
 __all__ = [
     "ProcessingJobCreate",
+    "ProcessingJobCreateRequest",
     "ProcessingJobListResult",
     "ProcessingJobRecord",
     "ProcessingJobUpdate",

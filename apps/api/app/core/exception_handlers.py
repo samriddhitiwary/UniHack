@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.core.exceptions import (
+    InvalidProcessingJobCursorError,
     InvalidProductCursorError,
     InvalidProductSourceCursorError,
     InvalidProductSourceFileContentError,
@@ -15,6 +16,10 @@ from app.core.exceptions import (
     InvalidProductSourceStatusTransitionError,
     ObjectSizeExceededError,
     ObjectStorageError,
+    ProcessingJobAlreadyExistsError,
+    ProcessingJobNotFoundError,
+    ProcessingJobRepositoryError,
+    ProcessingJobTypeNotSupportedForSourceError,
     ProductAlreadyExistsError,
     ProductNotFoundError,
     ProductRepositoryError,
@@ -72,6 +77,20 @@ def register_exception_handlers(application: FastAPI) -> None:
     )
     application.add_exception_handler(ObjectSizeExceededError, object_size_exceeded_handler)
     application.add_exception_handler(ObjectStorageError, object_storage_handler)
+    application.add_exception_handler(
+        ProcessingJobAlreadyExistsError, processing_job_already_exists_handler
+    )
+    application.add_exception_handler(ProcessingJobNotFoundError, processing_job_not_found_handler)
+    application.add_exception_handler(
+        InvalidProcessingJobCursorError, invalid_processing_job_cursor_handler
+    )
+    application.add_exception_handler(
+        ProcessingJobTypeNotSupportedForSourceError,
+        processing_job_type_not_supported_handler,
+    )
+    application.add_exception_handler(
+        ProcessingJobRepositoryError, processing_job_repository_handler
+    )
     application.add_exception_handler(RequestValidationError, request_validation_handler)
     application.add_exception_handler(Exception, unexpected_error_handler)
 
@@ -300,6 +319,64 @@ async def object_storage_handler(request: Request, exc: Exception) -> JSONRespon
         status_code=503,
         code="OBJECT_STORAGE_UNAVAILABLE",
         message="Object storage is temporarily unavailable.",
+    )
+
+
+async def processing_job_already_exists_handler(request: Request, exc: Exception) -> JSONResponse:
+    _expect_exception(exc, ProcessingJobAlreadyExistsError)
+    return _error_response(
+        request,
+        status_code=409,
+        code="PROCESSING_JOB_ALREADY_EXISTS",
+        message="A processing job with this identifier already exists.",
+    )
+
+
+async def processing_job_not_found_handler(request: Request, exc: Exception) -> JSONResponse:
+    error = _expect_exception(exc, ProcessingJobNotFoundError)
+    return _error_response(
+        request,
+        status_code=404,
+        code="PROCESSING_JOB_NOT_FOUND",
+        message="The requested processing job does not exist.",
+        details={"jobId": error.job_id},
+    )
+
+
+async def invalid_processing_job_cursor_handler(request: Request, exc: Exception) -> JSONResponse:
+    _expect_exception(exc, InvalidProcessingJobCursorError)
+    return _error_response(
+        request,
+        status_code=400,
+        code="INVALID_PROCESSING_JOB_CURSOR",
+        message="The processing-job cursor is invalid.",
+    )
+
+
+async def processing_job_type_not_supported_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    error = _expect_exception(exc, ProcessingJobTypeNotSupportedForSourceError)
+    return _error_response(
+        request,
+        status_code=422,
+        code="PROCESSING_JOB_TYPE_NOT_SUPPORTED",
+        message="The processing-job type is not supported for this source type.",
+        details={"sourceType": error.source_type, "jobType": error.job_type},
+    )
+
+
+async def processing_job_repository_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(
+        "event=processing_job.persistence_failed request_id=%s error_type=%s",
+        _request_id(request),
+        type(exc).__name__,
+    )
+    return _error_response(
+        request,
+        status_code=503,
+        code="PROCESSING_JOB_STORAGE_UNAVAILABLE",
+        message="Processing-job storage is temporarily unavailable.",
     )
 
 

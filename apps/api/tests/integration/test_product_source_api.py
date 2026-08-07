@@ -895,7 +895,9 @@ def test_unapproved_source_routes_do_not_exist(client: TestClient, method: str, 
 def test_openapi_documents_exactly_six_source_operations(client: TestClient) -> None:
     schema = client.get("/openapi.json").json()
     source_paths = {
-        path: operations for path, operations in schema["paths"].items() if "/sources" in path
+        path: operations
+        for path, operations in schema["paths"].items()
+        if "/sources" in path and not path.endswith("/jobs")
     }
     assert set(source_paths) == {
         "/api/v1/products/{product_id}/sources",
