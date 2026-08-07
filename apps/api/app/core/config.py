@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     max_pdf_upload_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
     max_image_upload_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
     max_csv_upload_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
+    pdf_extraction_max_pages: int = Field(default=300, gt=0)
+    pdf_extraction_max_total_characters: int = Field(default=2_000_000, gt=0)
+    pdf_extraction_max_page_characters: int = Field(default=100_000, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

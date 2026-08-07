@@ -103,3 +103,18 @@ Processing-job routes -> ProcessingJobService -> ProductRepository (parent check
 ```
 
 Create accepts only a job type, validates product/source ownership and the centralized compatibility matrix, then persists one PENDING job. Product and source lists validate their parents before using the existing descending GSIs and separately scoped opaque cursors. Routes depend only on the service; the service imports neither FastAPI nor Boto3. No PATCH, DELETE, global list, start, cancel, retry, worker, scheduler, queue, parser, extraction, OCR, or AI execution is exposed.
+
+SPEC-016 adds direct PDF embedded-text extraction orchestration:
+
+```text
+PdfTextExtractionService -> ProcessingJobRepository (RUNNING/COMPLETED/FAILED)
+                         -> ProductSourceRepository (scoped PDF metadata)
+                         -> ObjectStorage.open (binary PDF stream)
+                         -> PdfTextParser (pypdf, bounded pages/text)
+                         -> PdfExtractionResultRepository (META + PAGE evidence)
+```
+
+Result evidence is stored outside source/job records in a composite DynamoDB table. Blank
+pages retain their positions; deterministic quality is USABLE, LOW_TEXT, or NO_TEXT.
+Readable scanned/image-only PDFs complete as NO_TEXT without OCR. The service has no API,
+worker, scheduler, queue, direct filesystem/Boto3 use, table extraction, or AI behavior.

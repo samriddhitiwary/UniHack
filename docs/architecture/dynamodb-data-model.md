@@ -1,6 +1,6 @@
 # DynamoDB Data Model
 
-The local model contains configuration-derived `{DYNAMODB_TABLE_PREFIX}-products`, `{DYNAMODB_TABLE_PREFIX}-sources`, and `{DYNAMODB_TABLE_PREFIX}-processing-jobs` tables. No production table is provisioned by this repository.
+The local model contains configuration-derived products, sources, processing-jobs, and extraction-results tables. No production table is provisioned by this repository.
 
 ## Item shape
 
@@ -113,6 +113,29 @@ Job types are `SOURCE_PROCESSING`, `PDF_TEXT_EXTRACTION`, `PDF_TABLE_EXTRACTION`
 
 `ProductCreatedAtIndex` uses `productId`/`createdAt`. `SourceCreatedAtIndex` uses server-generated `sourceScope = productId#sourceId`/`createdAt`, preventing global source enumeration. The two list paths use separate opaque cursor scopes bound to their complete query identity. Limits are 1–100; no scan, total count, global list, status dashboard, worker claim, retry queue, or delete operation exists. Updates increment version once and refresh `updatedAt`.
 
+## PDF extraction results table
+
+The extraction-results table separates page evidence from source and job records. Its
+partition key is `extractionId` and sort key is `recordKey`.
+
+| Record | Contents |
+| --- | --- |
+| `META` | Job/product/source IDs, parser/version, counts, quality, warnings, creation time |
+| `PAGE#000001` | Page number, normalized text, character count, and has-text flag |
+
+One page per item avoids unsafe single-item growth for moderate PDFs. Configured page text
+is limited to 100,000 characters, safely below DynamoDB's per-item limit. META records
+alone contain `jobId` and `createdAt`, so `JobIdIndex` (`jobId`/`createdAt`) is sparse.
+
+| Extraction access pattern | Operation |
+| --- | --- |
+| Create result | Conditional META `PutItem`, followed by bounded page records |
+| Retrieve by extraction ID | Paginated consistent partition query |
+| Retrieve by job ID | `JobIdIndex` query followed by extraction partition query |
+
+There is no scan, list API, result API, update, or delete contract. Missing/inconsistent
+page records are controlled serialization errors and cannot produce a completed job.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -121,6 +144,8 @@ After starting DynamoDB Local, run:
 uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
-or `make dynamodb-create-tables`. The script creates the products table with two indexes, the sources table with `ProductCreatedAtIndex`, and the processing-jobs table with its product/source indexes. It waits for each table and exits successfully without altering data when a table is already present.
+or `make dynamodb-create-tables`. The script creates products, sources, processing-jobs,
+and extraction-results tables with their documented indexes. It waits for each table and
+exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

@@ -46,3 +46,16 @@ def test_blank_local_storage_root_is_rejected() -> None:
 def test_upload_limits_must_be_positive(field: str) -> None:
     with pytest.raises(ValidationError):
         Settings(**{field: 0})
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "pdf_extraction_max_pages",
+        "pdf_extraction_max_total_characters",
+        "pdf_extraction_max_page_characters",
+    ],
+)
+def test_pdf_extraction_limits_must_be_positive(field: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**{field: 0})

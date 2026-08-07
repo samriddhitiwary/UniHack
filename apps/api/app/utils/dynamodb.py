@@ -12,9 +12,15 @@ from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from pydantic import BaseModel
 
 from app.core.exceptions import (
+    PdfExtractionSerializationError,
     ProcessingJobSerializationError,
     ProductSerializationError,
     ProductSourceSerializationError,
+)
+from app.domain.pdf_extraction import (
+    PdfExtractionPage,
+    PdfExtractionQualityStatus,
+    PdfTextExtractionResult,
 )
 from app.domain.processing_jobs import ProcessingJob, ProcessingJobStatus, ProcessingJobType
 from app.domain.product_sources import ProductSource, ProductSourceStatus, ProductSourceType
@@ -230,6 +236,83 @@ def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
         ) from exc
 
 
+def pdf_extraction_metadata_to_item(result: PdfTextExtractionResult) -> dict[str, object]:
+    return {
+        "extractionId": result.extraction_id,
+        "recordKey": "META",
+        "jobId": result.job_id,
+        "productId": result.product_id,
+        "sourceId": result.source_id,
+        "parser": result.parser,
+        "parserVersion": result.parser_version,
+        "pageCount": result.page_count,
+        "pagesWithText": result.pages_with_text,
+        "totalCharacterCount": result.total_character_count,
+        "qualityStatus": result.quality_status,
+        "warningCodes": result.warning_codes,
+        "createdAt": result.created_at,
+    }
+
+
+def pdf_extraction_page_to_item(extraction_id: UUID, page: PdfExtractionPage) -> dict[str, object]:
+    return {
+        "extractionId": extraction_id,
+        "recordKey": f"PAGE#{page.page_number:06d}",
+        "pageNumber": page.page_number,
+        "text": page.text,
+        "characterCount": page.character_count,
+        "hasText": page.has_text,
+    }
+
+
+def pdf_extraction_result_from_items(
+    items: Sequence[Mapping[str, object]],
+) -> PdfTextExtractionResult:
+    try:
+        metadata_items = [item for item in items if item.get("recordKey") == "META"]
+        if len(metadata_items) != 1:
+            raise ValueError("one extraction metadata record is required")
+        metadata = metadata_items[0]
+        extraction_id = UUID(str(metadata["extractionId"]))
+        page_items = sorted(
+            (item for item in items if str(item.get("recordKey", "")).startswith("PAGE#")),
+            key=lambda item: str(item["recordKey"]),
+        )
+        pages = tuple(
+            PdfExtractionPage(
+                page_number=_integer(item["pageNumber"], "pageNumber"),
+                text=_required_string(item["text"], "text"),
+                character_count=_integer(item["characterCount"], "characterCount"),
+                has_text=_boolean(item["hasText"], "hasText"),
+            )
+            for item in page_items
+        )
+        warning_codes = metadata.get("warningCodes", [])
+        if not isinstance(warning_codes, Sequence) or isinstance(warning_codes, (str, bytes)):
+            raise ValueError("warningCodes must be a sequence")
+        return PdfTextExtractionResult(
+            extraction_id=extraction_id,
+            job_id=UUID(str(metadata["jobId"])),
+            product_id=UUID(str(metadata["productId"])),
+            source_id=UUID(str(metadata["sourceId"])),
+            parser=_required_string(metadata["parser"], "parser"),
+            parser_version=_required_string(metadata["parserVersion"], "parserVersion"),
+            page_count=_integer(metadata["pageCount"], "pageCount"),
+            pages_with_text=_integer(metadata["pagesWithText"], "pagesWithText"),
+            total_character_count=_integer(metadata["totalCharacterCount"], "totalCharacterCount"),
+            quality_status=PdfExtractionQualityStatus(str(metadata["qualityStatus"])),
+            pages=pages,
+            warning_codes=tuple(_required_string(code, "warningCode") for code in warning_codes),
+            created_at=parse_utc(metadata["createdAt"]),
+        )
+    except PdfExtractionSerializationError:
+        raise
+    except (KeyError, TypeError, ValueError, ProductSerializationError) as exc:
+        raise PdfExtractionSerializationError(
+            "DynamoDB items are not a valid PDF extraction result"
+        ) from exc
+
+
 def _optional_string(value: object) -> str | None:
     if value is None:
         return None
@@ -263,3 +346,9 @@ def _optional_datetime(value: object) -> datetime | None:
     if value is None:
         return None
     return parse_utc(value)
+
+
+def _boolean(value: object, field: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"{field} must be a boolean")
+    return value

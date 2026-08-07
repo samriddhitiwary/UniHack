@@ -137,6 +137,81 @@ class ProcessingJobTypeNotSupportedForSourceError(Exception):
         super().__init__("processing-job type is not supported for source type")
 
 
+class PdfTextExtractionError(Exception):
+    """Base controlled PDF extraction failure with safe job metadata."""
+
+    code = "PDF_EXTRACTION_FAILED"
+    safe_message = "PDF text extraction failed."
+
+
+class InvalidPdfExtractionJobError(PdfTextExtractionError):
+    """Raised when a job cannot begin PDF text extraction."""
+
+    code = "PDF_EXTRACTION_JOB_INVALID"
+    safe_message = "The processing job is not eligible for PDF text extraction."
+
+
+class InvalidPdfSourceError(PdfTextExtractionError):
+    """Raised when a job does not reference a usable stored PDF source."""
+
+    code = "PDF_SOURCE_INVALID"
+    safe_message = "The processing job does not reference a valid stored PDF source."
+
+
+class PdfParseError(PdfTextExtractionError):
+    """Raised when pypdf cannot structurally read or extract a PDF."""
+
+    code = "PDF_PARSE_FAILED"
+    safe_message = "The PDF could not be read for embedded text extraction."
+
+
+class PdfExtractionPageLimitExceededError(PdfTextExtractionError):
+    """Raised when a PDF contains more pages than configured."""
+
+    code = "PDF_EXTRACTION_PAGE_LIMIT_EXCEEDED"
+    safe_message = "The PDF exceeds the configured extraction page limit."
+
+
+class PdfExtractionTextLimitExceededError(PdfTextExtractionError):
+    """Raised when one page or the whole result exceeds configured text limits."""
+
+    code = "PDF_EXTRACTION_TEXT_LIMIT_EXCEEDED"
+    safe_message = "The PDF exceeds the configured extracted-text limit."
+
+
+class PdfExtractionObjectNotFoundError(PdfTextExtractionError):
+    """Raised when the source's stored PDF object is absent."""
+
+    code = "PDF_OBJECT_NOT_FOUND"
+    safe_message = "The stored PDF object could not be found."
+
+
+class PdfExtractionObjectStorageError(PdfTextExtractionError):
+    """Raised when object storage cannot provide the source PDF."""
+
+    code = "PDF_OBJECT_STORAGE_FAILED"
+    safe_message = "The stored PDF object is temporarily unavailable."
+
+
+class PdfExtractionRepositoryError(Exception):
+    """Base error for extraction-result persistence failures."""
+
+
+class PdfExtractionResultAlreadyExistsError(PdfExtractionRepositoryError):
+    """Raised when conditional result creation finds the identity already stored."""
+
+
+class PdfExtractionSerializationError(PdfExtractionRepositoryError):
+    """Raised when extraction data cannot safely cross the DynamoDB boundary."""
+
+
+class PdfExtractionResultStorageError(PdfTextExtractionError):
+    """Safe lifecycle metadata for extraction-result repository failures."""
+
+    code = "PDF_EXTRACTION_STORAGE_FAILED"
+    safe_message = "The PDF extraction result could not be stored."
+
+
 class InvalidProductSourceCursorError(ProductSourceRepositoryError):
     """Raised when an opaque product-source cursor is invalid."""
 
