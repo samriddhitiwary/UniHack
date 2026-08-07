@@ -10,11 +10,13 @@ from uuid import UUID
 import pytest
 
 from app.core.exceptions import (
+    InvalidProductSourceCursorError,
     ObjectSizeExceededError,
     ObjectStorageError,
     ProductNotFoundError,
     ProductRepositoryError,
     ProductSourceAlreadyExistsError,
+    ProductSourceNotFoundError,
     ProductSourceRepositoryError,
 )
 from app.domain.product_sources import (
@@ -32,6 +34,7 @@ from app.services.product_sources import ProductSourceService
 from app.storage.models import StoredObject
 from app.storage.protocol import ObjectStorage
 from app.utils.file_validation import UploadSizeLimits
+from tests.fixtures.product_sources import SECOND_SOURCE_ID, SOURCE_ID, make_product_source
 from tests.fixtures.products import PRODUCT_ID, make_product
 
 
@@ -66,9 +69,19 @@ class FakeProductRepository:
 
 
 class FakeProductSourceRepository:
-    def __init__(self, error: Exception | None = None) -> None:
+    def __init__(
+        self,
+        error: Exception | None = None,
+        *,
+        source: ProductSource | None = None,
+        page: ProductSourcePage | None = None,
+    ) -> None:
         self.error = error
+        self.source = source
+        self.page = page or ProductSourcePage(items=(), next_cursor=None)
         self.created: list[ProductSource] = []
+        self.requested_gets: list[tuple[UUID, UUID]] = []
+        self.requested_lists: list[tuple[UUID, int, str | None]] = []
 
     def create(self, source: ProductSource) -> ProductSource:
         self.created.append(source)
@@ -77,7 +90,16 @@ class FakeProductSourceRepository:
         return source
 
     def get_by_id(self, product_id: UUID, source_id: UUID) -> ProductSource | None:
-        raise NotImplementedError
+        self.requested_gets.append((product_id, source_id))
+        if self.error is not None:
+            raise self.error
+        if (
+            self.source is None
+            or self.source.product_id != product_id
+            or self.source.source_id != source_id
+        ):
+            return None
+        return self.source
 
     def update(self, source: ProductSource, expected_version: int) -> ProductSource:
         raise NotImplementedError
@@ -89,7 +111,10 @@ class FakeProductSourceRepository:
         limit: int = 25,
         cursor: str | None = None,
     ) -> ProductSourcePage:
-        raise NotImplementedError
+        self.requested_lists.append((product_id, limit, cursor))
+        if self.error is not None:
+            raise self.error
+        return self.page
 
     def delete(self, product_id: UUID, source_id: UUID, expected_version: int) -> None:
         raise NotImplementedError
@@ -239,7 +264,127 @@ def test_service_has_no_fastapi_boto3_or_direct_filesystem_dependency() -> None:
     assert "boto3" not in source
     assert "pathlib" not in source
     assert "LocalObjectStorage" not in source
-    assert "pathlib" not in source
+
+
+def test_list_sources_checks_parent_and_preserves_newest_first_page() -> None:
+    newest = make_product_source(source_id=SECOND_SOURCE_ID)
+    older = make_product_source()
+    products = FakeProductRepository(make_product())
+    sources = FakeProductSourceRepository(
+        page=ProductSourcePage(items=(newest, older), next_cursor="opaque-next")
+    )
+
+    result = service(products, sources).list_sources(
+        product_id=PRODUCT_ID,
+        limit=10,
+        cursor="opaque-current",
+    )
+
+    assert products.requested_ids == [PRODUCT_ID]
+    assert sources.requested_lists == [(PRODUCT_ID, 10, "opaque-current")]
+    assert [item.source_id for item in result.items] == [SECOND_SOURCE_ID, SOURCE_ID]
+    assert result.next_cursor == "opaque-next"
+
+
+def test_list_sources_returns_empty_page() -> None:
+    result = service(
+        FakeProductRepository(make_product()), FakeProductSourceRepository()
+    ).list_sources(product_id=PRODUCT_ID, limit=20)
+    assert result.items == []
+    assert result.next_cursor is None
+
+
+def test_list_sources_missing_product_skips_source_repository() -> None:
+    products = FakeProductRepository()
+    sources = FakeProductSourceRepository()
+
+    with pytest.raises(ProductNotFoundError):
+        service(products, sources).list_sources(product_id=PRODUCT_ID, limit=20)
+
+    assert products.requested_ids == [PRODUCT_ID]
+    assert sources.requested_lists == []
+
+
+def test_list_sources_preserves_product_repository_failure() -> None:
+    error = ProductRepositoryError("private")
+    sources = FakeProductSourceRepository()
+    with pytest.raises(ProductRepositoryError) as captured:
+        service(FakeProductRepository(error=error), sources).list_sources(
+            product_id=PRODUCT_ID, limit=20
+        )
+    assert captured.value is error
+    assert sources.requested_lists == []
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        ProductSourceRepositoryError("private"),
+        InvalidProductSourceCursorError("invalid"),
+    ],
+)
+def test_list_sources_preserves_source_repository_failure(error: Exception) -> None:
+    sources = FakeProductSourceRepository(error=error)
+    with pytest.raises(type(error)) as captured:
+        service(FakeProductRepository(make_product()), sources).list_sources(
+            product_id=PRODUCT_ID, limit=20, cursor="opaque"
+        )
+    assert captured.value is error
+    assert sources.requested_lists == [(PRODUCT_ID, 20, "opaque")]
+
+
+def test_get_source_checks_parent_and_uses_composite_identity() -> None:
+    expected = make_product_source()
+    products = FakeProductRepository(make_product())
+    sources = FakeProductSourceRepository(source=expected)
+
+    result = service(products, sources).get_source(product_id=PRODUCT_ID, source_id=SOURCE_ID)
+
+    assert result is expected
+    assert products.requested_ids == [PRODUCT_ID]
+    assert sources.requested_gets == [(PRODUCT_ID, SOURCE_ID)]
+
+
+def test_get_source_missing_product_skips_source_repository() -> None:
+    sources = FakeProductSourceRepository(source=make_product_source())
+    with pytest.raises(ProductNotFoundError):
+        service(FakeProductRepository(), sources).get_source(
+            product_id=PRODUCT_ID, source_id=SOURCE_ID
+        )
+    assert sources.requested_gets == []
+
+
+def test_get_source_missing_or_wrong_product_is_product_scoped() -> None:
+    other_product_id = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+    sources = FakeProductSourceRepository(source=make_product_source())
+
+    with pytest.raises(ProductSourceNotFoundError) as captured:
+        service(FakeProductRepository(make_product()), sources).get_source(
+            product_id=other_product_id, source_id=SOURCE_ID
+        )
+
+    assert captured.value.product_id == str(other_product_id)
+    assert captured.value.source_id == str(SOURCE_ID)
+    assert sources.requested_gets == [(other_product_id, SOURCE_ID)]
+
+
+def test_get_source_preserves_repository_failures() -> None:
+    product_error = ProductRepositoryError("private product")
+    sources = FakeProductSourceRepository()
+    with pytest.raises(ProductRepositoryError) as captured_product:
+        service(FakeProductRepository(error=product_error), sources).get_source(
+            product_id=PRODUCT_ID, source_id=SOURCE_ID
+        )
+    assert captured_product.value is product_error
+    assert sources.requested_gets == []
+
+    source_error = ProductSourceRepositoryError("private source")
+    failing_sources = FakeProductSourceRepository(error=source_error)
+    with pytest.raises(ProductSourceRepositoryError) as captured_source:
+        service(FakeProductRepository(make_product()), failing_sources).get_source(
+            product_id=PRODUCT_ID, source_id=SOURCE_ID
+        )
+    assert captured_source.value is source_error
 
 
 @pytest.mark.parametrize(

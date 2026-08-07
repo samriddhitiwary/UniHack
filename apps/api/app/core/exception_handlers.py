@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.exceptions import (
     InvalidProductCursorError,
+    InvalidProductSourceCursorError,
     InvalidProductSourceFileContentError,
     InvalidProductSourceFilenameError,
     ObjectSizeExceededError,
@@ -18,6 +19,7 @@ from app.core.exceptions import (
     ProductRepositoryError,
     ProductSourceAlreadyExistsError,
     ProductSourceMimeTypeMismatchError,
+    ProductSourceNotFoundError,
     ProductSourceRepositoryError,
     ProductVersionConflictError,
     UnsupportedProductSourceFileTypeError,
@@ -34,6 +36,10 @@ def register_exception_handlers(application: FastAPI) -> None:
     application.add_exception_handler(ProductRepositoryError, product_repository_handler)
     application.add_exception_handler(
         ProductSourceAlreadyExistsError, product_source_already_exists_handler
+    )
+    application.add_exception_handler(ProductSourceNotFoundError, product_source_not_found_handler)
+    application.add_exception_handler(
+        InvalidProductSourceCursorError, invalid_product_source_cursor_handler
     )
     application.add_exception_handler(
         ProductSourceRepositoryError, product_source_repository_handler
@@ -122,6 +128,30 @@ async def product_source_already_exists_handler(request: Request, exc: Exception
         status_code=409,
         code="PRODUCT_SOURCE_ALREADY_EXISTS",
         message="A product source with this identifier already exists.",
+    )
+
+
+async def product_source_not_found_handler(request: Request, exc: Exception) -> JSONResponse:
+    error = _expect_exception(exc, ProductSourceNotFoundError)
+    details = {"productId": error.product_id}
+    if error.source_id is not None:
+        details["sourceId"] = error.source_id
+    return _error_response(
+        request,
+        status_code=404,
+        code="PRODUCT_SOURCE_NOT_FOUND",
+        message="The requested product source does not exist.",
+        details=details,
+    )
+
+
+async def invalid_product_source_cursor_handler(request: Request, exc: Exception) -> JSONResponse:
+    _expect_exception(exc, InvalidProductSourceCursorError)
+    return _error_response(
+        request,
+        status_code=400,
+        code="INVALID_PRODUCT_SOURCE_CURSOR",
+        message="The product source cursor is invalid.",
     )
 
 

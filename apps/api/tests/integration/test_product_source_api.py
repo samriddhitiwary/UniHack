@@ -10,11 +10,13 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies.product_sources import get_product_source_service
 from app.core.exceptions import (
+    InvalidProductSourceCursorError,
     ObjectStorageError,
     ProductRepositoryError,
     ProductSourceAlreadyExistsError,
     ProductSourceRepositoryError,
 )
+from app.domain.product_sources import ProductSourcePage
 from app.main import app
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
@@ -22,6 +24,7 @@ from app.services.product_sources import ProductSourceService
 from app.storage.local import LocalObjectStorage
 from app.storage.protocol import ObjectStorage
 from app.utils.file_validation import UploadSizeLimits
+from tests.fixtures.product_sources import SECOND_SOURCE_ID, SOURCE_ID, make_product_source
 from tests.fixtures.products import PRODUCT_ID, make_product
 from tests.unit.test_product_source_service import (
     FakeProductRepository,
@@ -214,14 +217,193 @@ def test_unexpected_failure_returns_safe_500_with_matching_request_id() -> None:
         app.dependency_overrides.clear()
 
 
+def test_list_sources_returns_200_camel_case_newest_first_page(client: TestClient) -> None:
+    newest = make_product_source(source_id=SECOND_SOURCE_ID)
+    older = make_product_source()
+    sources = FakeProductSourceRepository(
+        page=ProductSourcePage(items=(newest, older), next_cursor="opaque-next")
+    )
+    override_service(FakeProductRepository(make_product()), sources)
+
+    response = client.get(
+        f"/api/v1/products/{PRODUCT_ID}/sources",
+        params={"limit": 10, "cursor": "opaque-current"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [item["sourceId"] for item in body["items"]] == [
+        str(SECOND_SOURCE_ID),
+        str(SOURCE_ID),
+    ]
+    assert all(item["productId"] == str(PRODUCT_ID) for item in body["items"])
+    assert "sourceType" in body["items"][0]
+    assert "createdAt" in body["items"][0]
+    assert body["nextCursor"] == "opaque-next"
+    assert "total" not in body
+    assert response.headers["X-Request-ID"]
+    assert sources.requested_lists == [(PRODUCT_ID, 10, "opaque-current")]
+
+
+def test_list_sources_returns_empty_200_page(client: TestClient) -> None:
+    sources = FakeProductSourceRepository()
+    override_service(FakeProductRepository(make_product()), sources)
+    response = client.get(f"/api/v1/products/{PRODUCT_ID}/sources")
+    assert response.status_code == 200
+    assert response.json() == {"items": [], "nextCursor": None}
+    assert sources.requested_lists == [(PRODUCT_ID, 20, None)]
+
+
+@pytest.mark.parametrize("limit", [1, 100])
+def test_list_source_limit_boundaries_are_accepted(client: TestClient, limit: int) -> None:
+    sources = FakeProductSourceRepository()
+    override_service(FakeProductRepository(make_product()), sources)
+    response = client.get(f"/api/v1/products/{PRODUCT_ID}/sources", params={"limit": limit})
+    assert response.status_code == 200
+    assert sources.requested_lists == [(PRODUCT_ID, limit, None)]
+
+
+@pytest.mark.parametrize("limit", ["0", "101", "abc"])
+def test_invalid_list_source_limit_is_rejected_before_service(
+    client: TestClient, limit: str
+) -> None:
+    products = FakeProductRepository(make_product())
+    sources = FakeProductSourceRepository()
+    override_service(products, sources)
+    response = client.get(f"/api/v1/products/{PRODUCT_ID}/sources", params={"limit": limit})
+    assert response.status_code == 422
+    assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert products.requested_ids == []
+    assert sources.requested_lists == []
+
+
+@pytest.mark.parametrize("cursor", ["malformed", "cursor-for-another-product"])
+def test_invalid_source_cursor_returns_safe_400(client: TestClient, cursor: str) -> None:
+    sources = FakeProductSourceRepository(
+        error=InvalidProductSourceCursorError("private cursor detail")
+    )
+    override_service(FakeProductRepository(make_product()), sources)
+    response = client.get(f"/api/v1/products/{PRODUCT_ID}/sources", params={"cursor": cursor})
+    assert response.status_code == 400
+    assert_error(response.json(), "INVALID_PRODUCT_SOURCE_CURSOR")
+    assert "private cursor detail" not in response.text
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        f"/api/v1/products/{PRODUCT_ID}/sources",
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}",
+    ],
+)
+def test_source_reads_return_missing_parent_without_source_access(
+    client: TestClient, path: str
+) -> None:
+    sources = FakeProductSourceRepository(source=make_product_source())
+    override_service(FakeProductRepository(), sources)
+    response = client.get(path)
+    assert response.status_code == 404
+    assert_error(response.json(), "PRODUCT_NOT_FOUND")
+    assert sources.requested_lists == []
+    assert sources.requested_gets == []
+
+
+def test_retrieve_source_returns_product_scoped_record(client: TestClient) -> None:
+    source = make_product_source(storage_key="products/logical/source.pdf")
+    sources = FakeProductSourceRepository(source=source)
+    override_service(FakeProductRepository(make_product()), sources)
+    response = client.get(f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["sourceId"] == str(SOURCE_ID)
+    assert body["productId"] == str(PRODUCT_ID)
+    assert body["storageKey"] == "products/logical/source.pdf"
+    assert "file" not in body and "bytes" not in body
+    assert sources.requested_gets == [(PRODUCT_ID, SOURCE_ID)]
+
+
+def test_retrieve_missing_or_wrong_product_source_returns_safe_404(client: TestClient) -> None:
+    other_product_id = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+    sources = FakeProductSourceRepository(source=make_product_source())
+    override_service(FakeProductRepository(make_product()), sources)
+    response = client.get(f"/api/v1/products/{other_product_id}/sources/{SOURCE_ID}")
+    assert response.status_code == 404
+    assert_error(response.json(), "PRODUCT_SOURCE_NOT_FOUND")
+    assert response.json()["error"]["details"] == {
+        "productId": str(other_product_id),
+        "sourceId": str(SOURCE_ID),
+    }
+    assert sources.requested_gets == [(other_product_id, SOURCE_ID)]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        f"/api/v1/products/not-a-uuid/sources/{SOURCE_ID}",
+        f"/api/v1/products/{PRODUCT_ID}/sources/not-a-uuid",
+    ],
+)
+def test_invalid_retrieve_uuid_is_rejected_before_service(client: TestClient, path: str) -> None:
+    products = FakeProductRepository(make_product())
+    sources = FakeProductSourceRepository(source=make_product_source())
+    override_service(products, sources)
+    response = client.get(path)
+    assert response.status_code == 422
+    assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert products.requested_ids == []
+    assert sources.requested_gets == []
+
+
+@pytest.mark.parametrize(
+    ("product_error", "source_error", "code"),
+    [
+        (ProductRepositoryError("private product"), None, "PRODUCT_STORAGE_UNAVAILABLE"),
+        (
+            None,
+            ProductSourceRepositoryError("private source"),
+            "PRODUCT_SOURCE_STORAGE_UNAVAILABLE",
+        ),
+    ],
+)
+def test_source_read_repository_failures_return_safe_503(
+    client: TestClient,
+    product_error: Exception | None,
+    source_error: Exception | None,
+    code: str,
+) -> None:
+    products = FakeProductRepository(make_product(), error=product_error)
+    sources = FakeProductSourceRepository(error=source_error)
+    override_service(products, sources)
+    response = client.get(f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}")
+    assert response.status_code == 503
+    assert_error(response.json(), code)
+    assert "private" not in response.text
+
+
+def test_source_read_unexpected_failure_returns_safe_500() -> None:
+    override_service(
+        FakeProductRepository(make_product()),
+        FakeProductSourceRepository(error=RuntimeError("private unexpected")),
+    )
+    try:
+        with TestClient(app, raise_server_exceptions=False) as client:
+            response = client.get(f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}")
+        assert response.status_code == 500
+        assert_error(response.json(), "INTERNAL_SERVER_ERROR")
+        assert response.json()["requestId"] == response.headers["X-Request-ID"]
+        assert "private unexpected" not in response.text
+    finally:
+        app.dependency_overrides.clear()
+
+
 @pytest.mark.parametrize(
     ("method", "path"),
     [
-        ("get", f"/api/v1/products/{PRODUCT_ID}/sources"),
-        ("get", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
         ("patch", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
         ("delete", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
         ("post", f"/api/v1/products/{PRODUCT_ID}/sources"),
+        ("get", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}/download"),
+        ("post", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}/process"),
     ],
 )
 def test_unapproved_source_routes_do_not_exist(client: TestClient, method: str, path: str) -> None:
@@ -229,15 +411,49 @@ def test_unapproved_source_routes_do_not_exist(client: TestClient, method: str, 
     assert response.status_code in {404, 405}
 
 
-def test_openapi_documents_exactly_two_source_operations(client: TestClient) -> None:
+def test_openapi_documents_exactly_four_source_operations(client: TestClient) -> None:
     schema = client.get("/openapi.json").json()
     source_paths = {
         path: operations for path, operations in schema["paths"].items() if "/sources" in path
     }
     assert set(source_paths) == {
+        "/api/v1/products/{product_id}/sources",
+        "/api/v1/products/{product_id}/sources/{source_id}",
         "/api/v1/products/{product_id}/sources/text",
         "/api/v1/products/{product_id}/sources/upload",
     }
+    list_operation = source_paths["/api/v1/products/{product_id}/sources"]
+    assert set(list_operation) == {"get"}
+    list_get = list_operation["get"]
+    assert list_get["summary"] == "List product sources"
+    assert {parameter["name"] for parameter in list_get["parameters"]} == {
+        "product_id",
+        "limit",
+        "cursor",
+    }
+    limit_parameter = next(
+        parameter for parameter in list_get["parameters"] if parameter["name"] == "limit"
+    )
+    assert limit_parameter["schema"] == {
+        "type": "integer",
+        "maximum": 100,
+        "minimum": 1,
+        "default": 20,
+        "title": "Limit",
+    }
+    assert set(list_get["responses"]) == {"200", "400", "404", "422", "503"}
+    list_ref = list_get["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    assert list_ref.endswith("/ProductSourceListResult")
+    retrieve = source_paths["/api/v1/products/{product_id}/sources/{source_id}"]["get"]
+    assert retrieve["summary"] == "Retrieve a product source"
+    assert {parameter["name"] for parameter in retrieve["parameters"]} == {
+        "product_id",
+        "source_id",
+    }
+    assert all(parameter["schema"]["format"] == "uuid" for parameter in retrieve["parameters"])
+    assert set(retrieve["responses"]) == {"200", "404", "422", "503"}
+    retrieve_ref = retrieve["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    assert retrieve_ref.endswith("/ProductSourceRecord")
     operation = source_paths["/api/v1/products/{product_id}/sources/text"]
     assert set(operation) == {"post"}
     post = operation["post"]

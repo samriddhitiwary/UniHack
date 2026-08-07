@@ -1,13 +1,15 @@
 # Product Source API
 
-The API exposes exactly two product-source operations:
+The API exposes exactly four product-source operations:
 
 ```text
 POST /api/v1/products/{product_id}/sources/text
 POST /api/v1/products/{product_id}/sources/upload
+GET /api/v1/products/{product_id}/sources
+GET /api/v1/products/{product_id}/sources/{source_id}
 ```
 
-It creates source metadata and normalized plain text in DynamoDB. It does not upload a file, call local object storage, process content, or provide source listing/retrieval/update/deletion.
+It creates source metadata and normalized plain text in DynamoDB, stores validated file uploads through configured object storage, and provides product-scoped source metadata listing and retrieval. It does not provide source update/deletion, download, parsing, or processing.
 
 ## Create a text source
 
@@ -53,6 +55,8 @@ Successful creation returns HTTP 201:
 | Status | Code | Meaning |
 | --- | --- | --- |
 | 404 | `PRODUCT_NOT_FOUND` | The parent product does not exist |
+| 404 | `PRODUCT_SOURCE_NOT_FOUND` | The source does not exist under the requested product |
+| 400 | `INVALID_PRODUCT_SOURCE_CURSOR` | The source cursor is malformed, wrong-scope, or belongs to another product |
 | 409 | `PRODUCT_SOURCE_ALREADY_EXISTS` | Conditional source creation found the generated identity already present |
 | 422 | `REQUEST_VALIDATION_FAILED` | The UUID or request body is invalid |
 | 503 | `PRODUCT_STORAGE_UNAVAILABLE` | Parent-product persistence is unavailable |
@@ -71,4 +75,25 @@ Success returns HTTP 201 with `READY`, a secure generated object key, and size/S
 
 Additional upload errors are `PRODUCT_SOURCE_FILE_TOO_LARGE` (413), `UNSUPPORTED_PRODUCT_SOURCE_FILE_TYPE`, `PRODUCT_SOURCE_MIME_TYPE_MISMATCH`, and `INVALID_PRODUCT_SOURCE_FILE_CONTENT` (422), plus `OBJECT_STORAGE_UNAVAILABLE` (503).
 
-The OpenAPI document contains no source GET, PATCH, DELETE, collection-create, batch, parsing, or processing operation.
+## List product sources
+
+`GET /api/v1/products/{product_id}/sources` verifies that the UUID parent exists and returns its source metadata newest first:
+
+```json
+{
+  "items": [],
+  "nextCursor": null
+}
+```
+
+`limit` is optional, defaults to 20, and accepts values from 1 through 100. `cursor` is an optional opaque continuation token. The cursor is scoped to product-source listing and bound to the product UUID; malformed, wrong-scope, and cross-product cursors return the same safe `400 INVALID_PRODUCT_SOURCE_CURSOR` response. Raw DynamoDB keys and total counts are never returned.
+
+An existing product with no sources returns HTTP 200 with an empty `items` array and `nextCursor: null`. No status or source-type filters are supported because SPEC-011 adds no scans, indexes, or incomplete in-memory filtering.
+
+## Retrieve a product source
+
+`GET /api/v1/products/{product_id}/sources/{source_id}` validates both identifiers as UUIDs, verifies the parent product, and retrieves through the product/source composite key. Success returns HTTP 200 with the existing camel-case `ProductSourceRecord` metadata.
+
+If the source is absent under that product, the API returns `404 PRODUCT_SOURCE_NOT_FOUND`. A source owned by another product produces the identical response and its ownership is not disclosed. Retrieval does not open object storage, read file bytes, expose a local filesystem path, or create a download URL.
+
+The OpenAPI document contains the two source POST operations and these two GET operations only. It contains no source PATCH, DELETE, collection-create, download, content, filter, search, batch, parsing, or processing operation.

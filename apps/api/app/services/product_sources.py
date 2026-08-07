@@ -9,12 +9,17 @@ from uuid import UUID
 from app.core.exceptions import (
     ProductNotFoundError,
     ProductRepositoryError,
+    ProductSourceNotFoundError,
     ProductSourceRepositoryError,
 )
 from app.domain.product_sources import ProductSource, ProductSourceStatus, ProductSourceType
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
-from app.schemas.product_sources import TextProductSourceCreate
+from app.schemas.product_sources import (
+    ProductSourceListResult,
+    ProductSourceRecord,
+    TextProductSourceCreate,
+)
 from app.storage.keys import generate_object_key
 from app.storage.protocol import ObjectStorage
 from app.utils.file_validation import UploadSizeLimits, validate_upload
@@ -36,6 +41,95 @@ class ProductSourceService:
         self._source_repository = source_repository
         self._object_storage = object_storage
         self._upload_limits = upload_limits
+
+    def list_sources(
+        self,
+        *,
+        product_id: UUID,
+        limit: int,
+        cursor: str | None = None,
+    ) -> ProductSourceListResult:
+        """List one product's source metadata newest first."""
+        logger.info(
+            "event=product_source.list.requested product_id=%s limit=%s has_cursor=%s",
+            product_id,
+            limit,
+            cursor is not None,
+        )
+        self._require_product(product_id)
+        try:
+            page = self._source_repository.list_by_product(
+                product_id,
+                limit=limit,
+                cursor=cursor,
+            )
+        except ProductSourceRepositoryError as exc:
+            logger.warning(
+                "event=product_source.read_failed product_id=%s operation=list error_type=%s",
+                product_id,
+                type(exc).__name__,
+            )
+            raise
+        result = ProductSourceListResult(
+            items=[ProductSourceRecord.model_validate(source) for source in page.items],
+            next_cursor=page.next_cursor,
+        )
+        logger.info(
+            "event=product_source.listed product_id=%s limit=%s result_count=%s has_next_cursor=%s",
+            product_id,
+            limit,
+            len(result.items),
+            result.next_cursor is not None,
+        )
+        return result
+
+    def get_source(self, *, product_id: UUID, source_id: UUID) -> ProductSource:
+        """Retrieve one source by its product-scoped composite identity."""
+        logger.info(
+            "event=product_source.retrieve.requested product_id=%s source_id=%s",
+            product_id,
+            source_id,
+        )
+        self._require_product(product_id)
+        try:
+            source = self._source_repository.get_by_id(product_id, source_id)
+        except ProductSourceRepositoryError as exc:
+            logger.warning(
+                "event=product_source.read_failed product_id=%s source_id=%s "
+                "operation=retrieve error_type=%s",
+                product_id,
+                source_id,
+                type(exc).__name__,
+            )
+            raise
+        if source is None:
+            logger.info(
+                "event=product_source.not_found product_id=%s source_id=%s",
+                product_id,
+                source_id,
+            )
+            raise ProductSourceNotFoundError(product_id, source_id)
+        logger.info(
+            "event=product_source.retrieved product_id=%s source_id=%s",
+            product_id,
+            source_id,
+        )
+        return source
+
+    def _require_product(self, product_id: UUID) -> None:
+        try:
+            product = self._product_repository.get_by_id(product_id)
+        except ProductRepositoryError as exc:
+            logger.warning(
+                "event=product_source.read_failed product_id=%s operation=parent_check "
+                "error_type=%s",
+                product_id,
+                type(exc).__name__,
+            )
+            raise
+        if product is None:
+            logger.info("event=product_source.parent_product_not_found product_id=%s", product_id)
+            raise ProductNotFoundError(product_id)
 
     def create_text_source(
         self,

@@ -46,6 +46,15 @@ class ProductSourceAlreadyExistsError(ProductSourceRepositoryError):
 class ProductSourceNotFoundError(ProductSourceRepositoryError):
     """Raised when an explicit source mutation targets no stored source."""
 
+    def __init__(
+        self,
+        product_id: UUID | str,
+        source_id: UUID | str | None = None,
+    ) -> None:
+        self.product_id = str(product_id)
+        self.source_id = str(source_id) if source_id is not None else None
+        super().__init__("product source does not exist")
+
 
 class ProductSourceVersionConflictError(ProductSourceRepositoryError):
     """Raised when optimistic concurrency rejects a stale source mutation."""

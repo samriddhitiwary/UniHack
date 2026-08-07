@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-010: Product Source API — Local File Upload**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-011: Product Source API — List and Retrieve Sources**.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains foundational product and product-source metadata entities, DynamoDB repositories, and provider-independent object storage. Product APIs support create/list/retrieve/update/delete. Product-source APIs create normalized text sources and validated local file uploads; source retrieve/list/update/delete capabilities are not exposed. No S3, extraction, processing, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains foundational product and product-source metadata entities, DynamoDB repositories, and provider-independent object storage. Product APIs support create/list/retrieve/update/delete. Product-source APIs create normalized text sources, accept validated local file uploads, list a product's sources, and retrieve one product-scoped source. Source update/delete and file download are not exposed. No S3, extraction, processing, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -71,6 +71,8 @@ PATCH /api/v1/products/{product_id}
 DELETE /api/v1/products/{product_id}?version=1
 POST /api/v1/products/{product_id}/sources/text
 POST /api/v1/products/{product_id}/sources/upload
+GET  /api/v1/products/{product_id}/sources?limit=20
+GET  /api/v1/products/{product_id}/sources/{source_id}
 ```
 
 Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete returns an empty HTTP 204. PATCH and DELETE use the client’s current positive version for optimistic concurrency. The list limit defaults to 20 and is bounded at 100, and continuation cursors are opaque. Requests and responses use camelCase JSON. See the [Product API documentation](docs/api/products.md) for examples and stable error codes.
@@ -78,6 +80,8 @@ Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete retu
 Text-source creation returns HTTP 201 after confirming the parent product. It stores normalized plain text with a UTF-8 size and SHA-256 checksum directly in source metadata and does not use filesystem/object storage. See the [Product Source API documentation](docs/api/product-sources.md).
 
 The multipart upload endpoint validates and streams PDF, PNG, JPEG, WEBP, or CSV through configured object storage. It returns server-derived size/checksum metadata and compensates by deleting the object if source persistence fails. Local storage remains development-only.
+
+Source listing verifies the parent and returns metadata newest first with a limit from 1 through 100 and a product-bound opaque cursor. Source retrieval also verifies the parent and uses the product/source composite key, so a source cannot be discovered through another product's path. Empty lists return `items: []` and `nextCursor: null`; neither read endpoint accesses object storage or returns file bytes.
 
 ## Documentation
 
@@ -91,6 +95,7 @@ The multipart upload endpoint validates and streams PDF, PNG, JPEG, WEBP, or CSV
 - [SPEC-008](docs/specs/SPEC-008-local-object-storage-foundation.md)
 - [SPEC-009](docs/specs/SPEC-009-product-source-api-create-text-source.md)
 - [SPEC-010](docs/specs/SPEC-010-product-source-api-local-file-upload.md)
+- [SPEC-011](docs/specs/SPEC-011-product-source-api-list-and-retrieve-sources.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [System overview](docs/architecture/system-overview.md)

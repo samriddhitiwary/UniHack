@@ -3,16 +3,70 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi import status as http_status
 
 from app.api.dependencies.product_sources import get_product_source_service
 from app.domain.product_sources.entities import DISPLAY_NAME_MAX_LENGTH
 from app.schemas.errors import ErrorResponse
-from app.schemas.product_sources import ProductSourceRecord, TextProductSourceCreate
+from app.schemas.product_sources import (
+    ProductSourceListResult,
+    ProductSourceRecord,
+    TextProductSourceCreate,
+)
 from app.services.product_sources import ProductSourceService
 
 router = APIRouter(prefix="/products/{product_id}/sources", tags=["Product Sources"])
+
+ERROR_422 = {"model": ErrorResponse, "description": "Request validation failed"}
+ERROR_503 = {
+    "model": ErrorResponse,
+    "description": "Product or product-source storage unavailable",
+}
+
+
+@router.get(
+    "",
+    response_model=ProductSourceListResult,
+    status_code=http_status.HTTP_200_OK,
+    summary="List product sources",
+    description="List one product's source metadata newest first with opaque pagination.",
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid product-source cursor"},
+        404: {"model": ErrorResponse, "description": "Parent product not found"},
+        422: ERROR_422,
+        503: ERROR_503,
+    },
+)
+def list_product_sources(
+    product_id: UUID,
+    service: Annotated[ProductSourceService, Depends(get_product_source_service)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    cursor: Annotated[str | None, Query(min_length=1, max_length=4_096)] = None,
+) -> ProductSourceListResult:
+    return service.list_sources(product_id=product_id, limit=limit, cursor=cursor)
+
+
+@router.get(
+    "/{source_id}",
+    response_model=ProductSourceRecord,
+    status_code=http_status.HTTP_200_OK,
+    summary="Retrieve a product source",
+    description="Retrieve one source's metadata using its product-scoped identity.",
+    responses={
+        404: {"model": ErrorResponse, "description": "Parent product or source not found"},
+        422: ERROR_422,
+        503: ERROR_503,
+    },
+)
+def retrieve_product_source(
+    product_id: UUID,
+    source_id: UUID,
+    service: Annotated[ProductSourceService, Depends(get_product_source_service)],
+) -> ProductSourceRecord:
+    return ProductSourceRecord.model_validate(
+        service.get_source(product_id=product_id, source_id=source_id)
+    )
 
 
 @router.post(

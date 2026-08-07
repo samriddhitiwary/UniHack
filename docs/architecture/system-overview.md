@@ -56,3 +56,12 @@ ProductSourceService
 The service validates the parent, computes UTF-8 size and SHA-256, and persists a `READY` text source through the existing DynamoDB repository. Routes contain no repository or checksum logic. The text endpoint stores no file and does not call `ObjectStorage`. No source list, retrieve, update, delete, or processing workflow exists.
 
 SPEC-010 adds a separate multipart upload route. The service validates filename, MIME, and a bounded content sample, streams through `ObjectStorage`, and persists `READY` file metadata. Persistence failure triggers compensating object deletion; no parser or processing workflow runs.
+
+SPEC-011 exposes read-only source metadata workflows:
+
+```text
+GET product sources route -> ProductSourceService -> parent ProductRepository check
+                                              `-> ProductSourceRepository query/get
+```
+
+Both reads validate the parent before accessing sources. Listing reuses the descending `ProductCreatedAtIndex` query and product-bound opaque cursor, defaults to 20 records, and permits 1 through 100. Retrieval uses the product/source composite key, so cross-product source IDs remain undisclosed. These routes do not call object storage or return file bytes, and they add no filters, scans, counts, mutation, download, or processing behavior.
