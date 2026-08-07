@@ -1,15 +1,16 @@
 # Product Source API
 
-The API exposes exactly four product-source operations:
+The API exposes exactly five product-source operations:
 
 ```text
 POST /api/v1/products/{product_id}/sources/text
 POST /api/v1/products/{product_id}/sources/upload
 GET /api/v1/products/{product_id}/sources
 GET /api/v1/products/{product_id}/sources/{source_id}
+PATCH /api/v1/products/{product_id}/sources/{source_id}
 ```
 
-It creates source metadata and normalized plain text in DynamoDB, stores validated file uploads through configured object storage, and provides product-scoped source metadata listing and retrieval. It does not provide source update/deletion, download, parsing, or processing.
+It creates source metadata and normalized plain text in DynamoDB, stores validated file uploads through configured object storage, provides product-scoped metadata listing/retrieval, and partially updates approved metadata/status. It does not provide source deletion, content/file replacement, download, parsing, or processing jobs.
 
 ## Create a text source
 
@@ -57,6 +58,8 @@ Successful creation returns HTTP 201:
 | 404 | `PRODUCT_NOT_FOUND` | The parent product does not exist |
 | 404 | `PRODUCT_SOURCE_NOT_FOUND` | The source does not exist under the requested product |
 | 400 | `INVALID_PRODUCT_SOURCE_CURSOR` | The source cursor is malformed, wrong-scope, or belongs to another product |
+| 409 | `PRODUCT_SOURCE_VERSION_CONFLICT` | The client version is stale |
+| 409 | `PRODUCT_SOURCE_STATUS_TRANSITION_INVALID` | The requested direct status transition is not approved |
 | 409 | `PRODUCT_SOURCE_ALREADY_EXISTS` | Conditional source creation found the generated identity already present |
 | 422 | `REQUEST_VALIDATION_FAILED` | The UUID or request body is invalid |
 | 503 | `PRODUCT_STORAGE_UNAVAILABLE` | Parent-product persistence is unavailable |
@@ -96,4 +99,35 @@ An existing product with no sources returns HTTP 200 with an empty `items` array
 
 If the source is absent under that product, the API returns `404 PRODUCT_SOURCE_NOT_FOUND`. A source owned by another product produces the identical response and its ownership is not disclosed. Retrieval does not open object storage, read file bytes, expose a local filesystem path, or create a download URL.
 
-The OpenAPI document contains the two source POST operations and these two GET operations only. It contains no source PATCH, DELETE, collection-create, download, content, filter, search, batch, parsing, or processing operation.
+## Update source metadata and status
+
+`PATCH /api/v1/products/{product_id}/sources/{source_id}` accepts a strict partial request:
+
+```json
+{
+  "version": 3,
+  "displayName": "Updated supplier datasheet",
+  "status": "PROCESSING",
+  "errorMessage": null
+}
+```
+
+`version` is required, must be a strict positive integer, and represents the version last retrieved by the client. At least one of `displayName`, `status`, or `errorMessage` must be explicitly supplied. Unknown fields and immutable identity, type, filename, storage, MIME, size, checksum, text, timestamp, or record-version fields are rejected with `422 REQUEST_VALIDATION_FAILED`.
+
+Omitted editable fields remain unchanged. Explicit null or blank `displayName` clears the display name; explicit null or blank `errorMessage` clears the error. Status cannot be null. A same-value update is accepted and advances the version.
+
+Approved transitions are:
+
+| Current | Approved next status |
+| --- | --- |
+| `PENDING` | `READY`, `FAILED` |
+| `READY` | `PROCESSING`, `FAILED` |
+| `PROCESSING` | `COMPLETED`, `FAILED` |
+| `FAILED` | `READY` |
+| `COMPLETED` | None |
+
+Every status may also remain unchanged. Invalid direct transitions return `409 PRODUCT_SOURCE_STATUS_TRANSITION_INVALID`; no intermediate transition is inferred. Recovery from `FAILED` to `READY` and completion from `PROCESSING` to `COMPLETED` clear stale `errorMessage` deterministically.
+
+The service verifies the parent and retrieves the source using the product/source composite key. Missing and cross-product sources return the same safe 404. DynamoDB conditionally requires the requested version, increments it once, and refreshes `updatedAt`; stale writes return `409 PRODUCT_SOURCE_VERSION_CONFLICT` and are not retried.
+
+The OpenAPI document contains two source POST, two GET, and this PATCH operation only. It contains no source PUT, DELETE, download, replace-file, process, retry, parsing, or AI operation.

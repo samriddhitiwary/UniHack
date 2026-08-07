@@ -7,17 +7,25 @@ from typing import BinaryIO
 from uuid import UUID
 
 from app.core.exceptions import (
+    InvalidProductSourceStatusTransitionError,
     ProductNotFoundError,
     ProductRepositoryError,
     ProductSourceNotFoundError,
     ProductSourceRepositoryError,
+    ProductSourceVersionConflictError,
 )
-from app.domain.product_sources import ProductSource, ProductSourceStatus, ProductSourceType
+from app.domain.product_sources import (
+    ProductSource,
+    ProductSourceStatus,
+    ProductSourceType,
+    is_status_transition_allowed,
+)
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
 from app.schemas.product_sources import (
     ProductSourceListResult,
     ProductSourceRecord,
+    ProductSourceUpdate,
     TextProductSourceCreate,
 )
 from app.storage.keys import generate_object_key
@@ -130,6 +138,108 @@ class ProductSourceService:
         if product is None:
             logger.info("event=product_source.parent_product_not_found product_id=%s", product_id)
             raise ProductNotFoundError(product_id)
+
+    def update_source(
+        self,
+        *,
+        product_id: UUID,
+        source_id: UUID,
+        request: ProductSourceUpdate,
+    ) -> ProductSource:
+        """Update approved source fields using product scope and optimistic concurrency."""
+        updated_fields = request.model_fields_set & request.editable_fields
+        logger.info(
+            "event=product_source.update.requested product_id=%s source_id=%s "
+            "expected_version=%s fields=%s",
+            product_id,
+            source_id,
+            request.version,
+            ",".join(sorted(updated_fields)),
+        )
+        self._require_product(product_id)
+        try:
+            current = self._source_repository.get_by_id(product_id, source_id)
+        except ProductSourceRepositoryError as exc:
+            logger.warning(
+                "event=product_source.update_failed product_id=%s source_id=%s "
+                "expected_version=%s operation=retrieve error_type=%s",
+                product_id,
+                source_id,
+                request.version,
+                type(exc).__name__,
+            )
+            raise
+        if current is None:
+            logger.info(
+                "event=product_source.update_not_found product_id=%s source_id=%s",
+                product_id,
+                source_id,
+            )
+            raise ProductSourceNotFoundError(product_id, source_id)
+
+        requested_status = request.status if "status" in updated_fields else None
+        if requested_status is not None and not is_status_transition_allowed(
+            current.status, requested_status
+        ):
+            logger.info(
+                "event=product_source.status_transition_rejected product_id=%s source_id=%s "
+                "current_status=%s requested_status=%s",
+                product_id,
+                source_id,
+                current.status.value,
+                requested_status.value,
+            )
+            raise InvalidProductSourceStatusTransitionError(
+                source_id,
+                current.status.value,
+                requested_status.value,
+            )
+
+        changes = request.model_dump(
+            include=updated_fields,
+            exclude_unset=True,
+            by_alias=False,
+        )
+        if (current.status, requested_status) in {
+            (ProductSourceStatus.FAILED, ProductSourceStatus.READY),
+            (ProductSourceStatus.PROCESSING, ProductSourceStatus.COMPLETED),
+        }:
+            changes["error_message"] = None
+        candidate = replace(current, **changes)
+        try:
+            stored = self._source_repository.update(
+                candidate,
+                expected_version=request.version,
+            )
+        except ProductSourceVersionConflictError:
+            logger.info(
+                "event=product_source.update_version_conflict product_id=%s source_id=%s "
+                "expected_version=%s",
+                product_id,
+                source_id,
+                request.version,
+            )
+            raise
+        except ProductSourceRepositoryError as exc:
+            logger.warning(
+                "event=product_source.update_failed product_id=%s source_id=%s "
+                "expected_version=%s operation=update error_type=%s",
+                product_id,
+                source_id,
+                request.version,
+                type(exc).__name__,
+            )
+            raise
+        logger.info(
+            "event=product_source.updated product_id=%s source_id=%s version=%s status=%s "
+            "fields=%s",
+            product_id,
+            source_id,
+            stored.version,
+            stored.status.value,
+            ",".join(sorted(updated_fields)),
+        )
+        return stored
 
     def create_text_source(
         self,

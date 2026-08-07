@@ -216,7 +216,7 @@ class DynamoDBProductSourceRepository:
     ) -> None:
         current = self.get_by_id(product_id, source_id)
         if current is None:
-            raise ProductSourceNotFoundError("product source does not exist") from original
+            raise ProductSourceNotFoundError(product_id, source_id) from original
         raise ProductSourceVersionConflictError(
             f"product source is not at expected version {expected_version}"
         ) from original

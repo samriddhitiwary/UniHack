@@ -12,6 +12,7 @@ from app.core.exceptions import (
     InvalidProductSourceCursorError,
     InvalidProductSourceFileContentError,
     InvalidProductSourceFilenameError,
+    InvalidProductSourceStatusTransitionError,
     ObjectSizeExceededError,
     ObjectStorageError,
     ProductAlreadyExistsError,
@@ -21,6 +22,7 @@ from app.core.exceptions import (
     ProductSourceMimeTypeMismatchError,
     ProductSourceNotFoundError,
     ProductSourceRepositoryError,
+    ProductSourceVersionConflictError,
     ProductVersionConflictError,
     UnsupportedProductSourceFileTypeError,
 )
@@ -40,6 +42,13 @@ def register_exception_handlers(application: FastAPI) -> None:
     application.add_exception_handler(ProductSourceNotFoundError, product_source_not_found_handler)
     application.add_exception_handler(
         InvalidProductSourceCursorError, invalid_product_source_cursor_handler
+    )
+    application.add_exception_handler(
+        ProductSourceVersionConflictError, product_source_version_conflict_handler
+    )
+    application.add_exception_handler(
+        InvalidProductSourceStatusTransitionError,
+        invalid_product_source_status_transition_handler,
     )
     application.add_exception_handler(
         ProductSourceRepositoryError, product_source_repository_handler
@@ -152,6 +161,36 @@ async def invalid_product_source_cursor_handler(request: Request, exc: Exception
         status_code=400,
         code="INVALID_PRODUCT_SOURCE_CURSOR",
         message="The product source cursor is invalid.",
+    )
+
+
+async def product_source_version_conflict_handler(request: Request, exc: Exception) -> JSONResponse:
+    _expect_exception(exc, ProductSourceVersionConflictError)
+    return _error_response(
+        request,
+        status_code=409,
+        code="PRODUCT_SOURCE_VERSION_CONFLICT",
+        message=(
+            "The product source was modified by another request. "
+            "Retrieve the latest version and try again."
+        ),
+    )
+
+
+async def invalid_product_source_status_transition_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    error = _expect_exception(exc, InvalidProductSourceStatusTransitionError)
+    return _error_response(
+        request,
+        status_code=409,
+        code="PRODUCT_SOURCE_STATUS_TRANSITION_INVALID",
+        message="The requested product source status transition is not allowed.",
+        details={
+            "sourceId": error.source_id,
+            "currentStatus": error.current_status,
+            "requestedStatus": error.requested_status,
+        },
     )
 
 

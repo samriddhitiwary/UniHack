@@ -80,35 +80,91 @@ def test_create_enforces_cross_field_and_length_rules(payload: dict[str, Any]) -
 
 def test_update_tracks_explicit_null_and_allows_only_mutable_fields() -> None:
     update = ProductSourceUpdate(
+        version=3,
         status=ProductSourceStatus.FAILED,
-        storageKey=None,
+        displayName=None,
         errorMessage=" safe failure ",
     )
-    assert update.model_fields_set == {"status", "storage_key", "error_message"}
-    assert update.storage_key is None
+    assert update.model_fields_set == {"version", "status", "display_name", "error_message"}
+    assert update.display_name is None
     assert update.error_message == "safe failure"
 
 
 @pytest.mark.parametrize(
     "payload",
     [
-        {},
-        {"status": None},
-        {"sourceId": "forbidden"},
-        {"productId": str(PRODUCT_ID)},
-        {"sourceType": "TEXT"},
-        {"originalFilename": "forbidden.txt"},
-        {"createdAt": "2026-08-06T12:00:00Z"},
-        {"version": 1},
-        {"errorMessage": "x" * 2_001},
-        {"checksumSha256": "z" * 64},
-        {"storageKey": "C:\\absolute\\source.pdf"},
-        {"unknown": "value"},
+        {"version": 1, "displayName": "Updated"},
+        {"version": 1, "status": "PROCESSING"},
+        {"version": 1, "errorMessage": "Safe failure"},
+        {
+            "version": 2,
+            "displayName": "Updated",
+            "status": "FAILED",
+            "errorMessage": "Safe failure",
+        },
     ],
 )
-def test_update_rejects_empty_immutable_invalid_or_extra_fields(payload: dict[str, Any]) -> None:
+def test_update_accepts_approved_partial_requests(payload: dict[str, Any]) -> None:
+    update = ProductSourceUpdate.model_validate(payload)
+    assert update.version >= 1
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"version": 1},
+        {"version": 1, "status": None},
+        {"version": 0, "displayName": "x"},
+        {"version": -1, "displayName": "x"},
+        {"version": 1.0, "displayName": "x"},
+        {"version": "1", "displayName": "x"},
+        {"version": True, "displayName": "x"},
+        {"errorMessage": "x" * 2_001},
+    ],
+)
+def test_update_rejects_missing_invalid_version_or_invalid_values(
+    payload: dict[str, Any],
+) -> None:
     with pytest.raises(ValidationError):
         ProductSourceUpdate.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "sourceId",
+        "productId",
+        "sourceType",
+        "originalFilename",
+        "storageKey",
+        "mimeType",
+        "fileSizeBytes",
+        "checksumSha256",
+        "textContent",
+        "createdAt",
+        "updatedAt",
+        "unknown",
+    ],
+)
+def test_update_rejects_immutable_and_unknown_fields(field: str) -> None:
+    payload: dict[str, Any] = {"version": 1, "displayName": "valid", field: "forbidden"}
+    with pytest.raises(ValidationError):
+        ProductSourceUpdate.model_validate(payload)
+
+
+def test_update_distinguishes_omitted_explicit_null_and_blank() -> None:
+    omitted = ProductSourceUpdate(version=1, status=ProductSourceStatus.READY)
+    assert omitted.model_fields_set == {"version", "status"}
+
+    cleared = ProductSourceUpdate(version=1, displayName=None, errorMessage=None)
+    assert cleared.display_name is None
+    assert cleared.error_message is None
+    assert cleared.model_fields_set == {"version", "display_name", "error_message"}
+
+    blank = ProductSourceUpdate(version=1, displayName="   ", errorMessage="   ")
+    assert blank.display_name is None
+    assert blank.error_message is None
 
 
 def test_record_and_list_models_use_public_camel_case_shape() -> None:

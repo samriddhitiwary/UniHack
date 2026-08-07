@@ -104,25 +104,12 @@ class TextProductSourceCreate(ProductSourceSchema):
 
 class ProductSourceUpdate(ProductSourceSchema):
     editable_fields: ClassVar[frozenset[str]] = frozenset(
-        {
-            "status",
-            "storage_key",
-            "mime_type",
-            "file_size_bytes",
-            "checksum_sha256",
-            "display_name",
-            "text_content",
-            "error_message",
-        }
+        {"display_name", "status", "error_message"}
     )
 
-    status: ProductSourceStatus | SkipJsonSchema[None] = None
-    storage_key: str | None = Field(default=None, max_length=STORAGE_KEY_MAX_LENGTH)
-    mime_type: str | None = Field(default=None, max_length=MIME_TYPE_MAX_LENGTH)
-    file_size_bytes: int | None = Field(default=None, ge=0, strict=True)
-    checksum_sha256: str | None = Field(default=None, min_length=64, max_length=64)
+    version: int = Field(ge=1, strict=True)
     display_name: str | None = Field(default=None, max_length=DISPLAY_NAME_MAX_LENGTH)
-    text_content: str | None = Field(default=None, max_length=TEXT_CONTENT_MAX_LENGTH)
+    status: ProductSourceStatus | SkipJsonSchema[None] = None
     error_message: str | None = Field(default=None, max_length=ERROR_MESSAGE_MAX_LENGTH)
 
     @model_validator(mode="after")

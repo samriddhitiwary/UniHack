@@ -3,6 +3,7 @@
 import hashlib
 import inspect
 import io
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
@@ -11,6 +12,7 @@ import pytest
 
 from app.core.exceptions import (
     InvalidProductSourceCursorError,
+    InvalidProductSourceStatusTransitionError,
     ObjectSizeExceededError,
     ObjectStorageError,
     ProductNotFoundError,
@@ -18,6 +20,7 @@ from app.core.exceptions import (
     ProductSourceAlreadyExistsError,
     ProductSourceNotFoundError,
     ProductSourceRepositoryError,
+    ProductSourceVersionConflictError,
 )
 from app.domain.product_sources import (
     ProductSource,
@@ -28,13 +31,18 @@ from app.domain.product_sources import (
 from app.domain.products import Product, ProductPage, ProductStatus
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
-from app.schemas.product_sources import TextProductSourceCreate
+from app.schemas.product_sources import ProductSourceUpdate, TextProductSourceCreate
 from app.services import product_sources as product_sources_module
 from app.services.product_sources import ProductSourceService
 from app.storage.models import StoredObject
 from app.storage.protocol import ObjectStorage
 from app.utils.file_validation import UploadSizeLimits
-from tests.fixtures.product_sources import SECOND_SOURCE_ID, SOURCE_ID, make_product_source
+from tests.fixtures.product_sources import (
+    SECOND_SOURCE_ID,
+    SOURCE_ID,
+    SOURCE_UPDATED_AT,
+    make_product_source,
+)
 from tests.fixtures.products import PRODUCT_ID, make_product
 
 
@@ -75,13 +83,16 @@ class FakeProductSourceRepository:
         *,
         source: ProductSource | None = None,
         page: ProductSourcePage | None = None,
+        update_error: Exception | None = None,
     ) -> None:
         self.error = error
         self.source = source
         self.page = page or ProductSourcePage(items=(), next_cursor=None)
+        self.update_error = update_error
         self.created: list[ProductSource] = []
         self.requested_gets: list[tuple[UUID, UUID]] = []
         self.requested_lists: list[tuple[UUID, int, str | None]] = []
+        self.update_calls: list[tuple[ProductSource, int]] = []
 
     def create(self, source: ProductSource) -> ProductSource:
         self.created.append(source)
@@ -102,7 +113,12 @@ class FakeProductSourceRepository:
         return self.source
 
     def update(self, source: ProductSource, expected_version: int) -> ProductSource:
-        raise NotImplementedError
+        self.update_calls.append((source, expected_version))
+        if self.update_error is not None:
+            raise self.update_error
+        updated = replace(source, updated_at=SOURCE_UPDATED_AT, version=expected_version + 1)
+        self.source = updated
+        return updated
 
     def list_by_product(
         self,
@@ -385,6 +401,204 @@ def test_get_source_preserves_repository_failures() -> None:
             product_id=PRODUCT_ID, source_id=SOURCE_ID
         )
     assert captured_source.value is source_error
+
+
+def test_update_source_merges_fields_and_preserves_immutable_metadata() -> None:
+    current = make_product_source(status=ProductSourceStatus.READY, version=3)
+    sources = FakeProductSourceRepository(source=current)
+    request = ProductSourceUpdate(
+        version=3,
+        displayName=" Updated datasheet ",
+        status=ProductSourceStatus.PROCESSING,
+        errorMessage=" Tracking note ",
+    )
+
+    updated = service(FakeProductRepository(make_product()), sources).update_source(
+        product_id=PRODUCT_ID,
+        source_id=SOURCE_ID,
+        request=request,
+    )
+
+    candidate, expected_version = sources.update_calls[0]
+    assert expected_version == 3
+    assert candidate.display_name == "Updated datasheet"
+    assert candidate.status is ProductSourceStatus.PROCESSING
+    assert candidate.error_message == "Tracking note"
+    assert updated.version == 4
+    assert updated.updated_at == SOURCE_UPDATED_AT
+    assert (
+        candidate.source_id,
+        candidate.product_id,
+        candidate.source_type,
+        candidate.original_filename,
+        candidate.storage_key,
+        candidate.mime_type,
+        candidate.file_size_bytes,
+        candidate.checksum_sha256,
+        candidate.text_content,
+        candidate.created_at,
+    ) == (
+        current.source_id,
+        current.product_id,
+        current.source_type,
+        current.original_filename,
+        current.storage_key,
+        current.mime_type,
+        current.file_size_bytes,
+        current.checksum_sha256,
+        current.text_content,
+        current.created_at,
+    )
+
+
+def test_update_source_explicit_null_clears_nullable_fields() -> None:
+    current = make_product_source(
+        status=ProductSourceStatus.FAILED,
+        display_name="Old name",
+        error_message="Old error",
+    )
+    sources = FakeProductSourceRepository(source=current)
+    updated = service(FakeProductRepository(make_product()), sources).update_source(
+        product_id=PRODUCT_ID,
+        source_id=SOURCE_ID,
+        request=ProductSourceUpdate(version=1, displayName=None, errorMessage=None),
+    )
+    assert updated.display_name is None
+    assert updated.error_message is None
+    assert updated.status is ProductSourceStatus.FAILED
+
+
+def test_update_source_missing_fields_remain_unchanged_and_same_status_advances() -> None:
+    current = make_product_source(
+        status=ProductSourceStatus.READY,
+        display_name="Kept",
+        error_message="Kept error",
+    )
+    sources = FakeProductSourceRepository(source=current)
+    updated = service(FakeProductRepository(make_product()), sources).update_source(
+        product_id=PRODUCT_ID,
+        source_id=SOURCE_ID,
+        request=ProductSourceUpdate(version=1, status=ProductSourceStatus.READY),
+    )
+    assert updated.display_name == "Kept"
+    assert updated.error_message == "Kept error"
+    assert updated.status is ProductSourceStatus.READY
+    assert updated.version == 2
+
+
+@pytest.mark.parametrize(
+    ("current_status", "requested_status"),
+    [
+        (ProductSourceStatus.FAILED, ProductSourceStatus.READY),
+        (ProductSourceStatus.PROCESSING, ProductSourceStatus.COMPLETED),
+    ],
+)
+def test_recovery_and_completion_clear_stale_error(
+    current_status: ProductSourceStatus,
+    requested_status: ProductSourceStatus,
+) -> None:
+    current = make_product_source(status=current_status, error_message="Stale error")
+    sources = FakeProductSourceRepository(source=current)
+    updated = service(FakeProductRepository(make_product()), sources).update_source(
+        product_id=PRODUCT_ID,
+        source_id=SOURCE_ID,
+        request=ProductSourceUpdate(
+            version=1,
+            status=requested_status,
+            errorMessage="Must also be cleared",
+        ),
+    )
+    assert updated.status is requested_status
+    assert updated.error_message is None
+
+
+def test_invalid_status_transition_stops_before_repository_update() -> None:
+    sources = FakeProductSourceRepository(
+        source=make_product_source(status=ProductSourceStatus.READY)
+    )
+    with pytest.raises(InvalidProductSourceStatusTransitionError) as captured:
+        service(FakeProductRepository(make_product()), sources).update_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            request=ProductSourceUpdate(version=1, status=ProductSourceStatus.COMPLETED),
+        )
+    assert captured.value.source_id == str(SOURCE_ID)
+    assert captured.value.current_status == "READY"
+    assert captured.value.requested_status == "COMPLETED"
+    assert sources.update_calls == []
+
+
+def test_update_source_missing_parent_stops_before_source_lookup() -> None:
+    sources = FakeProductSourceRepository(source=make_product_source())
+    with pytest.raises(ProductNotFoundError):
+        service(FakeProductRepository(), sources).update_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            request=ProductSourceUpdate(version=1, displayName="Updated"),
+        )
+    assert sources.requested_gets == []
+    assert sources.update_calls == []
+
+
+def test_update_source_missing_or_cross_product_source_is_not_found() -> None:
+    other_product_id = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+    sources = FakeProductSourceRepository(source=make_product_source())
+    with pytest.raises(ProductSourceNotFoundError):
+        service(FakeProductRepository(make_product()), sources).update_source(
+            product_id=other_product_id,
+            source_id=SOURCE_ID,
+            request=ProductSourceUpdate(version=1, displayName="Updated"),
+        )
+    assert sources.requested_gets == [(other_product_id, SOURCE_ID)]
+    assert sources.update_calls == []
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        ProductSourceVersionConflictError("stale"),
+        ProductSourceRepositoryError("private"),
+    ],
+)
+def test_update_source_preserves_controlled_update_errors(error: Exception) -> None:
+    sources = FakeProductSourceRepository(source=make_product_source(), update_error=error)
+    with pytest.raises(type(error)) as captured:
+        service(FakeProductRepository(make_product()), sources).update_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            request=ProductSourceUpdate(version=1, displayName="Updated"),
+        )
+    assert captured.value is error
+    assert len(sources.update_calls) == 1
+
+
+def test_update_source_preserves_product_and_source_read_failures() -> None:
+    product_error = ProductRepositoryError("private product")
+    sources = FakeProductSourceRepository(source=make_product_source())
+    with pytest.raises(ProductRepositoryError):
+        service(FakeProductRepository(error=product_error), sources).update_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            request=ProductSourceUpdate(version=1, displayName="Updated"),
+        )
+    assert sources.requested_gets == []
+
+    source_error = ProductSourceRepositoryError("private source")
+    with pytest.raises(ProductSourceRepositoryError):
+        service(
+            FakeProductRepository(make_product()),
+            FakeProductSourceRepository(error=source_error),
+        ).update_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            request=ProductSourceUpdate(version=1, displayName="Updated"),
+        )
+
+
+def test_update_source_method_has_no_http_infrastructure_or_storage_logic() -> None:
+    source = inspect.getsource(ProductSourceService.update_source)
+    for forbidden in ("fastapi", "boto3", "pathlib", "ObjectStorage", "_object_storage"):
+        assert forbidden not in source
 
 
 @pytest.mark.parametrize(

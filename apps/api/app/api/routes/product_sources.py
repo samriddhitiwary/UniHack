@@ -12,6 +12,7 @@ from app.schemas.errors import ErrorResponse
 from app.schemas.product_sources import (
     ProductSourceListResult,
     ProductSourceRecord,
+    ProductSourceUpdate,
     TextProductSourceCreate,
 )
 from app.services.product_sources import ProductSourceService
@@ -66,6 +67,33 @@ def retrieve_product_source(
 ) -> ProductSourceRecord:
     return ProductSourceRecord.model_validate(
         service.get_source(product_id=product_id, source_id=source_id)
+    )
+
+
+@router.patch(
+    "/{source_id}",
+    response_model=ProductSourceRecord,
+    status_code=http_status.HTTP_200_OK,
+    summary="Update product source metadata and status",
+    description="Partially update approved source fields using optimistic concurrency.",
+    responses={
+        404: {"model": ErrorResponse, "description": "Parent product or source not found"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Source version conflict or invalid status transition",
+        },
+        422: ERROR_422,
+        503: ERROR_503,
+    },
+)
+def update_product_source(
+    product_id: UUID,
+    source_id: UUID,
+    request: ProductSourceUpdate,
+    service: Annotated[ProductSourceService, Depends(get_product_source_service)],
+) -> ProductSourceRecord:
+    return ProductSourceRecord.model_validate(
+        service.update_source(product_id=product_id, source_id=source_id, request=request)
     )
 
 

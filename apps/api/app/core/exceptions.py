@@ -60,6 +60,21 @@ class ProductSourceVersionConflictError(ProductSourceRepositoryError):
     """Raised when optimistic concurrency rejects a stale source mutation."""
 
 
+class InvalidProductSourceStatusTransitionError(Exception):
+    """Raised when a source status cannot move directly to the requested status."""
+
+    def __init__(
+        self,
+        source_id: UUID | str,
+        current_status: str,
+        requested_status: str,
+    ) -> None:
+        self.source_id = str(source_id)
+        self.current_status = current_status
+        self.requested_status = requested_status
+        super().__init__("product source status transition is not allowed")
+
+
 class InvalidProductSourceCursorError(ProductSourceRepositoryError):
     """Raised when an opaque product-source cursor is invalid."""
 

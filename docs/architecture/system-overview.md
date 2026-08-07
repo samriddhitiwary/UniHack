@@ -65,3 +65,13 @@ GET product sources route -> ProductSourceService -> parent ProductRepository ch
 ```
 
 Both reads validate the parent before accessing sources. Listing reuses the descending `ProductCreatedAtIndex` query and product-bound opaque cursor, defaults to 20 records, and permits 1 through 100. Retrieval uses the product/source composite key, so cross-product source IDs remain undisclosed. These routes do not call object storage or return file bytes, and they add no filters, scans, counts, mutation, download, or processing behavior.
+
+SPEC-012 adds one product-scoped partial-update workflow:
+
+```text
+PATCH source route -> ProductSourceService -> parent/source validation
+                                      |-> transition and explicit-field merge
+                                      `-> conditional ProductSourceRepository update
+```
+
+The public allowlist contains only display name, status, and error message plus the required client version. The service preserves immutable content/file metadata, validates direct status transitions, and clears stale errors on recovery or completion. DynamoDB atomically checks the expected version, increments it once, and refreshes the update timestamp. The workflow never accesses object storage and does not replace files/text or start a processing job.

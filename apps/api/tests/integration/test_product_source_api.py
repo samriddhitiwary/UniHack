@@ -15,8 +15,9 @@ from app.core.exceptions import (
     ProductRepositoryError,
     ProductSourceAlreadyExistsError,
     ProductSourceRepositoryError,
+    ProductSourceVersionConflictError,
 )
-from app.domain.product_sources import ProductSourcePage
+from app.domain.product_sources import ProductSourcePage, ProductSourceStatus
 from app.main import app
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
@@ -396,14 +397,255 @@ def test_source_read_unexpected_failure_returns_safe_500() -> None:
         app.dependency_overrides.clear()
 
 
+def test_update_source_returns_200_and_preserves_immutable_metadata(client: TestClient) -> None:
+    current = make_product_source(status=ProductSourceStatus.READY, version=1)
+    sources = FakeProductSourceRepository(source=current)
+    override_service(FakeProductRepository(make_product()), sources)
+
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}",
+        json={"version": 1, "displayName": " Updated Datasheet "},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["displayName"] == "Updated Datasheet"
+    assert body["version"] == 2
+    assert body["sourceId"] == str(current.source_id)
+    assert body["productId"] == str(current.product_id)
+    assert body["sourceType"] == current.source_type.value
+    assert body["originalFilename"] == current.original_filename
+    assert body["storageKey"] == current.storage_key
+    assert body["mimeType"] == current.mime_type
+    assert body["fileSizeBytes"] == current.file_size_bytes
+    assert body["textContent"] == current.text_content
+    assert response.headers["X-Request-ID"]
+    assert sources.update_calls[0][1] == 1
+
+
+def test_update_source_status_and_explicit_nulls(client: TestClient) -> None:
+    current = make_product_source(
+        status=ProductSourceStatus.FAILED,
+        display_name="Old",
+        error_message="Old error",
+    )
+    sources = FakeProductSourceRepository(source=current)
+    override_service(FakeProductRepository(make_product()), sources)
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}",
+        json={
+            "version": 1,
+            "status": "READY",
+            "displayName": None,
+            "errorMessage": None,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "READY"
+    assert response.json()["displayName"] is None
+    assert response.json()["errorMessage"] is None
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"version": 1},
+        {"version": 0, "displayName": "x"},
+        {"version": 1, "status": None},
+        {"version": 1, "storageKey": "changed.pdf"},
+        {"version": 1, "textContent": "changed"},
+        {"version": 1, "sourceType": "TEXT"},
+        {"version": 1, "unknown": "changed"},
+    ],
+)
+def test_invalid_update_body_is_rejected_before_service(
+    client: TestClient, payload: dict[str, object]
+) -> None:
+    products = FakeProductRepository(make_product())
+    sources = FakeProductSourceRepository(source=make_product_source())
+    override_service(products, sources)
+    response = client.patch(f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", json=payload)
+    assert response.status_code == 422
+    assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert products.requested_ids == []
+    assert sources.update_calls == []
+
+
+def test_invalid_source_status_transition_returns_safe_409(client: TestClient) -> None:
+    sources = FakeProductSourceRepository(
+        source=make_product_source(status=ProductSourceStatus.READY)
+    )
+    override_service(FakeProductRepository(make_product()), sources)
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}",
+        json={"version": 1, "status": "COMPLETED"},
+    )
+    assert response.status_code == 409
+    assert_error(response.json(), "PRODUCT_SOURCE_STATUS_TRANSITION_INVALID")
+    assert response.json()["error"]["details"] == {
+        "sourceId": str(SOURCE_ID),
+        "currentStatus": "READY",
+        "requestedStatus": "COMPLETED",
+    }
+    assert sources.update_calls == []
+
+
+@pytest.mark.parametrize(
+    ("products", "sources", "product_id", "code"),
+    [
+        (
+            FakeProductRepository(),
+            FakeProductSourceRepository(source=make_product_source()),
+            PRODUCT_ID,
+            "PRODUCT_NOT_FOUND",
+        ),
+        (
+            FakeProductRepository(make_product()),
+            FakeProductSourceRepository(),
+            PRODUCT_ID,
+            "PRODUCT_SOURCE_NOT_FOUND",
+        ),
+        (
+            FakeProductRepository(make_product()),
+            FakeProductSourceRepository(source=make_product_source()),
+            UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"),
+            "PRODUCT_SOURCE_NOT_FOUND",
+        ),
+    ],
+)
+def test_update_source_missing_and_cross_product_are_safe(
+    client: TestClient,
+    products: FakeProductRepository,
+    sources: FakeProductSourceRepository,
+    product_id: UUID,
+    code: str,
+) -> None:
+    override_service(products, sources)
+    response = client.patch(
+        f"/api/v1/products/{product_id}/sources/{SOURCE_ID}",
+        json={"version": 1, "displayName": "Updated"},
+    )
+    assert response.status_code == 404
+    assert_error(response.json(), code)
+    assert sources.update_calls == []
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        f"/api/v1/products/not-a-uuid/sources/{SOURCE_ID}",
+        f"/api/v1/products/{PRODUCT_ID}/sources/not-a-uuid",
+    ],
+)
+def test_update_source_invalid_uuid_is_rejected_before_service(
+    client: TestClient, path: str
+) -> None:
+    products = FakeProductRepository(make_product())
+    sources = FakeProductSourceRepository(source=make_product_source())
+    override_service(products, sources)
+    response = client.patch(path, json={"version": 1, "displayName": "Updated"})
+    assert response.status_code == 422
+    assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert products.requested_ids == []
+    assert sources.update_calls == []
+
+
+def test_update_source_stale_version_returns_safe_409_without_overwrite(
+    client: TestClient,
+) -> None:
+    current = make_product_source(display_name="Current", version=2)
+    sources = FakeProductSourceRepository(
+        source=current,
+        update_error=ProductSourceVersionConflictError("private condition"),
+    )
+    override_service(FakeProductRepository(make_product()), sources)
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}",
+        json={"version": 1, "displayName": "Stale overwrite"},
+    )
+    assert response.status_code == 409
+    assert_error(response.json(), "PRODUCT_SOURCE_VERSION_CONFLICT")
+    assert "private condition" not in response.text
+    assert sources.source is current
+
+
+@pytest.mark.parametrize(
+    ("product_error", "source_error", "update_error", "code"),
+    [
+        (
+            ProductRepositoryError("private product"),
+            None,
+            None,
+            "PRODUCT_STORAGE_UNAVAILABLE",
+        ),
+        (
+            None,
+            ProductSourceRepositoryError("private source read"),
+            None,
+            "PRODUCT_SOURCE_STORAGE_UNAVAILABLE",
+        ),
+        (
+            None,
+            None,
+            ProductSourceRepositoryError("private source update"),
+            "PRODUCT_SOURCE_STORAGE_UNAVAILABLE",
+        ),
+    ],
+)
+def test_update_source_repository_failures_return_safe_503(
+    client: TestClient,
+    product_error: Exception | None,
+    source_error: Exception | None,
+    update_error: Exception | None,
+    code: str,
+) -> None:
+    products = FakeProductRepository(make_product(), error=product_error)
+    sources = FakeProductSourceRepository(
+        error=source_error,
+        source=make_product_source(),
+        update_error=update_error,
+    )
+    override_service(products, sources)
+    response = client.patch(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}",
+        json={"version": 1, "displayName": "Updated"},
+    )
+    assert response.status_code == 503
+    assert_error(response.json(), code)
+    assert "private" not in response.text
+
+
+def test_update_source_unexpected_failure_returns_safe_500() -> None:
+    override_service(
+        FakeProductRepository(make_product()),
+        FakeProductSourceRepository(
+            source=make_product_source(), update_error=RuntimeError("private unexpected")
+        ),
+    )
+    try:
+        with TestClient(app, raise_server_exceptions=False) as client:
+            response = client.patch(
+                f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}",
+                json={"version": 1, "displayName": "Updated"},
+            )
+        assert response.status_code == 500
+        assert_error(response.json(), "INTERNAL_SERVER_ERROR")
+        assert response.json()["requestId"] == response.headers["X-Request-ID"]
+        assert "private unexpected" not in response.text
+    finally:
+        app.dependency_overrides.clear()
+
+
 @pytest.mark.parametrize(
     ("method", "path"),
     [
-        ("patch", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
+        ("put", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
         ("delete", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
         ("post", f"/api/v1/products/{PRODUCT_ID}/sources"),
         ("get", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}/download"),
         ("post", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}/process"),
+        ("post", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}/retry"),
     ],
 )
 def test_unapproved_source_routes_do_not_exist(client: TestClient, method: str, path: str) -> None:
@@ -411,7 +653,7 @@ def test_unapproved_source_routes_do_not_exist(client: TestClient, method: str, 
     assert response.status_code in {404, 405}
 
 
-def test_openapi_documents_exactly_four_source_operations(client: TestClient) -> None:
+def test_openapi_documents_exactly_five_source_operations(client: TestClient) -> None:
     schema = client.get("/openapi.json").json()
     source_paths = {
         path: operations for path, operations in schema["paths"].items() if "/sources" in path
@@ -444,7 +686,9 @@ def test_openapi_documents_exactly_four_source_operations(client: TestClient) ->
     assert set(list_get["responses"]) == {"200", "400", "404", "422", "503"}
     list_ref = list_get["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
     assert list_ref.endswith("/ProductSourceListResult")
-    retrieve = source_paths["/api/v1/products/{product_id}/sources/{source_id}"]["get"]
+    item_operations = source_paths["/api/v1/products/{product_id}/sources/{source_id}"]
+    assert set(item_operations) == {"get", "patch"}
+    retrieve = item_operations["get"]
     assert retrieve["summary"] == "Retrieve a product source"
     assert {parameter["name"] for parameter in retrieve["parameters"]} == {
         "product_id",
@@ -454,6 +698,27 @@ def test_openapi_documents_exactly_four_source_operations(client: TestClient) ->
     assert set(retrieve["responses"]) == {"200", "404", "422", "503"}
     retrieve_ref = retrieve["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
     assert retrieve_ref.endswith("/ProductSourceRecord")
+    patch_operation = item_operations["patch"]
+    assert patch_operation["summary"] == "Update product source metadata and status"
+    assert {parameter["name"] for parameter in patch_operation["parameters"]} == {
+        "product_id",
+        "source_id",
+    }
+    assert set(patch_operation["responses"]) == {"200", "404", "409", "422", "503"}
+    update_ref = patch_operation["requestBody"]["content"]["application/json"]["schema"]["$ref"]
+    update_schema = schema["components"]["schemas"][update_ref.rsplit("/", 1)[-1]]
+    assert update_schema["required"] == ["version"]
+    assert set(update_schema["properties"]) == {
+        "version",
+        "displayName",
+        "status",
+        "errorMessage",
+    }
+    assert update_schema["properties"]["version"]["minimum"] == 1
+    patch_response_ref = patch_operation["responses"]["200"]["content"]["application/json"][
+        "schema"
+    ]["$ref"]
+    assert patch_response_ref.endswith("/ProductSourceRecord")
     operation = source_paths["/api/v1/products/{product_id}/sources/text"]
     assert set(operation) == {"post"}
     post = operation["post"]
