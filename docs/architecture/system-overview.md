@@ -41,3 +41,16 @@ Future source service -> ObjectStorage protocol -> LocalObjectStorage (developme
 ```
 
 Logical keys, rather than filesystem paths, identify objects. The local backend streams bytes through bounded chunks, enforces the caller's maximum size, calculates SHA-256, prevents overwrite, and stores validated metadata sidecars. Every operation validates path safety and resolved-root containment. The settings-driven provider currently accepts only `local`; S3 remains a future backend. This layer does not create source records and is not exposed through an API.
+
+SPEC-009 exposes one source workflow while keeping the storage foundation separate:
+
+```text
+POST text-source route
+        |
+        v
+ProductSourceService
+        |-- ProductRepository (parent existence)
+        `-- ProductSourceRepository (TEXT metadata persistence)
+```
+
+The service validates the parent, computes UTF-8 size and SHA-256, and persists a `READY` text source through the existing DynamoDB repository. Routes contain no repository or checksum logic. The endpoint stores no file and does not call `ObjectStorage`. No source list, retrieve, update, delete, upload, or processing workflow exists.

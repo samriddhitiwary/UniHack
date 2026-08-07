@@ -45,7 +45,7 @@ SPEC-008 reuses Pydantic Settings, `pathlib`, UUID and UTC conventions, dataclas
 
 ## Local Storage Design
 
-`LocalObjectStorage` resolves and creates its root only when instantiated. Objects live beneath that root at their logical key. Each object has a deterministic `.metadata.json` sidecar containing only its key, size, SHA-256 checksum, and UTC creation time. Object and sidecar writes use random temporary files in the destination directory and exclusive hard-link finalization, preventing silent replacement. Failures remove all temporary and partially finalized files created by that save.
+`LocalObjectStorage` resolves and creates its root only when instantiated. Objects live beneath that root at their logical key. Each object has a deterministic `.metadata.json` sidecar containing only its key, size, SHA-256 checksum, and UTC creation time. Object and sidecar writes use random temporary files, exclusive mode-restricted final-name reservations, and atomic replacement in the destination directory, preventing silent replacement without creating filesystem hard links. Failures remove all reservations, temporary files, and partially finalized files created by that save.
 
 ## Object-Key Format
 
@@ -89,6 +89,6 @@ Use `app/storage` without adding routes or services. Sidecars use the determinis
 
 ## Completion Record
 
-Completed on 2026-08-06. Added a provider-independent storage protocol, immutable stored-object metadata, safe generated logical keys, strict key validation, a secure local backend with 256 KiB streaming, positive size limits, single-pass SHA-256, random temporary files, exclusive no-overwrite finalization, strict atomic JSON sidecars, controlled open/existence/metadata/delete behavior, settings-driven construction, safe exceptions/logging, focused tests, and architecture/local-setup documentation.
+Completed on 2026-08-06. Added a provider-independent storage protocol, immutable stored-object metadata, safe generated logical keys, strict key validation, a secure local backend with 256 KiB streaming, positive size limits, single-pass SHA-256, random temporary files, exclusive no-overwrite finalization, strict atomic JSON sidecars, controlled open/existence/metadata/delete behavior, settings-driven construction, safe exceptions/logging, focused tests, and architecture/local-setup documentation. The no-overwrite finalization was subsequently made security-software-friendly by replacing filesystem hard links with exclusive final-name reservations followed by atomic replacement.
 
 Verification passed: 311 backend tests passed with 2 opt-in DynamoDB Local tests skipped and 91.23% coverage; Ruff lint and formatting passed; strict mypy passed across 48 source files; the unchanged frontend passed 1 Vitest test, ESLint, Prettier, and a 1,063-module Vite production build; Docker Compose validation and Git whitespace checks passed. All 69 acceptance criteria passed. No API route, multipart/upload workflow, product-source service or DynamoDB write, S3 implementation, URL, parser/extractor, processing/AI feature, frontend feature, authentication, or deployment feature was added.

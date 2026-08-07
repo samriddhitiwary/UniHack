@@ -60,8 +60,8 @@ class LocalObjectStorage:
 
         data_temporary: Path | None = None
         metadata_temporary: Path | None = None
-        object_finalized = False
-        metadata_finalized = False
+        object_reserved = False
+        metadata_reserved = False
         try:
             self._prepare_parent(destination)
             if self._path_exists(destination) or self._path_exists(sidecar):
@@ -78,21 +78,23 @@ class LocalObjectStorage:
             )
             metadata_temporary = self._write_metadata_temporary(destination.parent, stored)
 
-            self._link_exclusive(data_temporary, destination)
-            object_finalized = True
-            self._link_exclusive(metadata_temporary, sidecar)
-            metadata_finalized = True
+            self._reserve_exclusive(destination)
+            object_reserved = True
+            self._reserve_exclusive(sidecar)
+            metadata_reserved = True
+            self._replace_reserved(data_temporary, destination)
+            self._replace_reserved(metadata_temporary, sidecar)
         except ObjectStorageError:
-            if metadata_finalized:
+            if metadata_reserved:
                 self._safe_unlink(sidecar)
-            if object_finalized:
+            if object_reserved:
                 self._safe_unlink(destination)
             logger.warning("event=object_storage.failed backend=local category=%s", category)
             raise
         except Exception as exc:
-            if metadata_finalized:
+            if metadata_reserved:
                 self._safe_unlink(sidecar)
-            if object_finalized:
+            if object_reserved:
                 self._safe_unlink(destination)
             logger.warning("event=object_storage.failed backend=local category=%s", category)
             raise ObjectStorageError("object could not be saved") from exc
@@ -300,11 +302,22 @@ class LocalObjectStorage:
             raise ObjectStorageError("temporary object could not be created") from exc
 
     @staticmethod
-    def _link_exclusive(source: Path, destination: Path) -> None:
+    def _reserve_exclusive(destination: Path) -> None:
+        descriptor: int | None = None
         try:
-            os.link(source, destination)
+            descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         except FileExistsError as exc:
             raise ObjectAlreadyExistsError("object key already exists") from exc
+        except OSError as exc:
+            raise ObjectStorageError("object could not be finalized") from exc
+        finally:
+            if descriptor is not None:
+                LocalObjectStorage._safe_close(descriptor)
+
+    @staticmethod
+    def _replace_reserved(source: Path, destination: Path) -> None:
+        try:
+            os.replace(source, destination)
         except OSError as exc:
             raise ObjectStorageError("object could not be finalized") from exc
 

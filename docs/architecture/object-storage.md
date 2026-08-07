@@ -42,7 +42,7 @@ All operations reject blank or over-1,024-character keys, absolute paths, Window
 
 `LocalObjectStorage` reads supplied streams in 256 KiB chunks. It tracks actual bytes and computes SHA-256 in the same pass, so object size does not determine memory use. A positive caller-provided maximum is enforced while reading: zero-byte objects and exact-limit objects succeed, while an object over the limit fails without a final or temporary object.
 
-The implementation writes object data and strict UTF-8 JSON metadata to random temporary files in the destination directory. It then creates final filesystem links exclusively, which prevents an existing object or sidecar from being overwritten. A finalization failure removes any final file created by that save as well as temporary files.
+The implementation writes object data and strict UTF-8 JSON metadata to random temporary files in the destination directory. It exclusively reserves both final names with mode-restricted empty files and then atomically replaces those reservations with the completed temporary files. This prevents an existing object or sidecar from being overwritten without creating filesystem hard links. A finalization failure removes reservations, any final file created by that save, and temporary files.
 
 The deterministic sidecar suffix is `.metadata.json`. Sidecars contain camelCase object key, size, checksum, and UTC creation timestamp; they contain no local path, original filename, credentials, or content. Metadata retrieval validates the exact JSON shape, field invariants, object-key match, and current object size. Missing, malformed, or inconsistent metadata raises a controlled error.
 

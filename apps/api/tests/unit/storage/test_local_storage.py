@@ -146,17 +146,17 @@ def test_file_descriptor_failure_removes_temporary_file(
 def test_sidecar_finalization_failure_removes_final_object(
     storage: LocalObjectStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    real_link = os.link
-    calls = 0
+    real_replace = os.replace
+    replacements = 0
 
-    def fail_second_link(source: Path, destination: Path) -> None:
-        nonlocal calls
-        calls += 1
-        if calls == 2:
+    def fail_second_replace(source: Path, destination: Path) -> None:
+        nonlocal replacements
+        replacements += 1
+        if replacements == 2:
             raise OSError("metadata failure")
-        real_link(source, destination)
+        real_replace(source, destination)
 
-    monkeypatch.setattr("app.storage.local.os.link", fail_second_link)
+    monkeypatch.setattr("app.storage.local.os.replace", fail_second_replace)
     with pytest.raises(ObjectStorageError, match="finalized"):
         storage.save(object_key=OBJECT_KEY, stream=io.BytesIO(b"x"), max_size_bytes=10)
 
@@ -164,6 +164,18 @@ def test_sidecar_finalization_failure_removes_final_object(
     assert not path.exists()
     assert not sidecar_path(path).exists()
     assert list(path.parent.glob(".object.tmp-*")) == []
+
+
+def test_save_does_not_create_filesystem_links(
+    storage: LocalObjectStorage, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def reject_link(*args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise AssertionError("hard-link creation must not be used")
+
+    monkeypatch.setattr("app.storage.local.os.link", reject_link)
+    saved = storage.save(object_key=OBJECT_KEY, stream=io.BytesIO(b"content"), max_size_bytes=20)
+    assert saved.size_bytes == 7
 
 
 def test_open_returns_binary_stream_with_original_bytes(storage: LocalObjectStorage) -> None:

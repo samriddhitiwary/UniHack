@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-008: Local Object Storage Foundation**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-009: Product Source API — Create Text Source**.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains foundational product and product-source metadata entities, validation schemas, DynamoDB repositories, serialization, scoped opaque cursors, the local table script, and a provider-independent object-storage contract with a secure local development backend. Product APIs support creation, listing, retrieval, optimistic updates, and deletion. Product-source metadata supports repository-only conditional creation, composite-key retrieval, newest-first listing, optimistic updates, and deletion. No source API, file-upload workflow, S3, extraction, processing, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains foundational product and product-source metadata entities, validation schemas, DynamoDB repositories, serialization, scoped opaque cursors, the local table script, and a provider-independent object-storage contract with a secure local development backend. Product APIs support creation, listing, retrieval, optimistic updates, and deletion. The single product-source API creates normalized `READY` text sources for existing products; repository-only source retrieve/list/update/delete capabilities are not exposed as routes. No file-upload workflow, object-storage use by the source API, S3, extraction, processing, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -69,9 +69,12 @@ GET  /api/v1/products?limit=20&status=DRAFT
 GET  /api/v1/products/{product_id}
 PATCH /api/v1/products/{product_id}
 DELETE /api/v1/products/{product_id}?version=1
+POST /api/v1/products/{product_id}/sources/text
 ```
 
 Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete returns an empty HTTP 204. PATCH and DELETE use the client’s current positive version for optimistic concurrency. The list limit defaults to 20 and is bounded at 100, and continuation cursors are opaque. Requests and responses use camelCase JSON. See the [Product API documentation](docs/api/products.md) for examples and stable error codes.
+
+Text-source creation returns HTTP 201 after confirming the parent product. It stores normalized plain text with a UTF-8 size and SHA-256 checksum directly in source metadata and does not use filesystem/object storage. See the [Product Source API documentation](docs/api/product-sources.md).
 
 ## Documentation
 
@@ -83,7 +86,9 @@ Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete retu
 - [SPEC-006](docs/specs/SPEC-006-product-api-delete-product.md)
 - [SPEC-007](docs/specs/SPEC-007-product-source-domain-model-and-dynamodb-access-patterns.md)
 - [SPEC-008](docs/specs/SPEC-008-local-object-storage-foundation.md)
+- [SPEC-009](docs/specs/SPEC-009-product-source-api-create-text-source.md)
 - [Product API](docs/api/products.md)
+- [Product Source API](docs/api/product-sources.md)
 - [System overview](docs/architecture/system-overview.md)
 - [DynamoDB data model](docs/architecture/dynamodb-data-model.md)
 - [Object storage](docs/architecture/object-storage.md)

@@ -12,6 +12,8 @@ from app.core.exceptions import (
     ProductAlreadyExistsError,
     ProductNotFoundError,
     ProductRepositoryError,
+    ProductSourceAlreadyExistsError,
+    ProductSourceRepositoryError,
     ProductVersionConflictError,
 )
 
@@ -24,6 +26,12 @@ def register_exception_handlers(application: FastAPI) -> None:
     application.add_exception_handler(InvalidProductCursorError, invalid_product_cursor_handler)
     application.add_exception_handler(ProductVersionConflictError, product_version_conflict_handler)
     application.add_exception_handler(ProductRepositoryError, product_repository_handler)
+    application.add_exception_handler(
+        ProductSourceAlreadyExistsError, product_source_already_exists_handler
+    )
+    application.add_exception_handler(
+        ProductSourceRepositoryError, product_source_repository_handler
+    )
     application.add_exception_handler(RequestValidationError, request_validation_handler)
     application.add_exception_handler(Exception, unexpected_error_handler)
 
@@ -84,6 +92,30 @@ async def product_repository_handler(request: Request, exc: Exception) -> JSONRe
         status_code=503,
         code="PRODUCT_STORAGE_UNAVAILABLE",
         message="Product storage is temporarily unavailable.",
+    )
+
+
+async def product_source_already_exists_handler(request: Request, exc: Exception) -> JSONResponse:
+    _expect_exception(exc, ProductSourceAlreadyExistsError)
+    return _error_response(
+        request,
+        status_code=409,
+        code="PRODUCT_SOURCE_ALREADY_EXISTS",
+        message="A product source with this identifier already exists.",
+    )
+
+
+async def product_source_repository_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(
+        "event=product_source.persistence_failed request_id=%s error_type=%s",
+        _request_id(request),
+        type(exc).__name__,
+    )
+    return _error_response(
+        request,
+        status_code=503,
+        code="PRODUCT_SOURCE_STORAGE_UNAVAILABLE",
+        message="Product source storage is temporarily unavailable.",
     )
 
 

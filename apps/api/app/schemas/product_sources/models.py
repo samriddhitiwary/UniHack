@@ -95,6 +95,13 @@ class ProductSourceCreate(ProductSourceSchema):
         return self
 
 
+class TextProductSourceCreate(ProductSourceSchema):
+    """Public request for one DynamoDB-backed plain-text source."""
+
+    display_name: str | None = Field(default=None, max_length=DISPLAY_NAME_MAX_LENGTH)
+    text_content: str = Field(min_length=1, max_length=TEXT_CONTENT_MAX_LENGTH)
+
+
 class ProductSourceUpdate(ProductSourceSchema):
     editable_fields: ClassVar[frozenset[str]] = frozenset(
         {

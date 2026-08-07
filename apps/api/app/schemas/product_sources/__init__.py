@@ -5,6 +5,7 @@ from app.schemas.product_sources.models import (
     ProductSourceListResult,
     ProductSourceRecord,
     ProductSourceUpdate,
+    TextProductSourceCreate,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "ProductSourceListResult",
     "ProductSourceRecord",
     "ProductSourceUpdate",
+    "TextProductSourceCreate",
 ]
