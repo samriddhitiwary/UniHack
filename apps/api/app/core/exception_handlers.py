@@ -22,6 +22,7 @@ from app.core.exceptions import (
     ProductSourceMimeTypeMismatchError,
     ProductSourceNotFoundError,
     ProductSourceRepositoryError,
+    ProductSourceStorageConsistencyError,
     ProductSourceVersionConflictError,
     ProductVersionConflictError,
     UnsupportedProductSourceFileTypeError,
@@ -49,6 +50,10 @@ def register_exception_handlers(application: FastAPI) -> None:
     application.add_exception_handler(
         InvalidProductSourceStatusTransitionError,
         invalid_product_source_status_transition_handler,
+    )
+    application.add_exception_handler(
+        ProductSourceStorageConsistencyError,
+        product_source_storage_consistency_handler,
     )
     application.add_exception_handler(
         ProductSourceRepositoryError, product_source_repository_handler
@@ -191,6 +196,26 @@ async def invalid_product_source_status_transition_handler(
             "currentStatus": error.current_status,
             "requestedStatus": error.requested_status,
         },
+    )
+
+
+async def product_source_storage_consistency_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    error = _expect_exception(exc, ProductSourceStorageConsistencyError)
+    logger.error(
+        "event=product_source.storage_consistency_failed request_id=%s "
+        "product_id=%s source_id=%s source_type=%s",
+        _request_id(request),
+        error.product_id,
+        error.source_id,
+        error.source_type,
+    )
+    return _error_response(
+        request,
+        status_code=500,
+        code="INTERNAL_SERVER_ERROR",
+        message="An unexpected error occurred.",
     )
 
 

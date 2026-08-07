@@ -12,6 +12,7 @@ from app.core.exceptions import (
     ProductRepositoryError,
     ProductSourceNotFoundError,
     ProductSourceRepositoryError,
+    ProductSourceStorageConsistencyError,
     ProductSourceVersionConflictError,
 )
 from app.domain.product_sources import (
@@ -33,6 +34,10 @@ from app.storage.protocol import ObjectStorage
 from app.utils.file_validation import UploadSizeLimits, validate_upload
 
 logger = logging.getLogger(__name__)
+
+FILE_BACKED_SOURCE_TYPES = frozenset(
+    {ProductSourceType.PDF, ProductSourceType.IMAGE, ProductSourceType.CSV}
+)
 
 
 class ProductSourceService:
@@ -240,6 +245,124 @@ class ProductSourceService:
             ",".join(sorted(updated_fields)),
         )
         return stored
+
+    def delete_source(
+        self,
+        *,
+        product_id: UUID,
+        source_id: UUID,
+        expected_version: int,
+    ) -> None:
+        """Delete one source and its file object with optimistic concurrency."""
+        logger.info(
+            "event=product_source.delete.requested product_id=%s source_id=%s expected_version=%s",
+            product_id,
+            source_id,
+            expected_version,
+        )
+        self._require_product(product_id)
+        try:
+            source = self._source_repository.get_by_id(product_id, source_id)
+        except ProductSourceRepositoryError as exc:
+            logger.warning(
+                "event=product_source.delete_failed product_id=%s source_id=%s "
+                "expected_version=%s operation=retrieve error_type=%s",
+                product_id,
+                source_id,
+                expected_version,
+                type(exc).__name__,
+            )
+            raise
+        if source is None:
+            logger.info(
+                "event=product_source.delete_not_found product_id=%s source_id=%s",
+                product_id,
+                source_id,
+            )
+            raise ProductSourceNotFoundError(product_id, source_id)
+        if source.version != expected_version:
+            logger.info(
+                "event=product_source.delete_version_conflict product_id=%s source_id=%s "
+                "expected_version=%s current_version=%s stage=precheck",
+                product_id,
+                source_id,
+                expected_version,
+                source.version,
+            )
+            raise ProductSourceVersionConflictError("product source version is stale")
+
+        object_deleted = False
+        if source.source_type in FILE_BACKED_SOURCE_TYPES:
+            if source.storage_key is None or self._object_storage is None:
+                raise ProductSourceStorageConsistencyError(
+                    product_id,
+                    source_id,
+                    source.source_type.value,
+                )
+            logger.info(
+                "event=product_source.delete_object_started product_id=%s source_id=%s "
+                "source_type=%s expected_version=%s",
+                product_id,
+                source_id,
+                source.source_type.value,
+                expected_version,
+            )
+            try:
+                self._object_storage.delete(source.storage_key)
+            except Exception as exc:
+                logger.warning(
+                    "event=product_source.delete_failed product_id=%s source_id=%s "
+                    "source_type=%s expected_version=%s operation=object_delete error_type=%s",
+                    product_id,
+                    source_id,
+                    source.source_type.value,
+                    expected_version,
+                    type(exc).__name__,
+                )
+                raise
+            object_deleted = True
+            logger.info(
+                "event=product_source.delete_object_completed product_id=%s source_id=%s "
+                "source_type=%s expected_version=%s",
+                product_id,
+                source_id,
+                source.source_type.value,
+                expected_version,
+            )
+
+        try:
+            self._source_repository.delete(product_id, source_id, expected_version)
+        except Exception as exc:
+            if object_deleted:
+                logger.error(
+                    "event=product_source.delete_consistency_risk product_id=%s source_id=%s "
+                    "source_type=%s expected_version=%s error_type=%s",
+                    product_id,
+                    source_id,
+                    source.source_type.value,
+                    expected_version,
+                    type(exc).__name__,
+                )
+            else:
+                logger.warning(
+                    "event=product_source.delete_failed product_id=%s source_id=%s "
+                    "source_type=%s expected_version=%s operation=metadata_delete error_type=%s",
+                    product_id,
+                    source_id,
+                    source.source_type.value,
+                    expected_version,
+                    type(exc).__name__,
+                )
+            raise
+        logger.info(
+            "event=product_source.deleted product_id=%s source_id=%s source_type=%s "
+            "expected_version=%s object_deleted=%s",
+            product_id,
+            source_id,
+            source.source_type.value,
+            expected_version,
+            object_deleted,
+        )
 
     def create_text_source(
         self,

@@ -13,6 +13,7 @@ import pytest
 from app.core.exceptions import (
     InvalidProductSourceCursorError,
     InvalidProductSourceStatusTransitionError,
+    ObjectNotFoundError,
     ObjectSizeExceededError,
     ObjectStorageError,
     ProductNotFoundError,
@@ -20,6 +21,7 @@ from app.core.exceptions import (
     ProductSourceAlreadyExistsError,
     ProductSourceNotFoundError,
     ProductSourceRepositoryError,
+    ProductSourceStorageConsistencyError,
     ProductSourceVersionConflictError,
 )
 from app.domain.product_sources import (
@@ -84,20 +86,24 @@ class FakeProductSourceRepository:
         source: ProductSource | None = None,
         page: ProductSourcePage | None = None,
         update_error: Exception | None = None,
+        delete_error: Exception | None = None,
     ) -> None:
         self.error = error
         self.source = source
         self.page = page or ProductSourcePage(items=(), next_cursor=None)
         self.update_error = update_error
+        self.delete_error = delete_error
         self.created: list[ProductSource] = []
         self.requested_gets: list[tuple[UUID, UUID]] = []
         self.requested_lists: list[tuple[UUID, int, str | None]] = []
         self.update_calls: list[tuple[ProductSource, int]] = []
+        self.delete_calls: list[tuple[UUID, UUID, int]] = []
 
     def create(self, source: ProductSource) -> ProductSource:
         self.created.append(source)
         if self.error is not None:
             raise self.error
+        self.source = source
         return source
 
     def get_by_id(self, product_id: UUID, source_id: UUID) -> ProductSource | None:
@@ -133,7 +139,10 @@ class FakeProductSourceRepository:
         return self.page
 
     def delete(self, product_id: UUID, source_id: UUID, expected_version: int) -> None:
-        raise NotImplementedError
+        self.delete_calls.append((product_id, source_id, expected_version))
+        if self.delete_error is not None:
+            raise self.delete_error
+        self.source = None
 
 
 def service(
@@ -598,6 +607,212 @@ def test_update_source_preserves_product_and_source_read_failures() -> None:
 def test_update_source_method_has_no_http_infrastructure_or_storage_logic() -> None:
     source = inspect.getsource(ProductSourceService.update_source)
     for forbidden in ("fastapi", "boto3", "pathlib", "ObjectStorage", "_object_storage"):
+        assert forbidden not in source
+
+
+def text_source(*, version: int = 1) -> ProductSource:
+    return make_product_source(
+        source_type=ProductSourceType.TEXT,
+        status=ProductSourceStatus.READY,
+        original_filename=None,
+        storage_key=None,
+        mime_type="text/plain",
+        file_size_bytes=4,
+        checksum_sha256=hashlib.sha256(b"text").hexdigest(),
+        text_content="text",
+        version=version,
+    )
+
+
+def test_delete_text_source_skips_storage_and_deletes_metadata() -> None:
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository(source=text_source(version=2))
+
+    result = service(FakeProductRepository(make_product()), sources, storage).delete_source(
+        product_id=PRODUCT_ID,
+        source_id=SOURCE_ID,
+        expected_version=2,
+    )
+
+    assert result is None
+    assert storage.deleted == []
+    assert sources.delete_calls == [(PRODUCT_ID, SOURCE_ID, 2)]
+    assert sources.source is None
+
+
+@pytest.mark.parametrize(
+    ("source_type", "filename", "mime_type"),
+    [
+        (ProductSourceType.PDF, "source.pdf", "application/pdf"),
+        (ProductSourceType.IMAGE, "source.png", "image/png"),
+        (ProductSourceType.CSV, "source.csv", "text/csv"),
+    ],
+)
+def test_delete_file_source_removes_object_then_metadata(
+    source_type: ProductSourceType,
+    filename: str,
+    mime_type: str,
+) -> None:
+    key = f"products/{PRODUCT_ID}/sources/{SOURCE_ID}/{filename}"
+    source = make_product_source(
+        source_type=source_type,
+        original_filename=filename,
+        storage_key=key,
+        mime_type=mime_type,
+        version=3,
+    )
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository(source=source)
+
+    service(FakeProductRepository(make_product()), sources, storage).delete_source(
+        product_id=PRODUCT_ID,
+        source_id=SOURCE_ID,
+        expected_version=3,
+    )
+
+    assert storage.deleted == [key]
+    assert sources.delete_calls == [(PRODUCT_ID, SOURCE_ID, 3)]
+
+
+def test_delete_missing_parent_stops_source_storage_and_metadata_calls() -> None:
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository(source=text_source())
+    with pytest.raises(ProductNotFoundError):
+        service(FakeProductRepository(), sources, storage).delete_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            expected_version=1,
+        )
+    assert sources.requested_gets == []
+    assert storage.deleted == []
+    assert sources.delete_calls == []
+
+
+def test_delete_missing_or_cross_product_source_is_scoped() -> None:
+    other_product_id = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository(source=text_source())
+    with pytest.raises(ProductSourceNotFoundError):
+        service(FakeProductRepository(make_product()), sources, storage).delete_source(
+            product_id=other_product_id,
+            source_id=SOURCE_ID,
+            expected_version=1,
+        )
+    assert sources.requested_gets == [(other_product_id, SOURCE_ID)]
+    assert storage.deleted == []
+    assert sources.delete_calls == []
+
+
+def test_delete_stale_precheck_skips_storage_and_repository_delete() -> None:
+    key = f"products/{PRODUCT_ID}/sources/{SOURCE_ID}/source.pdf"
+    source = make_product_source(storage_key=key, version=4)
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository(source=source)
+    with pytest.raises(ProductSourceVersionConflictError):
+        service(FakeProductRepository(make_product()), sources, storage).delete_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            expected_version=3,
+        )
+    assert storage.deleted == []
+    assert sources.delete_calls == []
+
+
+def test_file_source_without_storage_key_is_controlled_consistency_failure() -> None:
+    sources = FakeProductSourceRepository(source=make_product_source(storage_key=None))
+    storage = FakeStorage()
+    with pytest.raises(ProductSourceStorageConsistencyError):
+        service(FakeProductRepository(make_product()), sources, storage).delete_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            expected_version=1,
+        )
+    assert storage.deleted == []
+    assert sources.delete_calls == []
+
+
+@pytest.mark.parametrize(
+    "error",
+    [ObjectNotFoundError("missing"), ObjectStorageError("unavailable"), RuntimeError("unexpected")],
+)
+def test_storage_delete_failure_preserves_error_and_metadata(error: Exception) -> None:
+    key = f"products/{PRODUCT_ID}/sources/{SOURCE_ID}/source.pdf"
+    sources = FakeProductSourceRepository(source=make_product_source(storage_key=key))
+    storage = FakeStorage(delete_error=error)
+    with pytest.raises(type(error)) as captured:
+        service(FakeProductRepository(make_product()), sources, storage).delete_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            expected_version=1,
+        )
+    assert captured.value is error
+    assert storage.deleted == [key]
+    assert sources.delete_calls == []
+    assert sources.source is not None
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        ProductSourceRepositoryError("repository unavailable"),
+        ProductSourceVersionConflictError("final race"),
+        RuntimeError("unexpected"),
+    ],
+)
+def test_repository_failure_after_object_delete_is_preserved_and_logged(
+    error: Exception,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    key = f"products/{PRODUCT_ID}/sources/{SOURCE_ID}/source.pdf"
+    sources = FakeProductSourceRepository(
+        source=make_product_source(storage_key=key), delete_error=error
+    )
+    storage = FakeStorage()
+    with pytest.raises(type(error)) as captured:
+        service(FakeProductRepository(make_product()), sources, storage).delete_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            expected_version=1,
+        )
+    assert captured.value is error
+    assert storage.deleted == [key]
+    assert sources.delete_calls == [(PRODUCT_ID, SOURCE_ID, 1)]
+    assert "event=product_source.delete_consistency_risk" in caplog.text
+    assert key not in caplog.text
+
+
+def test_delete_preserves_product_and_source_read_failures() -> None:
+    product_error = ProductRepositoryError("private product")
+    sources = FakeProductSourceRepository(source=text_source())
+    with pytest.raises(ProductRepositoryError):
+        service(FakeProductRepository(error=product_error), sources).delete_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            expected_version=1,
+        )
+    assert sources.requested_gets == []
+
+    source_error = ProductSourceRepositoryError("private source")
+    failing_sources = FakeProductSourceRepository(error=source_error)
+    with pytest.raises(ProductSourceRepositoryError):
+        service(FakeProductRepository(make_product()), failing_sources).delete_source(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            expected_version=1,
+        )
+    assert failing_sources.delete_calls == []
+
+
+def test_delete_source_method_has_no_http_concrete_storage_or_filesystem_logic() -> None:
+    source = inspect.getsource(ProductSourceService.delete_source)
+    for forbidden in (
+        "fastapi",
+        "boto3",
+        "LocalObjectStorage",
+        "pathlib",
+        "unlink",
+        "os.remove",
+    ):
         assert forbidden not in source
 
 

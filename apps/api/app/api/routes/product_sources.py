@@ -97,6 +97,34 @@ def update_product_source(
     )
 
 
+@router.delete(
+    "/{source_id}",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+    summary="Delete a product source",
+    description="Delete one source and any stored file using optimistic concurrency.",
+    responses={
+        404: {"model": ErrorResponse, "description": "Parent product or source not found"},
+        409: {"model": ErrorResponse, "description": "Source version conflict"},
+        422: ERROR_422,
+        503: {
+            "model": ErrorResponse,
+            "description": "Product, source, or object storage unavailable",
+        },
+    },
+)
+def delete_product_source(
+    product_id: UUID,
+    source_id: UUID,
+    service: Annotated[ProductSourceService, Depends(get_product_source_service)],
+    version: Annotated[int, Query(ge=1)],
+) -> None:
+    service.delete_source(
+        product_id=product_id,
+        source_id=source_id,
+        expected_version=version,
+    )
+
+
 @router.post(
     "/text",
     response_model=ProductSourceRecord,

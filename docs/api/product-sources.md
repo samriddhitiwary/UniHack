@@ -1,6 +1,6 @@
 # Product Source API
 
-The API exposes exactly five product-source operations:
+The API exposes exactly six product-source operations:
 
 ```text
 POST /api/v1/products/{product_id}/sources/text
@@ -8,9 +8,10 @@ POST /api/v1/products/{product_id}/sources/upload
 GET /api/v1/products/{product_id}/sources
 GET /api/v1/products/{product_id}/sources/{source_id}
 PATCH /api/v1/products/{product_id}/sources/{source_id}
+DELETE /api/v1/products/{product_id}/sources/{source_id}?version={version}
 ```
 
-It creates source metadata and normalized plain text in DynamoDB, stores validated file uploads through configured object storage, provides product-scoped metadata listing/retrieval, and partially updates approved metadata/status. It does not provide source deletion, content/file replacement, download, parsing, or processing jobs.
+It creates source metadata and normalized plain text in DynamoDB, stores validated file uploads through configured object storage, provides product-scoped metadata listing/retrieval/update, and conditionally deletes one source plus any file object. It does not provide bulk deletion, restore, content/file replacement, download, parsing, or processing jobs.
 
 ## Create a text source
 
@@ -130,4 +131,14 @@ Every status may also remain unchanged. Invalid direct transitions return `409 P
 
 The service verifies the parent and retrieves the source using the product/source composite key. Missing and cross-product sources return the same safe 404. DynamoDB conditionally requires the requested version, increments it once, and refreshes `updatedAt`; stale writes return `409 PRODUCT_SOURCE_VERSION_CONFLICT` and are not retried.
 
-The OpenAPI document contains two source POST, two GET, and this PATCH operation only. It contains no source PUT, DELETE, download, replace-file, process, retry, parsing, or AI operation.
+## Delete a product source
+
+`DELETE /api/v1/products/{product_id}/sources/{source_id}?version={version}` requires the positive integer version last retrieved by the client. Missing, zero, negative, empty, or non-integer versions return `422 REQUEST_VALIDATION_FAILED`. Version is a query parameter, not a request body.
+
+The service verifies the parent, retrieves the source using both IDs, and compares the current version before destructive work. A stale pre-check returns `409 PRODUCT_SOURCE_VERSION_CONFLICT` without calling storage or repository deletion. DynamoDB still conditionally requires the version during final deletion to protect the race after the pre-check.
+
+TEXT sources skip object storage. PDF, IMAGE, and CSV sources require a server-owned logical storage key and call `ObjectStorage.delete` exactly once before conditional metadata deletion. A missing key is a safe internal consistency error. A missing object returns `503 OBJECT_STORAGE_UNAVAILABLE` and retains metadata because storage contradicts the source record.
+
+Success returns HTTP 204 with an empty body and no deleted record. If object deletion succeeds but final metadata deletion fails or detects a race, the repository error remains primary, a consistency-risk event is logged without the key, and success is not returned. The object cannot be recreated because local storage and DynamoDB do not share a transaction.
+
+The OpenAPI document contains two source POST, two GET, one PATCH, and one DELETE operation only. It contains no source PUT, collection DELETE, bulk-delete, restore, download, replace-file, process, retry, parsing, or AI operation.

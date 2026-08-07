@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-012: Product Source API — Update Source Metadata and Status**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-013: Product Source API — Delete Source and Stored Object**.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains foundational product and product-source metadata entities, DynamoDB repositories, and provider-independent object storage. Product APIs support create/list/retrieve/update/delete. Product-source APIs create normalized text sources, accept validated local file uploads, list and retrieve product-scoped sources, and partially update approved metadata/status with optimistic concurrency. Source deletion, content/file replacement, and download are not exposed. No S3, extraction, processing jobs, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains foundational product and product-source metadata entities, DynamoDB repositories, and provider-independent object storage. Product APIs support create/list/retrieve/update/delete. Product-source APIs create normalized text sources, accept validated local file uploads, list/retrieve/update product-scoped sources, and conditionally delete one source plus its file object. Content/file replacement, bulk deletion, restore, and download are not exposed. No S3, extraction, processing jobs, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -74,6 +74,7 @@ POST /api/v1/products/{product_id}/sources/upload
 GET  /api/v1/products/{product_id}/sources?limit=20
 GET  /api/v1/products/{product_id}/sources/{source_id}
 PATCH /api/v1/products/{product_id}/sources/{source_id}
+DELETE /api/v1/products/{product_id}/sources/{source_id}?version=1
 ```
 
 Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete returns an empty HTTP 204. PATCH and DELETE use the client’s current positive version for optimistic concurrency. The list limit defaults to 20 and is bounded at 100, and continuation cursors are opaque. Requests and responses use camelCase JSON. See the [Product API documentation](docs/api/products.md) for examples and stable error codes.
@@ -85,6 +86,8 @@ The multipart upload endpoint validates and streams PDF, PNG, JPEG, WEBP, or CSV
 Source listing verifies the parent and returns metadata newest first with a limit from 1 through 100 and a product-bound opaque cursor. Source retrieval also verifies the parent and uses the product/source composite key, so a source cannot be discovered through another product's path. Empty lists return `items: []` and `nextCursor: null`; neither read endpoint accesses object storage or returns file bytes.
 
 Source PATCH requires the last retrieved positive `version` and at least one of `displayName`, `status`, or `errorMessage`. It preserves omitted and immutable fields, distinguishes explicit null from omission, enforces direct status transitions, and returns `409` for stale versions or invalid transitions. It does not replace content, access object storage, or start processing.
+
+Source DELETE requires the last retrieved positive `version`. It validates the parent and product-scoped source, rejects obvious stale requests before storage access, deletes file-backed objects through `ObjectStorage`, skips storage for TEXT, and conditionally deletes metadata. Success is an empty 204. The object-first strategy avoids successful metadata deletion leaving an orphan, but a final database conflict/failure can occur after bytes are removed; this risk is logged and not reported as success.
 
 ## Documentation
 
@@ -100,6 +103,7 @@ Source PATCH requires the last retrieved positive `version` and at least one of 
 - [SPEC-010](docs/specs/SPEC-010-product-source-api-local-file-upload.md)
 - [SPEC-011](docs/specs/SPEC-011-product-source-api-list-and-retrieve-sources.md)
 - [SPEC-012](docs/specs/SPEC-012-product-source-api-update-source-metadata-and-status.md)
+- [SPEC-013](docs/specs/SPEC-013-product-source-api-delete-source-and-stored-object.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [System overview](docs/architecture/system-overview.md)

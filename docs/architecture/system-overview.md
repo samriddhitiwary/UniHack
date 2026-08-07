@@ -75,3 +75,13 @@ PATCH source route -> ProductSourceService -> parent/source validation
 ```
 
 The public allowlist contains only display name, status, and error message plus the required client version. The service preserves immutable content/file metadata, validates direct status transitions, and clears stale errors on recovery or completion. DynamoDB atomically checks the expected version, increments it once, and refreshes the update timestamp. The workflow never accesses object storage and does not replace files/text or start a processing job.
+
+SPEC-013 adds one conditional source-deletion workflow:
+
+```text
+DELETE source route -> ProductSourceService -> parent/source/version validation
+                                      |-> ObjectStorage.delete (PDF/IMAGE/CSV only)
+                                      `-> conditional ProductSourceRepository.delete
+```
+
+TEXT deletion bypasses storage. File-backed metadata must contain a server-owned logical key; missing or absent objects are controlled consistency failures. Object-first ordering avoids deleting metadata successfully while leaving an orphan, but storage and DynamoDB are not transactional: a final repository failure may leave metadata after its bytes were removed. That risk is logged and returned as failure without weakening concurrency.

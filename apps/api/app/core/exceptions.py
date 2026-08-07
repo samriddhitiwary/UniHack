@@ -75,6 +75,21 @@ class InvalidProductSourceStatusTransitionError(Exception):
         super().__init__("product source status transition is not allowed")
 
 
+class ProductSourceStorageConsistencyError(Exception):
+    """Raised when file-backed source metadata cannot identify its stored object."""
+
+    def __init__(
+        self,
+        product_id: UUID | str,
+        source_id: UUID | str,
+        source_type: str,
+    ) -> None:
+        self.product_id = str(product_id)
+        self.source_id = str(source_id)
+        self.source_type = source_type
+        super().__init__("product source storage metadata is inconsistent")
+
+
 class InvalidProductSourceCursorError(ProductSourceRepositoryError):
     """Raised when an opaque product-source cursor is invalid."""
 

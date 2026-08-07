@@ -1,6 +1,7 @@
 """Text product-source API and OpenAPI contract tests."""
 
 import hashlib
+import io
 from pathlib import Path
 from typing import cast
 from uuid import UUID
@@ -22,6 +23,7 @@ from app.main import app
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
 from app.services.product_sources import ProductSourceService
+from app.storage.keys import METADATA_SUFFIX
 from app.storage.local import LocalObjectStorage
 from app.storage.protocol import ObjectStorage
 from app.utils.file_validation import UploadSizeLimits
@@ -31,6 +33,7 @@ from tests.unit.test_product_source_service import (
     FakeProductRepository,
     FakeProductSourceRepository,
     FakeStorage,
+    text_source,
 )
 
 
@@ -637,11 +640,247 @@ def test_update_source_unexpected_failure_returns_safe_500() -> None:
         app.dependency_overrides.clear()
 
 
+def test_delete_text_source_returns_empty_204_and_skips_storage(client: TestClient) -> None:
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository(source=text_source(version=2))
+    override_service(FakeProductRepository(make_product()), sources, cast(ObjectStorage, storage))
+    response = client.delete(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", params={"version": 2}
+    )
+    assert response.status_code == 204
+    assert response.content == b""
+    assert response.headers.get("content-length") in {None, "0"}
+    assert storage.deleted == []
+    assert sources.delete_calls == [(PRODUCT_ID, SOURCE_ID, 2)]
+
+
+def test_delete_file_source_returns_empty_204(client: TestClient) -> None:
+    key = f"products/{PRODUCT_ID}/sources/{SOURCE_ID}/source.pdf"
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository(source=make_product_source(storage_key=key, version=3))
+    override_service(FakeProductRepository(make_product()), sources, cast(ObjectStorage, storage))
+    response = client.delete(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", params={"version": 3}
+    )
+    assert response.status_code == 204
+    assert response.content == b""
+    assert storage.deleted == [key]
+    assert sources.delete_calls == [(PRODUCT_ID, SOURCE_ID, 3)]
+
+
+@pytest.mark.parametrize("query", [None, "version=0", "version=-1", "version=abc", "version="])
+def test_delete_invalid_or_missing_version_is_rejected_before_service(
+    client: TestClient, query: str | None
+) -> None:
+    products = FakeProductRepository(make_product())
+    sources = FakeProductSourceRepository(source=text_source())
+    override_service(products, sources)
+    path = f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}"
+    response = client.delete(path if query is None else f"{path}?{query}")
+    assert response.status_code == 422
+    assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert products.requested_ids == []
+    assert sources.delete_calls == []
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        f"/api/v1/products/not-a-uuid/sources/{SOURCE_ID}?version=1",
+        f"/api/v1/products/{PRODUCT_ID}/sources/not-a-uuid?version=1",
+    ],
+)
+def test_delete_invalid_uuid_is_rejected_before_service(client: TestClient, path: str) -> None:
+    products = FakeProductRepository(make_product())
+    sources = FakeProductSourceRepository(source=text_source())
+    override_service(products, sources)
+    response = client.delete(path)
+    assert response.status_code == 422
+    assert_error(response.json(), "REQUEST_VALIDATION_FAILED")
+    assert products.requested_ids == []
+    assert sources.delete_calls == []
+
+
+@pytest.mark.parametrize(
+    ("products", "sources", "product_id", "code"),
+    [
+        (
+            FakeProductRepository(),
+            FakeProductSourceRepository(source=text_source()),
+            PRODUCT_ID,
+            "PRODUCT_NOT_FOUND",
+        ),
+        (
+            FakeProductRepository(make_product()),
+            FakeProductSourceRepository(),
+            PRODUCT_ID,
+            "PRODUCT_SOURCE_NOT_FOUND",
+        ),
+        (
+            FakeProductRepository(make_product()),
+            FakeProductSourceRepository(source=text_source()),
+            UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"),
+            "PRODUCT_SOURCE_NOT_FOUND",
+        ),
+    ],
+)
+def test_delete_missing_and_cross_product_are_safe(
+    client: TestClient,
+    products: FakeProductRepository,
+    sources: FakeProductSourceRepository,
+    product_id: UUID,
+    code: str,
+) -> None:
+    storage = FakeStorage()
+    override_service(products, sources, cast(ObjectStorage, storage))
+    response = client.delete(
+        f"/api/v1/products/{product_id}/sources/{SOURCE_ID}", params={"version": 1}
+    )
+    assert response.status_code == 404
+    assert_error(response.json(), code)
+    assert storage.deleted == []
+    assert sources.delete_calls == []
+
+
+def test_delete_stale_version_returns_409_without_deletion(client: TestClient) -> None:
+    key = f"products/{PRODUCT_ID}/sources/{SOURCE_ID}/source.pdf"
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository(source=make_product_source(storage_key=key, version=2))
+    override_service(FakeProductRepository(make_product()), sources, cast(ObjectStorage, storage))
+    response = client.delete(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", params={"version": 1}
+    )
+    assert response.status_code == 409
+    assert_error(response.json(), "PRODUCT_SOURCE_VERSION_CONFLICT")
+    assert storage.deleted == []
+    assert sources.delete_calls == []
+
+
+def test_delete_storage_failure_returns_safe_503(client: TestClient) -> None:
+    key = f"products/{PRODUCT_ID}/sources/{SOURCE_ID}/source.pdf"
+    storage = FakeStorage(delete_error=ObjectStorageError("private path"))
+    sources = FakeProductSourceRepository(source=make_product_source(storage_key=key))
+    override_service(FakeProductRepository(make_product()), sources, cast(ObjectStorage, storage))
+    response = client.delete(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", params={"version": 1}
+    )
+    assert response.status_code == 503
+    assert_error(response.json(), "OBJECT_STORAGE_UNAVAILABLE")
+    assert "private path" not in response.text
+    assert sources.delete_calls == []
+
+
+def test_delete_corrupt_file_metadata_returns_safe_500(client: TestClient) -> None:
+    sources = FakeProductSourceRepository(source=make_product_source(storage_key=None))
+    override_service(
+        FakeProductRepository(make_product()), sources, cast(ObjectStorage, FakeStorage())
+    )
+    response = client.delete(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", params={"version": 1}
+    )
+    assert response.status_code == 500
+    assert_error(response.json(), "INTERNAL_SERVER_ERROR")
+    assert sources.delete_calls == []
+
+
+@pytest.mark.parametrize(
+    ("product_error", "source_error", "delete_error", "code"),
+    [
+        (
+            ProductRepositoryError("private product"),
+            None,
+            None,
+            "PRODUCT_STORAGE_UNAVAILABLE",
+        ),
+        (
+            None,
+            ProductSourceRepositoryError("private source read"),
+            None,
+            "PRODUCT_SOURCE_STORAGE_UNAVAILABLE",
+        ),
+        (
+            None,
+            None,
+            ProductSourceRepositoryError("private source delete"),
+            "PRODUCT_SOURCE_STORAGE_UNAVAILABLE",
+        ),
+    ],
+)
+def test_delete_repository_failures_return_safe_503(
+    client: TestClient,
+    product_error: Exception | None,
+    source_error: Exception | None,
+    delete_error: Exception | None,
+    code: str,
+) -> None:
+    products = FakeProductRepository(make_product(), error=product_error)
+    sources = FakeProductSourceRepository(
+        error=source_error,
+        source=text_source(),
+        delete_error=delete_error,
+    )
+    override_service(products, sources)
+    response = client.delete(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", params={"version": 1}
+    )
+    assert response.status_code == 503
+    assert_error(response.json(), code)
+    assert "private" not in response.text
+
+
+def test_delete_unexpected_failure_returns_safe_500() -> None:
+    sources = FakeProductSourceRepository(
+        source=text_source(), delete_error=RuntimeError("private")
+    )
+    override_service(FakeProductRepository(make_product()), sources)
+    try:
+        with TestClient(app, raise_server_exceptions=False) as client:
+            response = client.delete(
+                f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", params={"version": 1}
+            )
+        assert response.status_code == 500
+        assert_error(response.json(), "INTERNAL_SERVER_ERROR")
+        assert response.json()["requestId"] == response.headers["X-Request-ID"]
+        assert "private" not in response.text
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_local_storage_delete_api_removes_object_sidecar_and_metadata(
+    client: TestClient, tmp_path: Path
+) -> None:
+    root = tmp_path / "objects"
+    storage = LocalObjectStorage(root)
+    key = f"products/{PRODUCT_ID}/sources/{SOURCE_ID}/source.pdf"
+    storage.save(object_key=key, stream=io.BytesIO(b"%PDF-local"), max_size_bytes=100)
+    object_path = root.joinpath(*key.split("/"))
+    sidecar_path = object_path.with_name(f"{object_path.name}{METADATA_SUFFIX}")
+    sources = FakeProductSourceRepository(source=make_product_source(storage_key=key))
+    override_service(FakeProductRepository(make_product()), sources, storage)
+
+    response = client.delete(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", params={"version": 1}
+    )
+
+    assert response.status_code == 204
+    assert not object_path.exists()
+    assert not sidecar_path.exists()
+    assert sources.source is None
+
+    text_sources = FakeProductSourceRepository(source=text_source())
+    override_service(FakeProductRepository(make_product()), text_sources, storage)
+    text_response = client.delete(
+        f"/api/v1/products/{PRODUCT_ID}/sources/{SOURCE_ID}", params={"version": 1}
+    )
+    assert text_response.status_code == 204
+    assert text_sources.source is None
+
+
 @pytest.mark.parametrize(
     ("method", "path"),
     [
         ("put", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
-        ("delete", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
+        ("delete", f"/api/v1/products/{PRODUCT_ID}/sources"),
         ("post", f"/api/v1/products/{PRODUCT_ID}/sources"),
         ("get", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}/download"),
         ("post", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}/process"),
@@ -653,7 +892,7 @@ def test_unapproved_source_routes_do_not_exist(client: TestClient, method: str, 
     assert response.status_code in {404, 405}
 
 
-def test_openapi_documents_exactly_five_source_operations(client: TestClient) -> None:
+def test_openapi_documents_exactly_six_source_operations(client: TestClient) -> None:
     schema = client.get("/openapi.json").json()
     source_paths = {
         path: operations for path, operations in schema["paths"].items() if "/sources" in path
@@ -687,7 +926,7 @@ def test_openapi_documents_exactly_five_source_operations(client: TestClient) ->
     list_ref = list_get["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
     assert list_ref.endswith("/ProductSourceListResult")
     item_operations = source_paths["/api/v1/products/{product_id}/sources/{source_id}"]
-    assert set(item_operations) == {"get", "patch"}
+    assert set(item_operations) == {"get", "patch", "delete"}
     retrieve = item_operations["get"]
     assert retrieve["summary"] == "Retrieve a product source"
     assert {parameter["name"] for parameter in retrieve["parameters"]} == {
@@ -719,6 +958,21 @@ def test_openapi_documents_exactly_five_source_operations(client: TestClient) ->
         "schema"
     ]["$ref"]
     assert patch_response_ref.endswith("/ProductSourceRecord")
+    delete_operation = item_operations["delete"]
+    assert delete_operation["summary"] == "Delete a product source"
+    assert {parameter["name"] for parameter in delete_operation["parameters"]} == {
+        "product_id",
+        "source_id",
+        "version",
+    }
+    version_parameter = next(
+        parameter for parameter in delete_operation["parameters"] if parameter["name"] == "version"
+    )
+    assert version_parameter["required"] is True
+    assert version_parameter["in"] == "query"
+    assert version_parameter["schema"]["minimum"] == 1
+    assert set(delete_operation["responses"]) == {"204", "404", "409", "422", "503"}
+    assert "content" not in delete_operation["responses"]["204"]
     operation = source_paths["/api/v1/products/{product_id}/sources/text"]
     assert set(operation) == {"post"}
     post = operation["post"]

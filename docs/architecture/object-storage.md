@@ -59,6 +59,8 @@ Relative roots are resolved from the `apps/api` project directory, so the exampl
 
 SPEC-010 passes validated/restored upload streams and configured per-type byte limits to `save`, then uses only returned size/checksum metadata. Source-persistence failure calls `delete` as compensating cleanup.
 
+SPEC-013 uses `delete` for product-scoped PDF, IMAGE, and CSV source deletion after a service-level version pre-check. TEXT sources never call storage. Local deletion removes the exact logical-key object and its sidecar; a missing object is treated as `OBJECT_STORAGE_UNAVAILABLE`, leaving source metadata intact. Metadata is then deleted conditionally. Because storage and DynamoDB have no distributed transaction, a final conditional conflict or repository failure can leave metadata whose object has already been removed; the service logs a high-signal consistency-risk event and returns the repository failure.
+
 ## Operational boundary
 
 Local persistence is for development and tests only. Future AWS/Lambda deployments must use a durable provider such as S3; Lambda local files are not application persistence. Storage logs include only the backend, first logical-key category, sizes, and at most a checksum prefix. They exclude full keys, roots, paths, original filenames, file bytes, and raw filesystem errors.
