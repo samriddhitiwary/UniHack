@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-009: Product Source API — Create Text Source**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-010: Product Source API — Local File Upload**.
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ Open the web app at <http://localhost:5173>. API liveness is at <http://localhos
 
 The table command is idempotent: it creates `{DYNAMODB_TABLE_PREFIX}-products` with `CreatedAtIndex` and `StatusCreatedAtIndex`, plus `{DYNAMODB_TABLE_PREFIX}-sources` with `ProductCreatedAtIndex`, or reports that either table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
 
-`STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no upload route or S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
+`STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
 
 ## Quality checks
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains foundational product and product-source metadata entities, validation schemas, DynamoDB repositories, serialization, scoped opaque cursors, the local table script, and a provider-independent object-storage contract with a secure local development backend. Product APIs support creation, listing, retrieval, optimistic updates, and deletion. The single product-source API creates normalized `READY` text sources for existing products; repository-only source retrieve/list/update/delete capabilities are not exposed as routes. No file-upload workflow, object-storage use by the source API, S3, extraction, processing, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains foundational product and product-source metadata entities, DynamoDB repositories, and provider-independent object storage. Product APIs support create/list/retrieve/update/delete. Product-source APIs create normalized text sources and validated local file uploads; source retrieve/list/update/delete capabilities are not exposed. No S3, extraction, processing, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -70,11 +70,14 @@ GET  /api/v1/products/{product_id}
 PATCH /api/v1/products/{product_id}
 DELETE /api/v1/products/{product_id}?version=1
 POST /api/v1/products/{product_id}/sources/text
+POST /api/v1/products/{product_id}/sources/upload
 ```
 
 Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete returns an empty HTTP 204. PATCH and DELETE use the client’s current positive version for optimistic concurrency. The list limit defaults to 20 and is bounded at 100, and continuation cursors are opaque. Requests and responses use camelCase JSON. See the [Product API documentation](docs/api/products.md) for examples and stable error codes.
 
 Text-source creation returns HTTP 201 after confirming the parent product. It stores normalized plain text with a UTF-8 size and SHA-256 checksum directly in source metadata and does not use filesystem/object storage. See the [Product Source API documentation](docs/api/product-sources.md).
+
+The multipart upload endpoint validates and streams PDF, PNG, JPEG, WEBP, or CSV through configured object storage. It returns server-derived size/checksum metadata and compensates by deleting the object if source persistence fails. Local storage remains development-only.
 
 ## Documentation
 
@@ -87,6 +90,7 @@ Text-source creation returns HTTP 201 after confirming the parent product. It st
 - [SPEC-007](docs/specs/SPEC-007-product-source-domain-model-and-dynamodb-access-patterns.md)
 - [SPEC-008](docs/specs/SPEC-008-local-object-storage-foundation.md)
 - [SPEC-009](docs/specs/SPEC-009-product-source-api-create-text-source.md)
+- [SPEC-010](docs/specs/SPEC-010-product-source-api-local-file-upload.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [System overview](docs/architecture/system-overview.md)

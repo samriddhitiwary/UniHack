@@ -1,9 +1,10 @@
 # Product Source API
 
-SPEC-009 exposes exactly one product-source operation:
+The API exposes exactly two product-source operations:
 
 ```text
 POST /api/v1/products/{product_id}/sources/text
+POST /api/v1/products/{product_id}/sources/upload
 ```
 
 It creates source metadata and normalized plain text in DynamoDB. It does not upload a file, call local object storage, process content, or provide source listing/retrieval/update/deletion.
@@ -60,4 +61,14 @@ Successful creation returns HTTP 201:
 
 Errors use the repository-wide safe envelope and return the same generated request ID in the body and `X-Request-ID` header. They do not expose DynamoDB, table, request, or stack-trace details.
 
-The OpenAPI document contains no source GET, PATCH, DELETE, collection-create, or upload operation.
+## Upload a file source
+
+`POST /api/v1/products/{product_id}/sources/upload` accepts `multipart/form-data` with required binary `file` and optional `displayName`. It supports PDF, PNG, JPEG, WEBP, and CSV using approved extension/MIME pairs.
+
+The service reduces fake paths to a basename, lowercases the extension, checks declared MIME and PDF/PNG/JPEG/WEBP signatures. CSV must be nonempty, null-free UTF-8 without binary control characters; it is not parsed. Default streamed limits are 10 MiB for PDF/images and 5 MiB for CSV.
+
+Success returns HTTP 201 with `READY`, a secure generated object key, and size/SHA-256 returned by storage. Persistence failure triggers compensating object deletion while preserving the database error.
+
+Additional upload errors are `PRODUCT_SOURCE_FILE_TOO_LARGE` (413), `UNSUPPORTED_PRODUCT_SOURCE_FILE_TYPE`, `PRODUCT_SOURCE_MIME_TYPE_MISMATCH`, and `INVALID_PRODUCT_SOURCE_FILE_CONTENT` (422), plus `OBJECT_STORAGE_UNAVAILABLE` (503).
+
+The OpenAPI document contains no source GET, PATCH, DELETE, collection-create, batch, parsing, or processing operation.

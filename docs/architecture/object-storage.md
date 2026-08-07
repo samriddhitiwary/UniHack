@@ -57,6 +57,8 @@ Relative roots are resolved from the `apps/api` project directory, so the exampl
 
 `s3` is reserved in settings for a future implementation but is currently rejected rather than falling back to local storage.
 
+SPEC-010 passes validated/restored upload streams and configured per-type byte limits to `save`, then uses only returned size/checksum metadata. Source-persistence failure calls `delete` as compensating cleanup.
+
 ## Operational boundary
 
 Local persistence is for development and tests only. Future AWS/Lambda deployments must use a durable provider such as S3; Lambda local files are not application persistence. Storage logs include only the backend, first logical-key category, sizes, and at most a checksum prefix. They exclude full keys, roots, paths, original filenames, file bytes, and raw filesystem errors.

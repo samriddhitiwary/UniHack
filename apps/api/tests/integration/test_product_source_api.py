@@ -1,6 +1,7 @@
 """Text product-source API and OpenAPI contract tests."""
 
 import hashlib
+from pathlib import Path
 from typing import cast
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies.product_sources import get_product_source_service
 from app.core.exceptions import (
+    ObjectStorageError,
     ProductRepositoryError,
     ProductSourceAlreadyExistsError,
     ProductSourceRepositoryError,
@@ -17,19 +19,27 @@ from app.main import app
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
 from app.services.product_sources import ProductSourceService
+from app.storage.local import LocalObjectStorage
+from app.storage.protocol import ObjectStorage
+from app.utils.file_validation import UploadSizeLimits
 from tests.fixtures.products import PRODUCT_ID, make_product
 from tests.unit.test_product_source_service import (
     FakeProductRepository,
     FakeProductSourceRepository,
+    FakeStorage,
 )
 
 
 def override_service(
     products: FakeProductRepository,
     sources: FakeProductSourceRepository,
+    storage: ObjectStorage | None = None,
 ) -> None:
     service = ProductSourceService(
-        cast(ProductRepository, products), cast(ProductSourceRepository, sources)
+        cast(ProductRepository, products),
+        cast(ProductSourceRepository, sources),
+        storage,
+        UploadSizeLimits(pdf=20, image=20, csv=20) if storage is not None else None,
     )
     app.dependency_overrides[get_product_source_service] = lambda: service
 
@@ -211,7 +221,6 @@ def test_unexpected_failure_returns_safe_500_with_matching_request_id() -> None:
         ("get", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
         ("patch", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
         ("delete", f"/api/v1/products/{PRODUCT_ID}/sources/{UUID(int=1)}"),
-        ("post", f"/api/v1/products/{PRODUCT_ID}/sources/upload"),
         ("post", f"/api/v1/products/{PRODUCT_ID}/sources"),
     ],
 )
@@ -220,12 +229,15 @@ def test_unapproved_source_routes_do_not_exist(client: TestClient, method: str, 
     assert response.status_code in {404, 405}
 
 
-def test_openapi_documents_exactly_one_source_operation(client: TestClient) -> None:
+def test_openapi_documents_exactly_two_source_operations(client: TestClient) -> None:
     schema = client.get("/openapi.json").json()
     source_paths = {
         path: operations for path, operations in schema["paths"].items() if "/sources" in path
     }
-    assert set(source_paths) == {"/api/v1/products/{product_id}/sources/text"}
+    assert set(source_paths) == {
+        "/api/v1/products/{product_id}/sources/text",
+        "/api/v1/products/{product_id}/sources/upload",
+    }
     operation = source_paths["/api/v1/products/{product_id}/sources/text"]
     assert set(operation) == {"post"}
     post = operation["post"]
@@ -241,3 +253,139 @@ def test_openapi_documents_exactly_one_source_operation(client: TestClient) -> N
     assert request_schema["properties"]["textContent"]["maxLength"] == 50_000
     response_ref = post["responses"]["201"]["content"]["application/json"]["schema"]["$ref"]
     assert response_ref.endswith("/ProductSourceRecord")
+    upload = source_paths["/api/v1/products/{product_id}/sources/upload"]["post"]
+    assert set(upload["responses"]) == {"201", "404", "409", "413", "422", "503"}
+    body = upload["requestBody"]["content"]["multipart/form-data"]["schema"]
+    upload_schema = schema["components"]["schemas"][body["$ref"].rsplit("/", 1)[-1]]
+    assert upload_schema["required"] == ["file"]
+    assert set(upload_schema["properties"]) == {"file", "displayName"}
+    assert upload_schema["properties"]["file"] == {
+        "type": "string",
+        "contentMediaType": "application/octet-stream",
+        "title": "File",
+        "description": "PDF, PNG, JPEG, WEBP, or CSV file",
+    }
+
+
+def test_upload_pdf_returns_ready_source(client: TestClient) -> None:
+    storage = FakeStorage()
+    override_service(
+        FakeProductRepository(make_product()),
+        FakeProductSourceRepository(),
+        cast(ObjectStorage, storage),
+    )
+    content = b"%PDF-valid"
+    response = client.post(
+        f"/api/v1/products/{PRODUCT_ID}/sources/upload",
+        files={"file": (r"C:\fakepath\Pump.PDF", content, "application/pdf")},
+        data={"displayName": "  Datasheet  "},
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["sourceType"] == "PDF" and body["status"] == "READY"
+    assert body["originalFilename"] == "Pump.pdf"
+    assert body["mimeType"] == "application/pdf"
+    assert body["fileSizeBytes"] == len(content)
+    assert body["checksumSha256"] == hashlib.sha256(content).hexdigest()
+    assert body["displayName"] == "Datasheet" and body["textContent"] is None
+
+
+@pytest.mark.parametrize(
+    ("files", "code"),
+    [
+        ({}, "REQUEST_VALIDATION_FAILED"),
+        ({"file": ("", b"%PDF-x", "application/pdf")}, "REQUEST_VALIDATION_FAILED"),
+        (
+            {"file": ("x.exe", b"x", "application/octet-stream")},
+            "UNSUPPORTED_PRODUCT_SOURCE_FILE_TYPE",
+        ),
+        ({"file": ("x.pdf", b"%PDF-x", "image/png")}, "PRODUCT_SOURCE_MIME_TYPE_MISMATCH"),
+        ({"file": ("x.pdf", b"plain", "application/pdf")}, "INVALID_PRODUCT_SOURCE_FILE_CONTENT"),
+    ],
+)
+def test_upload_validation_errors(client: TestClient, files: dict[str, object], code: str) -> None:
+    storage = FakeStorage()
+    override_service(
+        FakeProductRepository(make_product()),
+        FakeProductSourceRepository(),
+        cast(ObjectStorage, storage),
+    )
+    response = client.post(f"/api/v1/products/{PRODUCT_ID}/sources/upload", files=files)
+    assert response.status_code == 422
+    assert_error(response.json(), code)
+    assert storage.saved == []
+
+
+def test_upload_too_large_returns_413(client: TestClient) -> None:
+    storage = FakeStorage()
+    override_service(
+        FakeProductRepository(make_product()),
+        FakeProductSourceRepository(),
+        cast(ObjectStorage, storage),
+    )
+    response = client.post(
+        f"/api/v1/products/{PRODUCT_ID}/sources/upload",
+        files={"file": ("x.pdf", b"%PDF-" + b"x" * 20, "application/pdf")},
+    )
+    assert response.status_code == 413
+    assert_error(response.json(), "PRODUCT_SOURCE_FILE_TOO_LARGE")
+
+
+def test_upload_missing_product_skips_storage(client: TestClient) -> None:
+    storage = FakeStorage()
+    override_service(
+        FakeProductRepository(), FakeProductSourceRepository(), cast(ObjectStorage, storage)
+    )
+    response = client.post(
+        f"/api/v1/products/{PRODUCT_ID}/sources/upload",
+        files={"file": ("x.pdf", b"%PDF-x", "application/pdf")},
+    )
+    assert response.status_code == 404
+    assert storage.saved == []
+
+
+def test_upload_storage_failure_returns_503(client: TestClient) -> None:
+    storage = FakeStorage(error=ObjectStorageError("private path"))
+    override_service(
+        FakeProductRepository(make_product()),
+        FakeProductSourceRepository(),
+        cast(ObjectStorage, storage),
+    )
+    response = client.post(
+        f"/api/v1/products/{PRODUCT_ID}/sources/upload",
+        files={"file": ("x.pdf", b"%PDF-x", "application/pdf")},
+    )
+    assert response.status_code == 503
+    assert_error(response.json(), "OBJECT_STORAGE_UNAVAILABLE")
+
+
+def test_local_storage_upload_and_compensation(client: TestClient, tmp_path: Path) -> None:
+    root = tmp_path / "objects"
+    storage = LocalObjectStorage(root)
+    sources = FakeProductSourceRepository()
+    override_service(FakeProductRepository(make_product()), sources, storage)
+    content = b"%PDF-local-content"
+    response = client.post(
+        f"/api/v1/products/{PRODUCT_ID}/sources/upload",
+        files={"file": ("x.pdf", content, "application/pdf")},
+    )
+    assert response.status_code == 201
+    key = response.json()["storageKey"]
+    assert storage.exists(key)
+    with storage.open(key) as saved:
+        assert saved.read() == content
+    assert storage.get_metadata(key).checksum_sha256 == response.json()["checksumSha256"]
+    storage.delete(key)
+
+    override_service(
+        FakeProductRepository(make_product()),
+        FakeProductSourceRepository(ProductSourceRepositoryError("failure")),
+        storage,
+    )
+    failed = client.post(
+        f"/api/v1/products/{PRODUCT_ID}/sources/upload",
+        files={"file": ("x.pdf", content, "application/pdf")},
+    )
+    assert failed.status_code == 503
+    assert not list(root.rglob("*.pdf"))
+    assert not list(root.rglob(".object.tmp-*"))

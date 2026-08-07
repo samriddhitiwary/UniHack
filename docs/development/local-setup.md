@@ -11,6 +11,8 @@ LOCAL_STORAGE_ROOT=../../storage
 
 Relative storage paths resolve from `apps/api`, making the example root the repository's `storage` directory. The directory is created when the storage dependency is first requested. Generated runtime objects under `storage/products` are ignored by Git. A path that points to a file fails configuration instead of using the process directory. Local object persistence is development-only and must not be treated as durable Lambda storage. `s3` is not implemented and is rejected explicitly.
 
+Upload byte limits use `MAX_PDF_UPLOAD_BYTES` and `MAX_IMAGE_UPLOAD_BYTES` (10 MiB defaults) plus `MAX_CSV_UPLOAD_BYTES` (5 MiB default). Every value must be positive.
+
 Create the local products and product-sources tables with:
 
 ```powershell

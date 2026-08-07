@@ -12,6 +12,9 @@ from app.repositories.dynamodb_product_sources import DynamoDBProductSourceRepos
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
 from app.services.product_sources import ProductSourceService
+from app.storage.dependencies import get_object_storage
+from app.storage.protocol import ObjectStorage
+from app.utils.file_validation import UploadSizeLimits
 
 
 def get_product_source_repository(
@@ -25,6 +28,13 @@ def get_product_source_repository(
 def get_product_source_service(
     product_repository: Annotated[ProductRepository, Depends(get_product_repository)],
     source_repository: Annotated[ProductSourceRepository, Depends(get_product_source_repository)],
+    object_storage: Annotated[ObjectStorage, Depends(get_object_storage)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> ProductSourceService:
     """Build the focused product-source application service."""
-    return ProductSourceService(product_repository, source_repository)
+    limits = UploadSizeLimits(
+        pdf=settings.max_pdf_upload_bytes,
+        image=settings.max_image_upload_bytes,
+        csv=settings.max_csv_upload_bytes,
+    )
+    return ProductSourceService(product_repository, source_repository, object_storage, limits)

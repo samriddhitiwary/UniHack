@@ -38,3 +38,11 @@ def test_relative_local_storage_root_resolves_from_api_project() -> None:
 def test_blank_local_storage_root_is_rejected() -> None:
     with pytest.raises(ValidationError, match="local_storage_root must not be blank"):
         Settings(local_storage_root="")
+
+
+@pytest.mark.parametrize(
+    "field", ["max_pdf_upload_bytes", "max_image_upload_bytes", "max_csv_upload_bytes"]
+)
+def test_upload_limits_must_be_positive(field: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**{field: 0})

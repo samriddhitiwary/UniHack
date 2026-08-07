@@ -9,12 +9,18 @@ from fastapi.responses import JSONResponse
 
 from app.core.exceptions import (
     InvalidProductCursorError,
+    InvalidProductSourceFileContentError,
+    InvalidProductSourceFilenameError,
+    ObjectSizeExceededError,
+    ObjectStorageError,
     ProductAlreadyExistsError,
     ProductNotFoundError,
     ProductRepositoryError,
     ProductSourceAlreadyExistsError,
+    ProductSourceMimeTypeMismatchError,
     ProductSourceRepositoryError,
     ProductVersionConflictError,
+    UnsupportedProductSourceFileTypeError,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,6 +38,20 @@ def register_exception_handlers(application: FastAPI) -> None:
     application.add_exception_handler(
         ProductSourceRepositoryError, product_source_repository_handler
     )
+    application.add_exception_handler(
+        InvalidProductSourceFilenameError, invalid_product_source_filename_handler
+    )
+    application.add_exception_handler(
+        UnsupportedProductSourceFileTypeError, unsupported_product_source_file_type_handler
+    )
+    application.add_exception_handler(
+        ProductSourceMimeTypeMismatchError, product_source_mime_type_mismatch_handler
+    )
+    application.add_exception_handler(
+        InvalidProductSourceFileContentError, invalid_product_source_file_content_handler
+    )
+    application.add_exception_handler(ObjectSizeExceededError, object_size_exceeded_handler)
+    application.add_exception_handler(ObjectStorageError, object_storage_handler)
     application.add_exception_handler(RequestValidationError, request_validation_handler)
     application.add_exception_handler(Exception, unexpected_error_handler)
 
@@ -116,6 +136,76 @@ async def product_source_repository_handler(request: Request, exc: Exception) ->
         status_code=503,
         code="PRODUCT_SOURCE_STORAGE_UNAVAILABLE",
         message="Product source storage is temporarily unavailable.",
+    )
+
+
+async def invalid_product_source_filename_handler(request: Request, exc: Exception) -> JSONResponse:
+    _expect_exception(exc, InvalidProductSourceFilenameError)
+    return _error_response(
+        request,
+        status_code=422,
+        code="REQUEST_VALIDATION_FAILED",
+        message="The upload filename is invalid.",
+    )
+
+
+async def unsupported_product_source_file_type_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    _expect_exception(exc, UnsupportedProductSourceFileTypeError)
+    return _error_response(
+        request,
+        status_code=422,
+        code="UNSUPPORTED_PRODUCT_SOURCE_FILE_TYPE",
+        message="The product source file type is unsupported.",
+    )
+
+
+async def product_source_mime_type_mismatch_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    _expect_exception(exc, ProductSourceMimeTypeMismatchError)
+    return _error_response(
+        request,
+        status_code=422,
+        code="PRODUCT_SOURCE_MIME_TYPE_MISMATCH",
+        message="The declared MIME type does not match the file type.",
+    )
+
+
+async def invalid_product_source_file_content_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    _expect_exception(exc, InvalidProductSourceFileContentError)
+    return _error_response(
+        request,
+        status_code=422,
+        code="INVALID_PRODUCT_SOURCE_FILE_CONTENT",
+        message="The uploaded file content is invalid for its type.",
+    )
+
+
+async def object_size_exceeded_handler(request: Request, exc: Exception) -> JSONResponse:
+    _expect_exception(exc, ObjectSizeExceededError)
+    return _error_response(
+        request,
+        status_code=413,
+        code="PRODUCT_SOURCE_FILE_TOO_LARGE",
+        message="The product source file exceeds the permitted size.",
+    )
+
+
+async def object_storage_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(
+        "event=object_storage.request_failed request_id=%s error_type=%s",
+        _request_id(request),
+        type(exc).__name__,
+    )
+    return _error_response(
+        request,
+        status_code=503,
+        code="OBJECT_STORAGE_UNAVAILABLE",
+        message="Object storage is temporarily unavailable.",
     )
 
 

@@ -3,6 +3,7 @@
 import hashlib
 import logging
 from dataclasses import replace
+from typing import BinaryIO
 from uuid import UUID
 
 from app.core.exceptions import (
@@ -14,6 +15,9 @@ from app.domain.product_sources import ProductSource, ProductSourceStatus, Produ
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
 from app.schemas.product_sources import TextProductSourceCreate
+from app.storage.keys import generate_object_key
+from app.storage.protocol import ObjectStorage
+from app.utils.file_validation import UploadSizeLimits, validate_upload
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +29,13 @@ class ProductSourceService:
         self,
         product_repository: ProductRepository,
         source_repository: ProductSourceRepository,
+        object_storage: ObjectStorage | None = None,
+        upload_limits: UploadSizeLimits | None = None,
     ) -> None:
         self._product_repository = product_repository
         self._source_repository = source_repository
+        self._object_storage = object_storage
+        self._upload_limits = upload_limits
 
     def create_text_source(
         self,
@@ -90,3 +98,103 @@ class ProductSourceService:
             stored.file_size_bytes,
         )
         return stored
+
+    def create_file_source(
+        self,
+        *,
+        product_id: UUID,
+        stream: BinaryIO,
+        original_filename: str | None,
+        declared_mime_type: str | None,
+        display_name: str | None = None,
+    ) -> ProductSource:
+        """Validate, store, and persist one supported file source."""
+        logger.info(
+            "event=product_source.upload.requested product_id=%s has_display_name=%s",
+            product_id,
+            bool(display_name and display_name.strip()),
+        )
+        product = self._product_repository.get_by_id(product_id)
+        if product is None:
+            logger.info("event=product_source.parent_product_not_found product_id=%s", product_id)
+            raise ProductNotFoundError(product_id)
+        if self._object_storage is None or self._upload_limits is None:
+            raise RuntimeError("file-upload dependencies are unavailable")
+
+        upload = validate_upload(
+            stream=stream,
+            original_filename=original_filename,
+            declared_mime_type=declared_mime_type,
+            limits=self._upload_limits,
+        )
+        source = ProductSource.create(
+            product_id=product_id,
+            source_type=upload.source_type,
+            original_filename=upload.original_filename,
+            mime_type=upload.mime_type,
+            display_name=display_name,
+        )
+        object_key = generate_object_key(
+            product_id=product_id,
+            source_id=source.source_id,
+            original_filename=upload.original_filename,
+        )
+        logger.info(
+            "event=product_source.upload_validated product_id=%s source_id=%s "
+            "source_type=%s extension=%s",
+            product_id,
+            source.source_id,
+            upload.source_type.value,
+            upload.extension,
+        )
+        stored_object = self._object_storage.save(
+            object_key=object_key,
+            stream=upload.stream,
+            max_size_bytes=upload.max_size_bytes,
+        )
+        source = replace(
+            source,
+            status=ProductSourceStatus.READY,
+            storage_key=stored_object.object_key,
+            file_size_bytes=stored_object.size_bytes,
+            checksum_sha256=stored_object.checksum_sha256,
+        )
+        logger.info(
+            "event=product_source.object_saved product_id=%s source_id=%s size_bytes=%s",
+            product_id,
+            source.source_id,
+            stored_object.size_bytes,
+        )
+        try:
+            created = self._source_repository.create(source)
+        except Exception:
+            logger.warning(
+                "event=product_source.upload_cleanup_started product_id=%s source_id=%s",
+                product_id,
+                source.source_id,
+            )
+            try:
+                self._object_storage.delete(stored_object.object_key)
+                logger.info(
+                    "event=product_source.upload_cleanup_completed product_id=%s source_id=%s",
+                    product_id,
+                    source.source_id,
+                )
+            except Exception as cleanup_error:
+                logger.error(
+                    "event=product_source.upload_cleanup_failed product_id=%s source_id=%s "
+                    "error_type=%s",
+                    product_id,
+                    source.source_id,
+                    type(cleanup_error).__name__,
+                )
+            raise
+        logger.info(
+            "event=product_source.file_created product_id=%s source_id=%s "
+            "source_type=%s size_bytes=%s",
+            product_id,
+            created.source_id,
+            created.source_type.value,
+            created.file_size_bytes,
+        )
+        return created

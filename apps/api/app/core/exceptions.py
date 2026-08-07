@@ -59,6 +59,26 @@ class ProductSourceSerializationError(ProductSourceRepositoryError):
     """Raised when source data cannot safely cross the DynamoDB boundary."""
 
 
+class ProductSourceUploadValidationError(Exception):
+    """Base error for safe upload validation failures."""
+
+
+class InvalidProductSourceFilenameError(ProductSourceUploadValidationError):
+    """Raised when multipart filename metadata is absent or unsafe."""
+
+
+class UnsupportedProductSourceFileTypeError(ProductSourceUploadValidationError):
+    """Raised when an upload filename extension is unsupported."""
+
+
+class ProductSourceMimeTypeMismatchError(ProductSourceUploadValidationError):
+    """Raised when declared MIME does not agree with the filename extension."""
+
+
+class InvalidProductSourceFileContentError(ProductSourceUploadValidationError):
+    """Raised when an upload does not match the approved content policy."""
+
+
 class ObjectStorageError(Exception):
     """Base error for object-storage failures."""
 

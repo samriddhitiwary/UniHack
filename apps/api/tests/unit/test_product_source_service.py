@@ -2,12 +2,16 @@
 
 import hashlib
 import inspect
+import io
+from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
 import pytest
 
 from app.core.exceptions import (
+    ObjectSizeExceededError,
+    ObjectStorageError,
     ProductNotFoundError,
     ProductRepositoryError,
     ProductSourceAlreadyExistsError,
@@ -25,6 +29,9 @@ from app.repositories.products import ProductRepository
 from app.schemas.product_sources import TextProductSourceCreate
 from app.services import product_sources as product_sources_module
 from app.services.product_sources import ProductSourceService
+from app.storage.models import StoredObject
+from app.storage.protocol import ObjectStorage
+from app.utils.file_validation import UploadSizeLimits
 from tests.fixtures.products import PRODUCT_ID, make_product
 
 
@@ -89,11 +96,54 @@ class FakeProductSourceRepository:
 
 
 def service(
-    products: FakeProductRepository, sources: FakeProductSourceRepository
+    products: FakeProductRepository,
+    sources: FakeProductSourceRepository,
+    storage: "FakeStorage | None" = None,
 ) -> ProductSourceService:
     return ProductSourceService(
-        cast(ProductRepository, products), cast(ProductSourceRepository, sources)
+        cast(ProductRepository, products),
+        cast(ProductSourceRepository, sources),
+        cast(ObjectStorage, storage) if storage is not None else None,
+        UploadSizeLimits(pdf=20, image=20, csv=20) if storage is not None else None,
     )
+
+
+class FakeStorage:
+    def __init__(
+        self, error: Exception | None = None, delete_error: Exception | None = None
+    ) -> None:
+        self.error = error
+        self.delete_error = delete_error
+        self.saved: list[tuple[str, bytes, int]] = []
+        self.deleted: list[str] = []
+
+    def save(self, *, object_key: str, stream: object, max_size_bytes: int) -> StoredObject:
+        if self.error is not None:
+            raise self.error
+        content = stream.read()  # type: ignore[attr-defined]
+        if len(content) > max_size_bytes:
+            raise ObjectSizeExceededError("too large")
+        self.saved.append((object_key, content, max_size_bytes))
+        return StoredObject(
+            object_key=object_key,
+            size_bytes=len(content),
+            checksum_sha256=hashlib.sha256(content).hexdigest(),
+            created_at=datetime.now(UTC),
+        )
+
+    def delete(self, object_key: str) -> None:
+        self.deleted.append(object_key)
+        if self.delete_error is not None:
+            raise self.delete_error
+
+    def open(self, object_key: str) -> object:
+        raise NotImplementedError
+
+    def exists(self, object_key: str) -> bool:
+        return False
+
+    def get_metadata(self, object_key: str) -> StoredObject:
+        raise NotImplementedError
 
 
 def test_create_text_source_checks_parent_and_builds_ready_metadata() -> None:
@@ -183,10 +233,112 @@ def test_source_repository_controlled_failure_is_preserved(error: Exception) -> 
     assert len(sources.created) == 1
 
 
-def test_service_has_no_http_boto3_filesystem_or_object_storage_dependency() -> None:
+def test_service_has_no_fastapi_boto3_or_direct_filesystem_dependency() -> None:
     source = inspect.getsource(product_sources_module)
     assert "fastapi" not in source
     assert "boto3" not in source
     assert "pathlib" not in source
-    assert "app.storage" not in source
-    assert "open(" not in source
+    assert "LocalObjectStorage" not in source
+    assert "pathlib" not in source
+
+
+@pytest.mark.parametrize(
+    ("filename", "mime", "content", "source_type"),
+    [
+        ("pump.PDF", "application/pdf", b"%PDF-content", ProductSourceType.PDF),
+        ("image.png", "image/png", b"\x89PNG\r\n\x1a\nbody", ProductSourceType.IMAGE),
+        ("photo.jpeg", "image/jpeg", b"\xff\xd8\xffbody", ProductSourceType.IMAGE),
+        ("photo.webp", "image/webp", b"RIFF1234WEBPbody", ProductSourceType.IMAGE),
+        ("data.csv", "text/csv", b"name,value\npump,16\n", ProductSourceType.CSV),
+    ],
+)
+def test_create_file_source_stores_complete_bytes_and_ready_metadata(
+    filename: str, mime: str, content: bytes, source_type: ProductSourceType
+) -> None:
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository()
+    created = service(FakeProductRepository(make_product()), sources, storage).create_file_source(
+        product_id=PRODUCT_ID,
+        stream=io.BytesIO(content),
+        original_filename=filename,
+        declared_mime_type=mime,
+        display_name="  Upload  ",
+    )
+    key, saved, limit = storage.saved[0]
+    assert saved == content
+    assert limit == 20
+    assert f"sources/{created.source_id}/" in key
+    assert created.source_type is source_type
+    assert created.status is ProductSourceStatus.READY
+    assert created.original_filename.endswith(filename.split(".")[-1].lower())
+    assert created.storage_key == key
+    assert created.file_size_bytes == len(content)
+    assert created.checksum_sha256 == hashlib.sha256(content).hexdigest()
+    assert created.display_name == "Upload"
+    assert created.text_content is None
+    assert created.version == 1
+
+
+def test_missing_product_skips_storage_and_source_repository() -> None:
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository()
+    with pytest.raises(ProductNotFoundError):
+        service(FakeProductRepository(), sources, storage).create_file_source(
+            product_id=PRODUCT_ID,
+            stream=io.BytesIO(b"%PDF-x"),
+            original_filename="x.pdf",
+            declared_mime_type="application/pdf",
+        )
+    assert storage.saved == [] and sources.created == []
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        ProductSourceAlreadyExistsError("duplicate"),
+        ProductSourceRepositoryError("failure"),
+        RuntimeError("unexpected"),
+    ],
+)
+def test_persistence_failure_deletes_object_and_preserves_error(error: Exception) -> None:
+    storage = FakeStorage()
+    sources = FakeProductSourceRepository(error=error)
+    with pytest.raises(type(error)) as captured:
+        service(FakeProductRepository(make_product()), sources, storage).create_file_source(
+            product_id=PRODUCT_ID,
+            stream=io.BytesIO(b"%PDF-x"),
+            original_filename="x.pdf",
+            declared_mime_type="application/pdf",
+        )
+    assert captured.value is error
+    assert storage.deleted == [storage.saved[0][0]]
+
+
+def test_cleanup_failure_preserves_repository_error() -> None:
+    original = ProductSourceRepositoryError("original")
+    storage = FakeStorage(delete_error=ObjectStorageError("cleanup"))
+    with pytest.raises(ProductSourceRepositoryError) as captured:
+        service(
+            FakeProductRepository(make_product()), FakeProductSourceRepository(original), storage
+        ).create_file_source(
+            product_id=PRODUCT_ID,
+            stream=io.BytesIO(b"%PDF-x"),
+            original_filename="x.pdf",
+            declared_mime_type="application/pdf",
+        )
+    assert captured.value is original
+
+
+def test_storage_failure_skips_source_repository() -> None:
+    sources = FakeProductSourceRepository()
+    error = ObjectStorageError("unavailable")
+    with pytest.raises(ObjectStorageError):
+        service(
+            FakeProductRepository(make_product()), sources, FakeStorage(error=error)
+        ).create_file_source(
+            product_id=PRODUCT_ID,
+            stream=io.BytesIO(b"%PDF-x"),
+            original_filename="x.pdf",
+            declared_mime_type="application/pdf",
+        )
+    assert sources.created == []

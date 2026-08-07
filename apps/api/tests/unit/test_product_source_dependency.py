@@ -14,9 +14,11 @@ from app.repositories.dynamodb_product_sources import DynamoDBProductSourceRepos
 from app.repositories.product_sources import ProductSourceRepository
 from app.repositories.products import ProductRepository
 from app.services.product_sources import ProductSourceService
+from app.storage.protocol import ObjectStorage
 from tests.unit.test_product_source_service import (
     FakeProductRepository,
     FakeProductSourceRepository,
+    FakeStorage,
 )
 
 
@@ -32,5 +34,9 @@ def test_service_provider_wires_both_repository_protocols() -> None:
     service = get_product_source_service(
         cast(ProductRepository, FakeProductRepository()),
         cast(ProductSourceRepository, FakeProductSourceRepository()),
+        cast(ObjectStorage, FakeStorage()),
+        Settings(max_pdf_upload_bytes=11, max_image_upload_bytes=12, max_csv_upload_bytes=13),
     )
     assert isinstance(service, ProductSourceService)
+    assert service._upload_limits is not None
+    assert service._upload_limits.pdf == 11

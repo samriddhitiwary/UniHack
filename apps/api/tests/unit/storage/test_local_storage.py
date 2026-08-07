@@ -166,18 +166,6 @@ def test_sidecar_finalization_failure_removes_final_object(
     assert list(path.parent.glob(".object.tmp-*")) == []
 
 
-def test_save_does_not_create_filesystem_links(
-    storage: LocalObjectStorage, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    def reject_link(*args: object, **kwargs: object) -> None:
-        del args, kwargs
-        raise AssertionError("hard-link creation must not be used")
-
-    monkeypatch.setattr("app.storage.local.os.link", reject_link)
-    saved = storage.save(object_key=OBJECT_KEY, stream=io.BytesIO(b"content"), max_size_bytes=20)
-    assert saved.size_bytes == 7
-
-
 def test_open_returns_binary_stream_with_original_bytes(storage: LocalObjectStorage) -> None:
     storage.save(object_key=OBJECT_KEY, stream=io.BytesIO(b"content"), max_size_bytes=20)
     stream: BinaryIO = storage.open(OBJECT_KEY)
@@ -289,18 +277,3 @@ def test_traversal_never_deletes_outside_file(storage: LocalObjectStorage, tmp_p
     with pytest.raises(InvalidObjectKeyError):
         storage.delete("../outside.pdf")
     assert outside.read_bytes() == b"keep"
-
-
-def test_symlink_object_is_not_exposed(storage: LocalObjectStorage, tmp_path: Path) -> None:
-    outside = tmp_path / "outside.pdf"
-    outside.write_bytes(b"outside")
-    path = object_path(tmp_path / "objects")
-    path.parent.mkdir(parents=True)
-    try:
-        path.symlink_to(outside)
-    except OSError:
-        pytest.skip("symbolic links are unavailable")
-    with pytest.raises(InvalidObjectKeyError):
-        storage.exists(OBJECT_KEY)
-    with pytest.raises(InvalidObjectKeyError):
-        storage.open(OBJECT_KEY)

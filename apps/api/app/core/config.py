@@ -33,7 +33,9 @@ class Settings(BaseSettings):
     s3_bucket_name: str | None = None
 
     cors_allowed_origins: list[str] = ["http://localhost:5173"]
-    max_upload_size_mb: int = Field(default=25, gt=0)
+    max_pdf_upload_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
+    max_image_upload_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
+    max_csv_upload_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

@@ -32,7 +32,7 @@ SPEC-007 adds a backend-only product-source metadata foundation:
 Future source service -> ProductSourceRepository protocol -> DynamoDBProductSourceRepository
 ```
 
-The source table groups records by product, lists them newest first through `ProductCreatedAtIndex`, and protects mutations with versions. Scoped opaque cursors prevent source-list cursors from crossing products or being reused as product-list cursors. No source service, API route, upload/storage implementation, extraction, processing job, or frontend source workflow exists yet.
+The source table groups records by product, lists them newest first through `ProductCreatedAtIndex`, and protects mutations with versions. Scoped opaque cursors prevent source-list cursors from crossing products or being reused as product-list cursors.
 
 SPEC-008 adds an independent backend-only object-storage foundation:
 
@@ -53,4 +53,6 @@ ProductSourceService
         `-- ProductSourceRepository (TEXT metadata persistence)
 ```
 
-The service validates the parent, computes UTF-8 size and SHA-256, and persists a `READY` text source through the existing DynamoDB repository. Routes contain no repository or checksum logic. The endpoint stores no file and does not call `ObjectStorage`. No source list, retrieve, update, delete, upload, or processing workflow exists.
+The service validates the parent, computes UTF-8 size and SHA-256, and persists a `READY` text source through the existing DynamoDB repository. Routes contain no repository or checksum logic. The text endpoint stores no file and does not call `ObjectStorage`. No source list, retrieve, update, delete, or processing workflow exists.
+
+SPEC-010 adds a separate multipart upload route. The service validates filename, MIME, and a bounded content sample, streams through `ObjectStorage`, and persists `READY` file metadata. Persistence failure triggers compensating object deletion; no parser or processing workflow runs.
