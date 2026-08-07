@@ -11,7 +11,12 @@ from uuid import UUID
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from pydantic import BaseModel
 
-from app.core.exceptions import ProductSerializationError, ProductSourceSerializationError
+from app.core.exceptions import (
+    ProcessingJobSerializationError,
+    ProductSerializationError,
+    ProductSourceSerializationError,
+)
+from app.domain.processing_jobs import ProcessingJob, ProcessingJobStatus, ProcessingJobType
 from app.domain.product_sources import ProductSource, ProductSourceStatus, ProductSourceType
 from app.domain.products.entities import Product
 from app.domain.products.enums import ProductCategory, ProductStatus
@@ -169,6 +174,62 @@ def product_source_from_item(item: Mapping[str, object]) -> ProductSource:
         ) from exc
 
 
+def processing_job_source_scope(product_id: UUID, source_id: UUID) -> str:
+    return f"{product_id}#{source_id}"
+
+
+def processing_job_to_item(job: ProcessingJob) -> dict[str, object]:
+    return {
+        "jobId": job.job_id,
+        "productId": job.product_id,
+        "sourceId": job.source_id,
+        "sourceScope": processing_job_source_scope(job.product_id, job.source_id),
+        "jobType": job.job_type,
+        "status": job.status,
+        "attempt": job.attempt,
+        "progressPercent": job.progress_percent,
+        "errorCode": job.error_code,
+        "errorMessage": job.error_message,
+        "resultReference": job.result_reference,
+        "version": job.version,
+        "createdAt": job.created_at,
+        "startedAt": job.started_at,
+        "completedAt": job.completed_at,
+        "updatedAt": job.updated_at,
+    }
+
+
+def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
+    try:
+        product_id = UUID(str(item["productId"]))
+        source_id = UUID(str(item["sourceId"]))
+        if item.get("sourceScope") != processing_job_source_scope(product_id, source_id):
+            raise ValueError("sourceScope does not match job ownership")
+        return ProcessingJob(
+            job_id=UUID(str(item["jobId"])),
+            product_id=product_id,
+            source_id=source_id,
+            job_type=ProcessingJobType(str(item["jobType"])),
+            status=ProcessingJobStatus(str(item["status"])),
+            attempt=_integer(item["attempt"], "attempt"),
+            progress_percent=_integer(item["progressPercent"], "progressPercent"),
+            error_code=_optional_string(item.get("errorCode")),
+            error_message=_optional_string(item.get("errorMessage")),
+            result_reference=_optional_string(item.get("resultReference")),
+            version=_integer(item["version"], "version"),
+            created_at=parse_utc(item["createdAt"]),
+            started_at=_optional_datetime(item.get("startedAt")),
+            completed_at=_optional_datetime(item.get("completedAt")),
+            updated_at=parse_utc(item["updatedAt"]),
+        )
+    except ProcessingJobSerializationError:
+        raise
+    except (KeyError, TypeError, ValueError, ProductSerializationError) as exc:
+        raise ProcessingJobSerializationError(
+            "DynamoDB item is not a valid processing job"
+        ) from exc
+
+
 def _optional_string(value: object) -> str | None:
     if value is None:
         return None
@@ -196,3 +257,9 @@ def _optional_integer(value: object, field: str) -> int | None:
     if value is None:
         return None
     return _integer(value, field)
+
+
+def _optional_datetime(value: object) -> datetime | None:
+    if value is None:
+        return None
+    return parse_utc(value)

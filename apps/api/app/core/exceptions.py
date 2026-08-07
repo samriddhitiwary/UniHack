@@ -90,6 +90,40 @@ class ProductSourceStorageConsistencyError(Exception):
         super().__init__("product source storage metadata is inconsistent")
 
 
+class ProcessingJobRepositoryError(Exception):
+    """Base error for processing-job persistence failures."""
+
+
+class ProcessingJobAlreadyExistsError(ProcessingJobRepositoryError):
+    """Raised when a create would overwrite an existing job."""
+
+
+class ProcessingJobNotFoundError(ProcessingJobRepositoryError):
+    """Raised when a conditional job mutation finds no record."""
+
+
+class ProcessingJobVersionConflictError(ProcessingJobRepositoryError):
+    """Raised when optimistic concurrency rejects a stale job mutation."""
+
+
+class InvalidProcessingJobCursorError(ProcessingJobRepositoryError):
+    """Raised when an opaque processing-job cursor is invalid."""
+
+
+class ProcessingJobSerializationError(ProcessingJobRepositoryError):
+    """Raised when job data cannot safely cross the DynamoDB boundary."""
+
+
+class InvalidProcessingJobStatusTransitionError(Exception):
+    """Raised when a job status transition is not approved."""
+
+    def __init__(self, job_id: UUID | str, current_status: str, requested_status: str) -> None:
+        self.job_id = str(job_id)
+        self.current_status = current_status
+        self.requested_status = requested_status
+        super().__init__("processing-job status transition is not allowed")
+
+
 class InvalidProductSourceCursorError(ProductSourceRepositoryError):
     """Raised when an opaque product-source cursor is invalid."""
 

@@ -85,3 +85,11 @@ DELETE source route -> ProductSourceService -> parent/source/version validation
 ```
 
 TEXT deletion bypasses storage. File-backed metadata must contain a server-owned logical key; missing or absent objects are controlled consistency failures. Object-first ordering avoids deleting metadata successfully while leaving an orphan, but storage and DynamoDB are not transactional: a final repository failure may leave metadata after its bytes were removed. That risk is logged and returned as failure without weakening concurrency.
+
+SPEC-014 adds a processing-job domain and DynamoDB persistence foundation:
+
+```text
+Future job service -> ProcessingJobRepository protocol -> DynamoDBProcessingJobRepository
+```
+
+One immutable record represents one future attempt for one product source. The repository conditionally creates jobs, retrieves by `jobId`, lists newest first by product or product/source with separately scoped opaque cursors, and conditionally updates status metadata by expected version. The processing-jobs table uses `ProductCreatedAtIndex` and `SourceCreatedAtIndex`; the latter partitions on server-derived `productId#sourceId`. No API route, worker, queue, polling, retry execution, parser, extractor, OCR, or AI call exists.

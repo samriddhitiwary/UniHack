@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-013: Product Source API — Delete Source and Stored Object**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-014: Product Source Processing Job Domain and Persistence**.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ npm --prefix=apps/web run dev
 
 Open the web app at <http://localhost:5173>. API liveness is at <http://localhost:8000/api/v1/health>; readiness is at <http://localhost:8000/api/v1/health/ready>.
 
-The table command is idempotent: it creates `{DYNAMODB_TABLE_PREFIX}-products` with `CreatedAtIndex` and `StatusCreatedAtIndex`, plus `{DYNAMODB_TABLE_PREFIX}-sources` with `ProductCreatedAtIndex`, or reports that either table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
+The table command is idempotent: it creates `{DYNAMODB_TABLE_PREFIX}-products` with `CreatedAtIndex` and `StatusCreatedAtIndex`, `{DYNAMODB_TABLE_PREFIX}-sources` with `ProductCreatedAtIndex`, and `{DYNAMODB_TABLE_PREFIX}-processing-jobs` with `ProductCreatedAtIndex` and `SourceCreatedAtIndex`, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
 
 `STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains foundational product and product-source metadata entities, DynamoDB repositories, and provider-independent object storage. Product APIs support create/list/retrieve/update/delete. Product-source APIs create normalized text sources, accept validated local file uploads, list/retrieve/update product-scoped sources, and conditionally delete one source plus its file object. Content/file replacement, bulk deletion, restore, and download are not exposed. No S3, extraction, processing jobs, frontend source UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains product, product-source, and processing-job domain/persistence foundations plus provider-independent object storage. Product and product-source APIs cover their completed workflows. Processing jobs are persistence-only records with controlled statuses, scoped pagination, and optimistic concurrency; no job API or execution exists. Content/file replacement, bulk deletion, restore, and download are not exposed. No S3, extraction, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -104,6 +104,7 @@ Source DELETE requires the last retrieved positive `version`. It validates the p
 - [SPEC-011](docs/specs/SPEC-011-product-source-api-list-and-retrieve-sources.md)
 - [SPEC-012](docs/specs/SPEC-012-product-source-api-update-source-metadata-and-status.md)
 - [SPEC-013](docs/specs/SPEC-013-product-source-api-delete-source-and-stored-object.md)
+- [SPEC-014](docs/specs/SPEC-014-product-source-processing-job-domain-and-persistence.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [System overview](docs/architecture/system-overview.md)

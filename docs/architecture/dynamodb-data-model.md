@@ -1,6 +1,6 @@
 # DynamoDB Data Model
 
-The local model contains configuration-derived `{DYNAMODB_TABLE_PREFIX}-products` and `{DYNAMODB_TABLE_PREFIX}-sources` tables. No production table is provisioned by this repository.
+The local model contains configuration-derived `{DYNAMODB_TABLE_PREFIX}-products`, `{DYNAMODB_TABLE_PREFIX}-sources`, and `{DYNAMODB_TABLE_PREFIX}-processing-jobs` tables. No production table is provisioned by this repository.
 
 ## Item shape
 
@@ -76,6 +76,43 @@ Source types are exactly `PDF`, `IMAGE`, `CSV`, and `TEXT`. Statuses are `PENDIN
 
 The table contains no file bytes, base64 content, extracted PDF/CSV/image content, prompts, AI results, evidence, or storage credentials. Source update/delete operations use optimistic concurrency and distinguish missing records from stale versions after conditional failures.
 
+## Processing jobs table
+
+The processing-jobs table stores safe tracking metadata for future attempts and uses string partition key `jobId`. It does not enforce product/source foreign keys and stores no extracted content, prompts, responses, binaries, or stack traces.
+
+```json
+{
+  "jobId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "productId": "d8c8d2bc-3957-4a15-966f-a06da1fd9047",
+  "sourceId": "f348db3c-4da2-47f8-8716-179b7dd9273c",
+  "sourceScope": "d8c8d2bc-3957-4a15-966f-a06da1fd9047#f348db3c-4da2-47f8-8716-179b7dd9273c",
+  "jobType": "SOURCE_PROCESSING",
+  "status": "PENDING",
+  "attempt": 1,
+  "progressPercent": 0,
+  "errorCode": null,
+  "errorMessage": null,
+  "resultReference": null,
+  "version": 1,
+  "createdAt": "2026-08-07T06:00:00.000000Z",
+  "startedAt": null,
+  "completedAt": null,
+  "updatedAt": "2026-08-07T06:00:00.000000Z"
+}
+```
+
+Job types are `SOURCE_PROCESSING`, `PDF_TEXT_EXTRACTION`, `PDF_TABLE_EXTRACTION`, `IMAGE_ANALYSIS`, and `CSV_PROCESSING`. Statuses are `PENDING`, `RUNNING`, `COMPLETED`, `FAILED`, and `CANCELLED`. Approved transitions are PENDING to RUNNING/CANCELLED and RUNNING to COMPLETED/FAILED/CANCELLED; terminal states do not transition.
+
+| Job access pattern | Operation |
+| --- | --- |
+| Create by job ID | Conditional `PutItem`; job ID must not exist |
+| Retrieve by job ID | Consistent `GetItem` |
+| List newest jobs for a product | Descending query on `ProductCreatedAtIndex` |
+| List newest jobs for a product/source | Descending query on `SourceCreatedAtIndex` using `sourceScope` |
+| Update state | Conditional `UpdateItem` using expected version |
+
+`ProductCreatedAtIndex` uses `productId`/`createdAt`. `SourceCreatedAtIndex` uses server-generated `sourceScope = productId#sourceId`/`createdAt`, preventing global source enumeration. The two list paths use separate opaque cursor scopes bound to their complete query identity. Limits are 1–100; no scan, total count, global list, status dashboard, worker claim, retry queue, or delete operation exists. Updates increment version once and refresh `updatedAt`.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -84,6 +121,6 @@ After starting DynamoDB Local, run:
 uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
-or `make dynamodb-create-tables`. The script creates the products table with its two indexes and the sources table with `ProductCreatedAtIndex`, waits until both exist, and exits successfully without altering data when either table is already present.
+or `make dynamodb-create-tables`. The script creates the products table with two indexes, the sources table with `ProductCreatedAtIndex`, and the processing-jobs table with its product/source indexes. It waits for each table and exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.
