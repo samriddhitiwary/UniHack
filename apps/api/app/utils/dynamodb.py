@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from app.core.exceptions import (
     PdfExtractionSerializationError,
+    PdfTableExtractionSerializationError,
     ProcessingJobSerializationError,
     ProductSerializationError,
     ProductSourceSerializationError,
@@ -21,6 +22,13 @@ from app.domain.pdf_extraction import (
     PdfExtractionPage,
     PdfExtractionQualityStatus,
     PdfTextExtractionResult,
+)
+from app.domain.pdf_table_extraction import (
+    PdfExtractedTable,
+    PdfTableCell,
+    PdfTableExtractionQualityStatus,
+    PdfTableExtractionResult,
+    PdfTableRow,
 )
 from app.domain.processing_jobs import ProcessingJob, ProcessingJobStatus, ProcessingJobType
 from app.domain.product_sources import ProductSource, ProductSourceStatus, ProductSourceType
@@ -311,6 +319,134 @@ def pdf_extraction_result_from_items(
         raise PdfExtractionSerializationError(
             "DynamoDB items are not a valid PDF extraction result"
         ) from exc
+
+
+def pdf_table_extraction_metadata_to_item(
+    result: PdfTableExtractionResult,
+) -> dict[str, object]:
+    return {
+        "extractionId": result.extraction_id,
+        "recordKey": "META",
+        "jobId": result.job_id,
+        "productId": result.product_id,
+        "sourceId": result.source_id,
+        "parser": result.parser,
+        "parserVersion": result.parser_version,
+        "pageCount": result.page_count,
+        "pagesWithTables": result.pages_with_tables,
+        "tableCount": result.table_count,
+        "totalRowCount": result.total_row_count,
+        "totalCellCount": result.total_cell_count,
+        "qualityStatus": result.quality_status,
+        "warningCodes": result.warning_codes,
+        "createdAt": result.created_at,
+    }
+
+
+def pdf_table_extraction_table_to_item(
+    extraction_id: UUID, table: PdfExtractedTable
+) -> dict[str, object]:
+    return {
+        "extractionId": extraction_id,
+        "recordKey": f"TABLE#{table.page_number:06d}#{table.table_index:06d}",
+        "pageNumber": table.page_number,
+        "tableIndex": table.table_index,
+        "rowCount": table.row_count,
+        "columnCount": table.column_count,
+        "cellCount": table.cell_count,
+        "rows": [
+            {
+                "rowIndex": row.row_index,
+                "cells": [
+                    {
+                        "rowIndex": cell.row_index,
+                        "columnIndex": cell.column_index,
+                        "text": cell.text,
+                        "isEmpty": cell.is_empty,
+                    }
+                    for cell in row.cells
+                ],
+            }
+            for row in table.rows
+        ],
+    }
+
+
+def pdf_table_extraction_result_from_items(
+    items: Sequence[Mapping[str, object]],
+) -> PdfTableExtractionResult:
+    try:
+        metadata_items = [item for item in items if item.get("recordKey") == "META"]
+        if len(metadata_items) != 1:
+            raise ValueError("one table-extraction metadata record is required")
+        metadata = metadata_items[0]
+        extraction_id = UUID(str(metadata["extractionId"]))
+        table_items = sorted(
+            (item for item in items if str(item.get("recordKey", "")).startswith("TABLE#")),
+            key=lambda item: str(item["recordKey"]),
+        )
+        tables = tuple(_pdf_extracted_table_from_item(item) for item in table_items)
+        warnings = metadata.get("warningCodes", [])
+        if not isinstance(warnings, Sequence) or isinstance(warnings, (str, bytes)):
+            raise ValueError("warningCodes must be a sequence")
+        return PdfTableExtractionResult(
+            extraction_id=extraction_id,
+            job_id=UUID(str(metadata["jobId"])),
+            product_id=UUID(str(metadata["productId"])),
+            source_id=UUID(str(metadata["sourceId"])),
+            parser=_required_string(metadata["parser"], "parser"),
+            parser_version=_required_string(metadata["parserVersion"], "parserVersion"),
+            page_count=_integer(metadata["pageCount"], "pageCount"),
+            pages_with_tables=_integer(metadata["pagesWithTables"], "pagesWithTables"),
+            table_count=_integer(metadata["tableCount"], "tableCount"),
+            total_row_count=_integer(metadata["totalRowCount"], "totalRowCount"),
+            total_cell_count=_integer(metadata["totalCellCount"], "totalCellCount"),
+            quality_status=PdfTableExtractionQualityStatus(str(metadata["qualityStatus"])),
+            tables=tables,
+            warning_codes=tuple(_required_string(code, "warningCode") for code in warnings),
+            created_at=parse_utc(metadata["createdAt"]),
+        )
+    except PdfTableExtractionSerializationError:
+        raise
+    except (KeyError, TypeError, ValueError, ProductSerializationError) as exc:
+        raise PdfTableExtractionSerializationError(
+            "DynamoDB items are not a valid PDF table-extraction result"
+        ) from exc
+
+
+def _pdf_extracted_table_from_item(item: Mapping[str, object]) -> PdfExtractedTable:
+    raw_rows = item["rows"]
+    if not isinstance(raw_rows, Sequence) or isinstance(raw_rows, (str, bytes)):
+        raise ValueError("rows must be a sequence")
+    rows: list[PdfTableRow] = []
+    for raw_row in raw_rows:
+        if not isinstance(raw_row, Mapping):
+            raise ValueError("row must be a mapping")
+        row_index = _integer(raw_row["rowIndex"], "rowIndex")
+        raw_cells = raw_row["cells"]
+        if not isinstance(raw_cells, Sequence) or isinstance(raw_cells, (str, bytes)):
+            raise ValueError("cells must be a sequence")
+        cells = tuple(
+            PdfTableCell(
+                row_index=_integer(cell["rowIndex"], "rowIndex"),
+                column_index=_integer(cell["columnIndex"], "columnIndex"),
+                text=_required_string(cell["text"], "text"),
+                is_empty=_boolean(cell["isEmpty"], "isEmpty"),
+            )
+            for cell in raw_cells
+            if isinstance(cell, Mapping)
+        )
+        if len(cells) != len(raw_cells):
+            raise ValueError("cell must be a mapping")
+        rows.append(PdfTableRow(row_index, cells))
+    return PdfExtractedTable(
+        table_index=_integer(item["tableIndex"], "tableIndex"),
+        page_number=_integer(item["pageNumber"], "pageNumber"),
+        row_count=_integer(item["rowCount"], "rowCount"),
+        column_count=_integer(item["columnCount"], "columnCount"),
+        cell_count=_integer(item["cellCount"], "cellCount"),
+        rows=tuple(rows),
+    )
 
 
 def _optional_string(value: object) -> str | None:

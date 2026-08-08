@@ -68,6 +68,7 @@ Desktop.ini
 *.bak
 *.orig
 *.rej
+tmp/
 
 # Local runtime data (keep directories through .gitkeep)
 storage/products/

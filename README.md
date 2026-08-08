@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-016: PDF Text Extraction Engine**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-017: PDF Table Extraction Engine**.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ npm --prefix=apps/web run dev
 
 Open the web app at <http://localhost:5173>. API liveness is at <http://localhost:8000/api/v1/health>; readiness is at <http://localhost:8000/api/v1/health/ready>.
 
-The table command is idempotent: it creates the configured products, sources, processing-jobs, and extraction-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
+The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, and table-extraction-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
 
 `STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains product, product-source, processing-job, object-storage, and PDF embedded-text extraction foundations. Processing-job APIs create and read records but expose no execution endpoint. The PDF engine is invoked directly in backend code, stores ordered page evidence separately, and updates job lifecycle without changing source status. Content/file replacement, bulk deletion, restore, and download are not exposed. No OCR, table extraction, AI, S3, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains product, product-source, processing-job, object-storage, PDF embedded-text extraction, and PDF structured-table extraction foundations. Processing-job APIs create and read records but expose no execution endpoint. The PDF engines are invoked directly in backend code, store evidence separately, and update job lifecycle without changing source status. Content/file replacement, bulk deletion, restore, and download are not exposed. No OCR, semantic table interpretation, AI, S3, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -97,6 +97,8 @@ Processing-job creation accepts only `jobType`, verifies the product and product
 
 The PDF text-extraction service processes only PENDING `PDF_TEXT_EXTRACTION` jobs for stored PDF sources. It uses pypdf through `ObjectStorage.open`, preserves blank and text pages, enforces configurable bounds, stores composite META/PAGE result records, and completes even for LOW_TEXT or NO_TEXT outcomes. Scanned/image-only PDFs are identified as NO_TEXT but are not OCR-processed. There is no execution or extraction-result API. See the [PDF extraction architecture](docs/architecture/pdf-text-extraction.md).
 
+The PDF table-extraction service processes only PENDING `PDF_TABLE_EXTRACTION` jobs. It uses pdfplumber through `ObjectStorage.open`, preserves ordered row/cell evidence and empty cells, enforces page/table/row/column/cell/text limits, and stores META/TABLE records separately. Readable PDFs without detectable tables complete as NO_TABLES. It performs no OCR, semantic joining, or AI, and exposes no execution or result API. See the [PDF table extraction architecture](docs/architecture/pdf-table-extraction.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -115,6 +117,7 @@ The PDF text-extraction service processes only PENDING `PDF_TEXT_EXTRACTION` job
 - [SPEC-014](docs/specs/SPEC-014-product-source-processing-job-domain-and-persistence.md)
 - [SPEC-015](docs/specs/SPEC-015-processing-job-api-create-retrieve-and-list-jobs.md)
 - [SPEC-016](docs/specs/SPEC-016-pdf-text-extraction-engine.md)
+- [SPEC-017](docs/specs/SPEC-017-pdf-table-extraction-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -122,6 +125,7 @@ The PDF text-extraction service processes only PENDING `PDF_TEXT_EXTRACTION` job
 - [DynamoDB data model](docs/architecture/dynamodb-data-model.md)
 - [Object storage](docs/architecture/object-storage.md)
 - [PDF text extraction](docs/architecture/pdf-text-extraction.md)
+- [PDF table extraction](docs/architecture/pdf-table-extraction.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

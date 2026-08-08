@@ -118,3 +118,15 @@ Result evidence is stored outside source/job records in a composite DynamoDB tab
 pages retain their positions; deterministic quality is USABLE, LOW_TEXT, or NO_TEXT.
 Readable scanned/image-only PDFs complete as NO_TEXT without OCR. The service has no API,
 worker, scheduler, queue, direct filesystem/Boto3 use, table extraction, or AI behavior.
+
+SPEC-017 adds direct PDF structured-table extraction orchestration:
+
+```text
+PdfTableExtractionService -> ProcessingJobRepository (RUNNING/COMPLETED/FAILED)
+                          -> ProductSourceRepository (scoped PDF metadata)
+                          -> ObjectStorage.open (binary PDF stream)
+                          -> PdfTableParser (pdfplumber, bounded evidence)
+                          -> PdfTableExtractionRepository (META + TABLE evidence)
+```
+
+Page and parser table order, empty cells, and rectangular row/column positions are preserved. Readable PDFs without tables complete as NO_TABLES. Results live outside sources/jobs and each table record is size-checked before persistence. There is no OCR, semantic table joining, AI, worker, or execution/result API.

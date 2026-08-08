@@ -212,6 +212,85 @@ class PdfExtractionResultStorageError(PdfTextExtractionError):
     safe_message = "The PDF extraction result could not be stored."
 
 
+class PdfTableExtractionError(Exception):
+    """Base controlled PDF table-extraction failure with safe job metadata."""
+
+    code = "PDF_TABLE_EXTRACTION_FAILED"
+    safe_message = "PDF table extraction failed."
+
+
+class InvalidPdfTableExtractionJobError(PdfTableExtractionError):
+    code = "PDF_TABLE_EXTRACTION_JOB_INVALID"
+    safe_message = "The processing job is not eligible for PDF table extraction."
+
+
+class InvalidPdfTableSourceError(PdfTableExtractionError):
+    code = "PDF_TABLE_SOURCE_INVALID"
+    safe_message = "The processing job does not reference a valid stored PDF source."
+
+
+class PdfTableParseError(PdfTableExtractionError):
+    code = "PDF_TABLE_PARSE_FAILED"
+    safe_message = "The PDF could not be read for table extraction."
+
+
+class PdfTableExtractionPageLimitExceededError(PdfTableExtractionError):
+    code = "PDF_TABLE_EXTRACTION_PAGE_LIMIT_EXCEEDED"
+    safe_message = "The PDF exceeds the configured table-extraction page limit."
+
+
+class PdfTableExtractionTableLimitExceededError(PdfTableExtractionError):
+    code = "PDF_TABLE_EXTRACTION_TABLE_LIMIT_EXCEEDED"
+    safe_message = "The PDF exceeds the configured extracted-table limit."
+
+
+class PdfTableExtractionRowLimitExceededError(PdfTableExtractionError):
+    code = "PDF_TABLE_EXTRACTION_ROW_LIMIT_EXCEEDED"
+    safe_message = "A PDF table exceeds the configured row limit."
+
+
+class PdfTableExtractionColumnLimitExceededError(PdfTableExtractionError):
+    code = "PDF_TABLE_EXTRACTION_COLUMN_LIMIT_EXCEEDED"
+    safe_message = "A PDF table exceeds the configured column limit."
+
+
+class PdfTableExtractionCellLimitExceededError(PdfTableExtractionError):
+    code = "PDF_TABLE_EXTRACTION_CELL_LIMIT_EXCEEDED"
+    safe_message = "The PDF exceeds the configured extracted-cell limit."
+
+
+class PdfTableExtractionCellTextLimitExceededError(PdfTableExtractionError):
+    code = "PDF_TABLE_EXTRACTION_CELL_TEXT_LIMIT_EXCEEDED"
+    safe_message = "A PDF table cell exceeds the configured text limit."
+
+
+class PdfTableExtractionObjectNotFoundError(PdfTableExtractionError):
+    code = "PDF_TABLE_OBJECT_NOT_FOUND"
+    safe_message = "The stored PDF object could not be found."
+
+
+class PdfTableExtractionObjectStorageError(PdfTableExtractionError):
+    code = "PDF_TABLE_OBJECT_STORAGE_FAILED"
+    safe_message = "The stored PDF object is temporarily unavailable."
+
+
+class PdfTableExtractionRepositoryError(Exception):
+    """Base error for PDF table-result persistence failures."""
+
+
+class PdfTableExtractionResultAlreadyExistsError(PdfTableExtractionRepositoryError):
+    """Raised when conditional creation finds an existing result identity."""
+
+
+class PdfTableExtractionSerializationError(PdfTableExtractionRepositoryError):
+    """Raised when table evidence cannot safely cross the DynamoDB boundary."""
+
+
+class PdfTableExtractionResultStorageError(PdfTableExtractionError):
+    code = "PDF_TABLE_EXTRACTION_STORAGE_FAILED"
+    safe_message = "The PDF table-extraction result could not be stored."
+
+
 class InvalidProductSourceCursorError(ProductSourceRepositoryError):
     """Raised when an opaque product-source cursor is invalid."""
 

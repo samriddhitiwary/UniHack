@@ -1,6 +1,6 @@
 # DynamoDB Data Model
 
-The local model contains configuration-derived products, sources, processing-jobs, and extraction-results tables. No production table is provisioned by this repository.
+The local model contains configuration-derived products, sources, processing-jobs, extraction-results, and table-extraction-results tables. No production table is provisioned by this repository.
 
 ## Item shape
 
@@ -136,6 +136,17 @@ alone contain `jobId` and `createdAt`, so `JobIdIndex` (`jobId`/`createdAt`) is 
 There is no scan, list API, result API, update, or delete contract. Missing/inconsistent
 page records are controlled serialization errors and cannot produce a completed job.
 
+## PDF table extraction results table
+
+The table-extraction-results table uses partition key `extractionId` and sort key `recordKey`.
+
+| Record | Contents |
+| --- | --- |
+| `META` | Job/product/source IDs, parser/version, page/table/row/cell counts, quality, warnings, creation time |
+| `TABLE#000001#000001` | Page/table numbers, dimensions, and nested ordered row/cell evidence |
+
+One table per item avoids one aggregate payload. Each serialized record is rejected above a conservative 390,000-byte ceiling. Only META contains `jobId` and `createdAt`, so `JobIdIndex` is sparse. Creation is conditional, partition reads paginate and validate complete reconstruction, and job lookup uses the index followed by the partition query. No scan or global list exists.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -145,7 +156,7 @@ uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
 or `make dynamodb-create-tables`. The script creates products, sources, processing-jobs,
-and extraction-results tables with their documented indexes. It waits for each table and
+extraction-results, and table-extraction-results tables with their documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

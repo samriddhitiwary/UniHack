@@ -59,3 +59,19 @@ def test_upload_limits_must_be_positive(field: str) -> None:
 def test_pdf_extraction_limits_must_be_positive(field: str) -> None:
     with pytest.raises(ValidationError):
         Settings(**{field: 0})
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "pdf_table_extraction_max_pages",
+        "pdf_table_extraction_max_tables",
+        "pdf_table_extraction_max_rows_per_table",
+        "pdf_table_extraction_max_columns_per_table",
+        "pdf_table_extraction_max_cells",
+        "pdf_table_extraction_max_cell_characters",
+    ],
+)
+def test_pdf_table_extraction_limits_must_be_positive(field: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**{field: 0})
