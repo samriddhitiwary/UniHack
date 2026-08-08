@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     pdf_table_extraction_max_columns_per_table: int = Field(default=200, gt=0)
     pdf_table_extraction_max_cells: int = Field(default=500_000, gt=0)
     pdf_table_extraction_max_cell_characters: int = Field(default=20_000, gt=0)
+    csv_processing_max_file_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
+    csv_processing_max_rows: int = Field(default=100_000, gt=0)
+    csv_processing_max_columns: int = Field(default=500, gt=0)
+    csv_processing_max_total_cells: int = Field(default=1_000_000, gt=0)
+    csv_processing_max_cell_characters: int = Field(default=50_000, gt=0)
+    csv_processing_sample_bytes: int = Field(default=65_536, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

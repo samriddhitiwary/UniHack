@@ -291,6 +291,100 @@ class PdfTableExtractionResultStorageError(PdfTableExtractionError):
     safe_message = "The PDF table-extraction result could not be stored."
 
 
+class CsvProcessingError(Exception):
+    """Base controlled CSV processing failure with safe job metadata."""
+
+    code = "CSV_PROCESSING_FAILED"
+    safe_message = "CSV processing failed."
+
+
+class InvalidCsvProcessingJobError(CsvProcessingError):
+    code = "CSV_PROCESSING_JOB_INVALID"
+    safe_message = "The processing job is not eligible for CSV processing."
+
+
+class InvalidCsvSourceError(CsvProcessingError):
+    code = "CSV_SOURCE_INVALID"
+    safe_message = "The processing job does not reference a valid stored CSV source."
+
+
+class CsvEncodingUnsupportedError(CsvProcessingError):
+    code = "CSV_ENCODING_UNSUPPORTED"
+    safe_message = "The CSV must use UTF-8 encoding."
+
+
+class CsvDelimiterUndeterminedError(CsvProcessingError):
+    code = "CSV_DELIMITER_UNDETERMINED"
+    safe_message = "The CSV delimiter could not be determined safely."
+
+
+class CsvEmptyFileError(CsvProcessingError):
+    code = "CSV_EMPTY_FILE"
+    safe_message = "The CSV does not contain a header row."
+
+
+class CsvParseError(CsvProcessingError):
+    code = "CSV_PARSE_FAILED"
+    safe_message = "The CSV structure could not be parsed."
+
+
+class CsvFileSizeLimitExceededError(CsvProcessingError):
+    code = "CSV_PROCESSING_FILE_SIZE_LIMIT_EXCEEDED"
+    safe_message = "The CSV exceeds the configured processing file-size limit."
+
+
+class CsvRowLimitExceededError(CsvProcessingError):
+    code = "CSV_PROCESSING_ROW_LIMIT_EXCEEDED"
+    safe_message = "The CSV exceeds the configured data-row limit."
+
+
+class CsvColumnLimitExceededError(CsvProcessingError):
+    code = "CSV_PROCESSING_COLUMN_LIMIT_EXCEEDED"
+    safe_message = "The CSV exceeds the configured column limit."
+
+
+class CsvCellLimitExceededError(CsvProcessingError):
+    code = "CSV_PROCESSING_CELL_LIMIT_EXCEEDED"
+    safe_message = "The CSV exceeds the configured data-cell limit."
+
+
+class CsvCellTextLimitExceededError(CsvProcessingError):
+    code = "CSV_PROCESSING_CELL_TEXT_LIMIT_EXCEEDED"
+    safe_message = "A CSV cell exceeds the configured text limit."
+
+
+class CsvResultItemTooLargeError(CsvProcessingError):
+    code = "CSV_PROCESSING_RESULT_ITEM_TOO_LARGE"
+    safe_message = "A CSV result record exceeds the safe persistence size."
+
+
+class CsvObjectNotFoundError(CsvProcessingError):
+    code = "CSV_OBJECT_NOT_FOUND"
+    safe_message = "The stored CSV object could not be found."
+
+
+class CsvObjectStorageError(CsvProcessingError):
+    code = "CSV_OBJECT_STORAGE_FAILED"
+    safe_message = "The stored CSV object is temporarily unavailable."
+
+
+class CsvProcessingRepositoryError(Exception):
+    """Base error for CSV processing-result persistence failures."""
+
+
+class CsvProcessingResultAlreadyExistsError(CsvProcessingRepositoryError):
+    """Raised when conditional creation finds an existing processing identity."""
+
+
+class CsvProcessingSerializationError(CsvProcessingRepositoryError):
+    """Raised when CSV evidence cannot safely cross the DynamoDB boundary."""
+
+
+class CsvProcessingResultStorageError(CsvProcessingError):
+    code = "CSV_PROCESSING_STORAGE_FAILED"
+    safe_message = "The CSV processing result could not be stored."
+
+
 class InvalidProductSourceCursorError(ProductSourceRepositoryError):
     """Raised when an opaque product-source cursor is invalid."""
 

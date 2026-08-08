@@ -12,11 +12,19 @@ from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from pydantic import BaseModel
 
 from app.core.exceptions import (
+    CsvProcessingSerializationError,
     PdfExtractionSerializationError,
     PdfTableExtractionSerializationError,
     ProcessingJobSerializationError,
     ProductSerializationError,
     ProductSourceSerializationError,
+)
+from app.domain.csv_processing import (
+    CsvCell,
+    CsvHeaderCell,
+    CsvProcessingQualityStatus,
+    CsvProcessingResult,
+    CsvRow,
 )
 from app.domain.pdf_extraction import (
     PdfExtractionPage,
@@ -446,6 +454,135 @@ def _pdf_extracted_table_from_item(item: Mapping[str, object]) -> PdfExtractedTa
         column_count=_integer(item["columnCount"], "columnCount"),
         cell_count=_integer(item["cellCount"], "cellCount"),
         rows=tuple(rows),
+    )
+
+
+def csv_processing_metadata_to_item(result: CsvProcessingResult) -> dict[str, object]:
+    return {
+        "processingId": result.processing_id,
+        "recordKey": "META",
+        "jobId": result.job_id,
+        "productId": result.product_id,
+        "sourceId": result.source_id,
+        "encoding": result.encoding,
+        "delimiter": result.delimiter,
+        "header": [
+            {"columnIndex": cell.column_index, "text": cell.text, "isEmpty": cell.is_empty}
+            for cell in result.header
+        ],
+        "columnCount": result.column_count,
+        "rowCount": result.row_count,
+        "malformedRowCount": result.malformed_row_count,
+        "emptyCellCount": result.empty_cell_count,
+        "totalCellCount": result.total_cell_count,
+        "qualityStatus": result.quality_status,
+        "warningCodes": result.warning_codes,
+        "createdAt": result.created_at,
+    }
+
+
+def csv_processing_row_to_item(processing_id: UUID, row: CsvRow) -> dict[str, object]:
+    def cell_item(cell: CsvCell) -> dict[str, object]:
+        return {"columnIndex": cell.column_index, "text": cell.text, "isEmpty": cell.is_empty}
+
+    return {
+        "processingId": processing_id,
+        "recordKey": f"ROW#{row.row_number:09d}",
+        "rowNumber": row.row_number,
+        "cells": [cell_item(cell) for cell in row.cells],
+        "extraCells": [cell_item(cell) for cell in row.extra_cells],
+        "originalColumnCount": row.original_column_count,
+        "normalizedColumnCount": row.normalized_column_count,
+        "isMalformed": row.is_malformed,
+        "warningCodes": row.warning_codes,
+    }
+
+
+def csv_processing_result_from_items(
+    items: Sequence[Mapping[str, object]],
+) -> CsvProcessingResult:
+    try:
+        metadata_items = [item for item in items if item.get("recordKey") == "META"]
+        if len(metadata_items) != 1:
+            raise ValueError("one CSV processing metadata record is required")
+        metadata = metadata_items[0]
+        processing_id = UUID(str(metadata["processingId"]))
+        raw_header = metadata["header"]
+        if not isinstance(raw_header, Sequence) or isinstance(raw_header, (str, bytes)):
+            raise ValueError("header must be a sequence")
+        header = tuple(_csv_header_cell_from_item(cell) for cell in raw_header)
+        row_items = sorted(
+            (item for item in items if str(item.get("recordKey", "")).startswith("ROW#")),
+            key=lambda item: str(item["recordKey"]),
+        )
+        rows = tuple(_csv_row_from_item(item) for item in row_items)
+        warnings = metadata.get("warningCodes", [])
+        if not isinstance(warnings, Sequence) or isinstance(warnings, (str, bytes)):
+            raise ValueError("warningCodes must be a sequence")
+        return CsvProcessingResult(
+            processing_id=processing_id,
+            job_id=UUID(str(metadata["jobId"])),
+            product_id=UUID(str(metadata["productId"])),
+            source_id=UUID(str(metadata["sourceId"])),
+            encoding=_required_string(metadata["encoding"], "encoding"),
+            delimiter=_required_string(metadata["delimiter"], "delimiter"),
+            header=header,
+            column_count=_integer(metadata["columnCount"], "columnCount"),
+            row_count=_integer(metadata["rowCount"], "rowCount"),
+            malformed_row_count=_integer(metadata["malformedRowCount"], "malformedRowCount"),
+            empty_cell_count=_integer(metadata["emptyCellCount"], "emptyCellCount"),
+            total_cell_count=_integer(metadata["totalCellCount"], "totalCellCount"),
+            quality_status=CsvProcessingQualityStatus(str(metadata["qualityStatus"])),
+            rows=rows,
+            warning_codes=tuple(_required_string(code, "warningCode") for code in warnings),
+            created_at=parse_utc(metadata["createdAt"]),
+        )
+    except CsvProcessingSerializationError:
+        raise
+    except (KeyError, TypeError, ValueError, ProductSerializationError) as exc:
+        raise CsvProcessingSerializationError(
+            "DynamoDB items are not a valid CSV processing result"
+        ) from exc
+
+
+def _csv_header_cell_from_item(value: object) -> CsvHeaderCell:
+    if not isinstance(value, Mapping):
+        raise ValueError("header cell must be a mapping")
+    return CsvHeaderCell(
+        column_index=_integer(value["columnIndex"], "columnIndex"),
+        text=_required_string(value["text"], "text"),
+        is_empty=_boolean(value["isEmpty"], "isEmpty"),
+    )
+
+
+def _csv_cell_from_item(value: object) -> CsvCell:
+    if not isinstance(value, Mapping):
+        raise ValueError("CSV cell must be a mapping")
+    return CsvCell(
+        column_index=_integer(value["columnIndex"], "columnIndex"),
+        text=_required_string(value["text"], "text"),
+        is_empty=_boolean(value["isEmpty"], "isEmpty"),
+    )
+
+
+def _csv_row_from_item(item: Mapping[str, object]) -> CsvRow:
+    raw_cells = item["cells"]
+    raw_extra = item["extraCells"]
+    warnings = item["warningCodes"]
+    if not isinstance(raw_cells, Sequence) or isinstance(raw_cells, (str, bytes)):
+        raise ValueError("cells must be a sequence")
+    if not isinstance(raw_extra, Sequence) or isinstance(raw_extra, (str, bytes)):
+        raise ValueError("extraCells must be a sequence")
+    if not isinstance(warnings, Sequence) or isinstance(warnings, (str, bytes)):
+        raise ValueError("warningCodes must be a sequence")
+    return CsvRow(
+        row_number=_integer(item["rowNumber"], "rowNumber"),
+        cells=tuple(_csv_cell_from_item(cell) for cell in raw_cells),
+        extra_cells=tuple(_csv_cell_from_item(cell) for cell in raw_extra),
+        original_column_count=_integer(item["originalColumnCount"], "originalColumnCount"),
+        normalized_column_count=_integer(item["normalizedColumnCount"], "normalizedColumnCount"),
+        is_malformed=_boolean(item["isMalformed"], "isMalformed"),
+        warning_codes=tuple(_required_string(code, "warningCode") for code in warnings),
     )
 
 

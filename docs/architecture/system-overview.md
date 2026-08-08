@@ -130,3 +130,15 @@ PdfTableExtractionService -> ProcessingJobRepository (RUNNING/COMPLETED/FAILED)
 ```
 
 Page and parser table order, empty cells, and rectangular row/column positions are preserved. Readable PDFs without tables complete as NO_TABLES. Results live outside sources/jobs and each table record is size-checked before persistence. There is no OCR, semantic table joining, AI, worker, or execution/result API.
+
+SPEC-018 adds direct CSV processing orchestration:
+
+```text
+CsvProcessingService -> ProcessingJobRepository (RUNNING/COMPLETED/FAILED)
+                     -> ProductSourceRepository (scoped CSV metadata)
+                     -> ObjectStorage.open (bounded binary stream)
+                     -> CsvParser (UTF-8, allowlisted dialect, ordered strings)
+                     -> CsvProcessingResultRepository (META + ROW evidence)
+```
+
+Headers, data-row order, blank cells, leading zeroes, quoted multiline text, and formula-looking strings are preserved without evaluation. Short and overflow rows complete with explicit warnings; structural and hard-limit failures do not persist successful results. There is no schema inference, classification, attribute extraction, API, worker, or AI behavior.

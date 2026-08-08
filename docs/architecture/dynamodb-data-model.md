@@ -1,6 +1,6 @@
 # DynamoDB Data Model
 
-The local model contains configuration-derived products, sources, processing-jobs, extraction-results, and table-extraction-results tables. No production table is provisioned by this repository.
+The local model contains configuration-derived products, sources, processing-jobs, extraction-results, table-extraction-results, and csv-processing-results tables. No production table is provisioned by this repository.
 
 ## Item shape
 
@@ -147,6 +147,17 @@ The table-extraction-results table uses partition key `extractionId` and sort ke
 
 One table per item avoids one aggregate payload. Each serialized record is rejected above a conservative 390,000-byte ceiling. Only META contains `jobId` and `createdAt`, so `JobIdIndex` is sparse. Creation is conditional, partition reads paginate and validate complete reconstruction, and job lookup uses the index followed by the partition query. No scan or global list exists.
 
+## CSV processing results table
+
+The csv-processing-results table uses partition key `processingId` and sort key `recordKey`.
+
+| Record | Contents |
+| --- | --- |
+| `META` | Job/product/source IDs, encoding, delimiter, indexed header, aggregate counts, quality, warnings, creation time |
+| `ROW#000000001` | Row number, canonical cells, overflow cells, original/normalized widths, malformed flag, warnings |
+
+One row per item preserves source order without one unbounded aggregate. Every serialized item is rejected above 390,000 bytes. META alone carries `jobId` and `createdAt`, so `JobIdIndex` is sparse. Conditional creation protects identity; paginated consistent partition queries reconstruct and validate all expected rows; job lookup uses the index and then the partition. No scan or global list exists.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -156,7 +167,7 @@ uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
 or `make dynamodb-create-tables`. The script creates products, sources, processing-jobs,
-extraction-results, and table-extraction-results tables with their documented indexes. It waits for each table and
+extraction-results, table-extraction-results, and csv-processing-results tables with their documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

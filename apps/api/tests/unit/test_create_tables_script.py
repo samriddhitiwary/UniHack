@@ -65,17 +65,20 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     jobs = MagicMock()
     results = MagicMock()
     table_results = MagicMock()
+    csv_results = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
     monkeypatch.setattr(create_tables, "create_extraction_results_table", results)
     monkeypatch.setattr(create_tables, "create_table_extraction_results_table", table_results)
+    monkeypatch.setattr(create_tables, "create_csv_processing_results_table", csv_results)
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
     jobs.assert_called_once_with()
     results.assert_called_once_with()
     table_results.assert_called_once_with()
+    csv_results.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
@@ -156,6 +159,25 @@ def test_table_extraction_results_table_definition_and_idempotence(
     request = client.create_table.call_args_list[0].kwargs
     assert request["KeySchema"] == [
         {"AttributeName": "extractionId", "KeyType": "HASH"},
+        {"AttributeName": "recordKey", "KeyType": "RANGE"},
+    ]
+    assert request["GlobalSecondaryIndexes"][0]["IndexName"] == "JobIdIndex"
+
+
+def test_csv_processing_results_table_definition_and_idempotence(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-csv-processing-results"
+    client = MagicMock()
+    client.create_table.side_effect = [{}, _resource_in_use()]
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+    assert create_tables.create_csv_processing_results_table() is True
+    assert create_tables.create_csv_processing_results_table() is False
+    request = client.create_table.call_args_list[0].kwargs
+    assert request["KeySchema"] == [
+        {"AttributeName": "processingId", "KeyType": "HASH"},
         {"AttributeName": "recordKey", "KeyType": "RANGE"},
     ]
     assert request["GlobalSecondaryIndexes"][0]["IndexName"] == "JobIdIndex"
