@@ -1,6 +1,6 @@
 # DynamoDB Data Model
 
-The local model contains configuration-derived products, sources, processing-jobs, extraction-results, table-extraction-results, and csv-processing-results tables. No production table is provisioned by this repository.
+The local model contains configuration-derived products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, and image-analysis-results tables. No production table is provisioned by this repository.
 
 ## Item shape
 
@@ -158,6 +158,23 @@ The csv-processing-results table uses partition key `processingId` and sort key 
 
 One row per item preserves source order without one unbounded aggregate. Every serialized item is rejected above 390,000 bytes. META alone carries `jobId` and `createdAt`, so `JobIdIndex` is sparse. Conditional creation protects identity; paginated consistent partition queries reconstruct and validate all expected rows; job lookup uses the index and then the partition. No scan or global list exists.
 
+## Image analysis results table
+
+The image-analysis-results table uses partition key `analysisId` and sort key `recordKey`.
+
+| Record | Contents |
+| --- | --- |
+| `META` | Job/product/source IDs, parser/version, bounded image metadata, candidate status/score, counts, warning codes, creation time |
+| `REGION#000001` | Ordered region type, bounded pixel box, basis-point coordinates, and heuristic score |
+
+One record per deterministic region keeps geometry evidence separate from aggregate metadata. Every serialized item is rejected above 390,000 bytes. META alone carries `jobId` and `createdAt`, making `JobIdIndex` sparse. Conditional creation protects the result identity; paginated consistent partition queries reconstruct and validate all expected regions; job lookup uses the index followed by the partition query. No image bytes, crops, OCR output, scan, global list, update, delete, or public result API exists.
+
+| Image-analysis access pattern | Operation |
+| --- | --- |
+| Create result | Conditional META `PutItem`, followed by bounded REGION records |
+| Retrieve by analysis ID | Paginated consistent partition query |
+| Retrieve by job ID | `JobIdIndex` query followed by analysis partition query |
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -167,7 +184,7 @@ uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
 or `make dynamodb-create-tables`. The script creates products, sources, processing-jobs,
-extraction-results, table-extraction-results, and csv-processing-results tables with their documented indexes. It waits for each table and
+extraction-results, table-extraction-results, csv-processing-results, and image-analysis-results tables with their documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

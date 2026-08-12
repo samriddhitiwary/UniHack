@@ -307,6 +307,53 @@ def create_csv_processing_results_table() -> bool:
     return created
 
 
+def create_image_analysis_results_table() -> bool:
+    """Create the configured image-analysis-results table idempotently."""
+    settings = get_settings()
+    if not settings.dynamodb_endpoint_url:
+        raise RuntimeError("DYNAMODB_ENDPOINT_URL is required for local table creation")
+    client = create_dynamodb_client(settings)
+    wait_for_dynamodb(client)
+    table_name = settings.table_name("image-analysis-results")
+    created = False
+    try:
+        client.create_table(
+            TableName=table_name,
+            AttributeDefinitions=[
+                {"AttributeName": "analysisId", "AttributeType": "S"},
+                {"AttributeName": "recordKey", "AttributeType": "S"},
+                {"AttributeName": "jobId", "AttributeType": "S"},
+                {"AttributeName": "createdAt", "AttributeType": "S"},
+            ],
+            KeySchema=[
+                {"AttributeName": "analysisId", "KeyType": "HASH"},
+                {"AttributeName": "recordKey", "KeyType": "RANGE"},
+            ],
+            GlobalSecondaryIndexes=[
+                {
+                    "IndexName": JOB_ID_INDEX,
+                    "KeySchema": [
+                        {"AttributeName": "jobId", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                }
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        created = True
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") != "ResourceInUseException":
+            raise
+    client.get_waiter("table_exists").wait(TableName=table_name)
+    logger.info(
+        "Image-analysis-results table %s is %s",
+        table_name,
+        "created" if created else "already present",
+    )
+    return created
+
+
 def wait_for_dynamodb(
     client: BaseClient, *, attempts: int = 20, delay: float = 0.25
 ) -> None:
@@ -329,6 +376,7 @@ def main() -> int:
     create_extraction_results_table()
     create_table_extraction_results_table()
     create_csv_processing_results_table()
+    create_image_analysis_results_table()
     return 0
 
 

@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from app.core.exceptions import (
     CsvProcessingSerializationError,
+    ImageAnalysisSerializationError,
     PdfExtractionSerializationError,
     PdfTableExtractionSerializationError,
     ProcessingJobSerializationError,
@@ -25,6 +26,14 @@ from app.domain.csv_processing import (
     CsvProcessingQualityStatus,
     CsvProcessingResult,
     CsvRow,
+)
+from app.domain.image_analysis import (
+    ImageAnalysisRegion,
+    ImageAnalysisResult,
+    ImageMetadata,
+    ImageOrientation,
+    ImageRegionType,
+    NameplateCandidateStatus,
 )
 from app.domain.pdf_extraction import (
     PdfExtractionPage,
@@ -583,6 +592,130 @@ def _csv_row_from_item(item: Mapping[str, object]) -> CsvRow:
         normalized_column_count=_integer(item["normalizedColumnCount"], "normalizedColumnCount"),
         is_malformed=_boolean(item["isMalformed"], "isMalformed"),
         warning_codes=tuple(_required_string(code, "warningCode") for code in warnings),
+    )
+
+
+def image_analysis_metadata_to_item(result: ImageAnalysisResult) -> dict[str, object]:
+    metadata = result.metadata
+    return {
+        "analysisId": result.analysis_id,
+        "recordKey": "META",
+        "jobId": result.job_id,
+        "productId": result.product_id,
+        "sourceId": result.source_id,
+        "parser": result.parser,
+        "parserVersion": result.parser_version,
+        "format": metadata.format,
+        "mimeType": metadata.mime_type,
+        "width": metadata.width,
+        "height": metadata.height,
+        "pixelCount": metadata.pixel_count,
+        "aspectRatioNumerator": metadata.aspect_ratio_numerator,
+        "aspectRatioDenominator": metadata.aspect_ratio_denominator,
+        "colorMode": metadata.color_mode,
+        "hasAlpha": metadata.has_alpha,
+        "isGrayscale": metadata.is_grayscale,
+        "orientation": metadata.orientation,
+        "fileSizeBytes": metadata.file_size_bytes,
+        "nameplateCandidateStatus": result.nameplate_candidate_status,
+        "heuristicScore": result.heuristic_score,
+        "regionCount": len(result.regions),
+        "warningCodes": result.warning_codes,
+        "createdAt": result.created_at,
+    }
+
+
+def image_analysis_region_to_item(
+    analysis_id: UUID, index: int, region: ImageAnalysisRegion
+) -> dict[str, object]:
+    return {
+        "analysisId": analysis_id,
+        "recordKey": f"REGION#{index:06d}",
+        "regionId": region.region_id,
+        "regionType": region.region_type,
+        "x": region.x,
+        "y": region.y,
+        "width": region.width,
+        "height": region.height,
+        "relativeXBp": region.relative_x_bp,
+        "relativeYBp": region.relative_y_bp,
+        "relativeWidthBp": region.relative_width_bp,
+        "relativeHeightBp": region.relative_height_bp,
+        "heuristicScore": region.heuristic_score,
+    }
+
+
+def image_analysis_result_from_items(
+    items: Sequence[Mapping[str, object]],
+) -> ImageAnalysisResult:
+    try:
+        metadata_items = [item for item in items if item.get("recordKey") == "META"]
+        if len(metadata_items) != 1:
+            raise ValueError("one image-analysis metadata record is required")
+        item = metadata_items[0]
+        region_items = sorted(
+            (value for value in items if str(value.get("recordKey", "")).startswith("REGION#")),
+            key=lambda value: str(value["recordKey"]),
+        )
+        regions = tuple(_image_region_from_item(value) for value in region_items)
+        warnings = item.get("warningCodes", [])
+        if not isinstance(warnings, Sequence) or isinstance(warnings, (str, bytes)):
+            raise ValueError("warningCodes must be a sequence")
+        if _integer(item["regionCount"], "regionCount") != len(regions):
+            raise ValueError("region count must match records")
+        metadata = ImageMetadata(
+            format=_required_string(item["format"], "format"),
+            mime_type=_required_string(item["mimeType"], "mimeType"),
+            width=_integer(item["width"], "width"),
+            height=_integer(item["height"], "height"),
+            pixel_count=_integer(item["pixelCount"], "pixelCount"),
+            aspect_ratio_numerator=_integer(item["aspectRatioNumerator"], "aspectRatioNumerator"),
+            aspect_ratio_denominator=_integer(
+                item["aspectRatioDenominator"], "aspectRatioDenominator"
+            ),
+            color_mode=_required_string(item["colorMode"], "colorMode"),
+            has_alpha=_boolean(item["hasAlpha"], "hasAlpha"),
+            is_grayscale=_boolean(item["isGrayscale"], "isGrayscale"),
+            orientation=ImageOrientation(str(item["orientation"])),
+            file_size_bytes=_integer(item["fileSizeBytes"], "fileSizeBytes"),
+        )
+        return ImageAnalysisResult(
+            analysis_id=UUID(str(item["analysisId"])),
+            job_id=UUID(str(item["jobId"])),
+            product_id=UUID(str(item["productId"])),
+            source_id=UUID(str(item["sourceId"])),
+            parser=_required_string(item["parser"], "parser"),
+            parser_version=_required_string(item["parserVersion"], "parserVersion"),
+            metadata=metadata,
+            nameplate_candidate_status=NameplateCandidateStatus(
+                str(item["nameplateCandidateStatus"])
+            ),
+            heuristic_score=_integer(item["heuristicScore"], "heuristicScore"),
+            regions=regions,
+            warning_codes=tuple(_required_string(code, "warningCode") for code in warnings),
+            created_at=parse_utc(item["createdAt"]),
+        )
+    except ImageAnalysisSerializationError:
+        raise
+    except (KeyError, TypeError, ValueError, ProductSerializationError) as exc:
+        raise ImageAnalysisSerializationError(
+            "DynamoDB items are not a valid image-analysis result"
+        ) from exc
+
+
+def _image_region_from_item(item: Mapping[str, object]) -> ImageAnalysisRegion:
+    return ImageAnalysisRegion(
+        region_id=_required_string(item["regionId"], "regionId"),
+        region_type=ImageRegionType(str(item["regionType"])),
+        x=_integer(item["x"], "x"),
+        y=_integer(item["y"], "y"),
+        width=_integer(item["width"], "width"),
+        height=_integer(item["height"], "height"),
+        relative_x_bp=_integer(item["relativeXBp"], "relativeXBp"),
+        relative_y_bp=_integer(item["relativeYBp"], "relativeYBp"),
+        relative_width_bp=_integer(item["relativeWidthBp"], "relativeWidthBp"),
+        relative_height_bp=_integer(item["relativeHeightBp"], "relativeHeightBp"),
+        heuristic_score=_integer(item["heuristicScore"], "heuristicScore"),
     )
 
 

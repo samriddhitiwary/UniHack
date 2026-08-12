@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-018: CSV Processing Engine**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-019: Image and Nameplate Analysis Foundation**.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ npm --prefix=apps/web run dev
 
 Open the web app at <http://localhost:5173>. API liveness is at <http://localhost:8000/api/v1/health>; readiness is at <http://localhost:8000/api/v1/health/ready>.
 
-The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, table-extraction-results, and csv-processing-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
+The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, and image-analysis-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
 
 `STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains product, product-source, processing-job, object-storage, PDF extraction, and CSV processing foundations. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code, store evidence separately, and update job lifecycle without changing source status. Content/file replacement, bulk deletion, restore, and download are not exposed. No classification, attribute extraction, OCR, AI, S3, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains product, product-source, processing-job, object-storage, PDF extraction, CSV processing, and image-analysis foundations. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code, store evidence separately, and update job lifecycle without changing source status. Content/file replacement, bulk deletion, restore, and download are not exposed. No classification, attribute extraction, OCR, AI, S3, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -101,6 +101,8 @@ The PDF table-extraction service processes only PENDING `PDF_TABLE_EXTRACTION` j
 
 The CSV processing service processes only PENDING `CSV_PROCESSING` jobs. It uses strict standard-library CSV parsing through `ObjectStorage.open`, accepts UTF-8/BOM and comma/semicolon/tab/pipe delimiters, preserves string evidence and malformed-row warnings, enforces independent limits, and stores META/ROW records separately. It performs no formula evaluation or semantic conversion and exposes no execution or result API. See the [CSV processing architecture](docs/architecture/csv-processing.md).
 
+The image-analysis service processes only PENDING `IMAGE_ANALYSIS` jobs for stored IMAGE sources. Pillow validates PNG, JPEG, and WEBP format/MIME agreement under bounded byte, dimension, pixel, animation, and decompression-bomb controls. Results contain safe metadata, six deterministic regions, and a geometry-only nameplate-candidate heuristic in composite META/REGION records. It performs no OCR, object detection, AI vision, or attribute extraction and exposes no execution or result API. See the [image analysis architecture](docs/architecture/image-analysis.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -121,6 +123,7 @@ The CSV processing service processes only PENDING `CSV_PROCESSING` jobs. It uses
 - [SPEC-016](docs/specs/SPEC-016-pdf-text-extraction-engine.md)
 - [SPEC-017](docs/specs/SPEC-017-pdf-table-extraction-engine.md)
 - [SPEC-018](docs/specs/SPEC-018-csv-processing-engine.md)
+- [SPEC-019](docs/specs/SPEC-019-image-and-nameplate-analysis-foundation.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -130,6 +133,7 @@ The CSV processing service processes only PENDING `CSV_PROCESSING` jobs. It uses
 - [PDF text extraction](docs/architecture/pdf-text-extraction.md)
 - [PDF table extraction](docs/architecture/pdf-table-extraction.md)
 - [CSV processing](docs/architecture/csv-processing.md)
+- [Image and nameplate analysis](docs/architecture/image-analysis.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

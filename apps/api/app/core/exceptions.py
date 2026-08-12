@@ -385,6 +385,95 @@ class CsvProcessingResultStorageError(CsvProcessingError):
     safe_message = "The CSV processing result could not be stored."
 
 
+class ImageAnalysisError(Exception):
+    """Base controlled image-analysis failure with safe job metadata."""
+
+    code = "IMAGE_ANALYSIS_FAILED"
+    safe_message = "Image analysis failed."
+
+
+class InvalidImageAnalysisJobError(ImageAnalysisError):
+    code = "IMAGE_ANALYSIS_JOB_INVALID"
+    safe_message = "The processing job is not eligible for image analysis."
+
+
+class InvalidImageSourceError(ImageAnalysisError):
+    code = "IMAGE_SOURCE_INVALID"
+    safe_message = "The processing job does not reference a valid stored image source."
+
+
+class ImageDecodeError(ImageAnalysisError):
+    code = "IMAGE_DECODE_FAILED"
+    safe_message = "The image could not be decoded safely."
+
+
+class ImageFormatUnsupportedError(ImageAnalysisError):
+    code = "IMAGE_FORMAT_UNSUPPORTED"
+    safe_message = "The decoded image format is unsupported."
+
+
+class ImageFormatMismatchError(ImageAnalysisError):
+    code = "IMAGE_FORMAT_MISMATCH"
+    safe_message = "The decoded image format does not match source metadata."
+
+
+class ImageAnimationNotSupportedError(ImageAnalysisError):
+    code = "IMAGE_ANIMATION_NOT_SUPPORTED"
+    safe_message = "Animated images are not supported for analysis."
+
+
+class ImageAnalysisFileSizeLimitExceededError(ImageAnalysisError):
+    code = "IMAGE_ANALYSIS_FILE_SIZE_LIMIT_EXCEEDED"
+    safe_message = "The image exceeds the configured analysis file-size limit."
+
+
+class ImageAnalysisWidthLimitExceededError(ImageAnalysisError):
+    code = "IMAGE_ANALYSIS_WIDTH_LIMIT_EXCEEDED"
+    safe_message = "The image exceeds the configured width limit."
+
+
+class ImageAnalysisHeightLimitExceededError(ImageAnalysisError):
+    code = "IMAGE_ANALYSIS_HEIGHT_LIMIT_EXCEEDED"
+    safe_message = "The image exceeds the configured height limit."
+
+
+class ImageAnalysisPixelLimitExceededError(ImageAnalysisError):
+    code = "IMAGE_ANALYSIS_PIXEL_LIMIT_EXCEEDED"
+    safe_message = "The image exceeds the configured pixel limit."
+
+
+class ImageAnalysisRegionLimitExceededError(ImageAnalysisError):
+    code = "IMAGE_ANALYSIS_REGION_LIMIT_EXCEEDED"
+    safe_message = "The image exceeds the configured analysis-region limit."
+
+
+class ImageObjectNotFoundError(ImageAnalysisError):
+    code = "IMAGE_OBJECT_NOT_FOUND"
+    safe_message = "The stored image object could not be found."
+
+
+class ImageObjectStorageError(ImageAnalysisError):
+    code = "IMAGE_OBJECT_STORAGE_FAILED"
+    safe_message = "The stored image object is temporarily unavailable."
+
+
+class ImageAnalysisRepositoryError(Exception):
+    """Base error for image-analysis result persistence failures."""
+
+
+class ImageAnalysisResultAlreadyExistsError(ImageAnalysisRepositoryError):
+    """Raised when conditional creation finds an existing analysis identity."""
+
+
+class ImageAnalysisSerializationError(ImageAnalysisRepositoryError):
+    """Raised when image evidence cannot safely cross the DynamoDB boundary."""
+
+
+class ImageAnalysisResultStorageError(ImageAnalysisError):
+    code = "IMAGE_ANALYSIS_STORAGE_FAILED"
+    safe_message = "The image-analysis result could not be stored."
+
+
 class InvalidProductSourceCursorError(ProductSourceRepositoryError):
     """Raised when an opaque product-source cursor is invalid."""
 

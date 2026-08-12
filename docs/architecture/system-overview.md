@@ -142,3 +142,15 @@ CsvProcessingService -> ProcessingJobRepository (RUNNING/COMPLETED/FAILED)
 ```
 
 Headers, data-row order, blank cells, leading zeroes, quoted multiline text, and formula-looking strings are preserved without evaluation. Short and overflow rows complete with explicit warnings; structural and hard-limit failures do not persist successful results. There is no schema inference, classification, attribute extraction, API, worker, or AI behavior.
+
+SPEC-019 adds direct image-analysis orchestration:
+
+```text
+ImageAnalysisService -> ProcessingJobRepository (RUNNING/COMPLETED/FAILED)
+                     -> ProductSourceRepository (scoped IMAGE metadata)
+                     -> ObjectStorage.open (bounded binary stream)
+                     -> ImageInspector (Pillow validation and safe metadata)
+                     -> ImageAnalysisResultRepository (META + REGION evidence)
+```
+
+PNG, JPEG, and WEBP inputs are decoded with format/MIME matching, animation rejection, decompression-bomb safeguards, and explicit byte/dimension/pixel limits. The service stores safe metadata plus six deterministic geometry regions and a pre-OCR suitability heuristic. It performs no OCR, object detection, classification, AI vision, or attribute extraction and exposes no execution or result API.

@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     csv_processing_max_total_cells: int = Field(default=1_000_000, gt=0)
     csv_processing_max_cell_characters: int = Field(default=50_000, gt=0)
     csv_processing_sample_bytes: int = Field(default=65_536, gt=0)
+    image_analysis_max_file_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
+    image_analysis_max_width: int = Field(default=12_000, gt=0)
+    image_analysis_max_height: int = Field(default=12_000, gt=0)
+    image_analysis_max_pixels: int = Field(default=80_000_000, gt=0)
+    image_analysis_max_regions: int = Field(default=16, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

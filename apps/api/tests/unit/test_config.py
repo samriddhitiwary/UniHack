@@ -91,3 +91,18 @@ def test_pdf_table_extraction_limits_must_be_positive(field: str) -> None:
 def test_csv_processing_limits_must_be_positive(field: str) -> None:
     with pytest.raises(ValidationError):
         Settings(**{field: 0})
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "image_analysis_max_file_bytes",
+        "image_analysis_max_width",
+        "image_analysis_max_height",
+        "image_analysis_max_pixels",
+        "image_analysis_max_regions",
+    ],
+)
+def test_image_analysis_limits_must_be_positive(field: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**{field: 0})
