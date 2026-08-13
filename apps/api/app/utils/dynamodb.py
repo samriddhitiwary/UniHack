@@ -258,6 +258,8 @@ def processing_job_to_item(job: ProcessingJob) -> dict[str, object]:
         item["classificationId"] = job.classification_id
     if job.attribute_extraction_id is not None:
         item["attributeExtractionId"] = job.attribute_extraction_id
+    if job.attribute_normalization_id is not None:
+        item["attributeNormalizationId"] = job.attribute_normalization_id
     return item
 
 
@@ -281,6 +283,11 @@ def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
             attribute_extraction_id=(
                 UUID(str(item["attributeExtractionId"]))
                 if "attributeExtractionId" in item
+                else None
+            ),
+            attribute_normalization_id=(
+                UUID(str(item["attributeNormalizationId"]))
+                if "attributeNormalizationId" in item
                 else None
             ),
             job_type=ProcessingJobType(str(item["jobType"])),

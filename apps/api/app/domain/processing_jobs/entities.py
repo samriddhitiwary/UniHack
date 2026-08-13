@@ -38,6 +38,7 @@ class ProcessingJob:
     source_id: UUID | None
     classification_id: UUID | None = None
     attribute_extraction_id: UUID | None = None
+    attribute_normalization_id: UUID | None = None
     job_type: ProcessingJobType
     status: ProcessingJobStatus
     attempt: int
@@ -62,6 +63,7 @@ class ProcessingJob:
             ProcessingJobType.PRODUCT_CLASSIFICATION,
             ProcessingJobType.ATTRIBUTE_EXTRACTION,
             ProcessingJobType.ATTRIBUTE_NORMALIZATION,
+            ProcessingJobType.ATTRIBUTE_CONFLICT_DETECTION,
         }:
             if self.source_id is not None:
                 raise ValueError("product-level jobs must not have a source_id")
@@ -78,6 +80,15 @@ class ProcessingJob:
         elif self.attribute_extraction_id is not None:
             raise ValueError(
                 "attribute_extraction_id is only valid for ATTRIBUTE_NORMALIZATION jobs"
+            )
+        if self.job_type is ProcessingJobType.ATTRIBUTE_CONFLICT_DETECTION:
+            if not isinstance(self.attribute_normalization_id, UUID):
+                raise ValueError(
+                    "ATTRIBUTE_CONFLICT_DETECTION jobs require an attribute_normalization_id"
+                )
+        elif self.attribute_normalization_id is not None:
+            raise ValueError(
+                "attribute_normalization_id is only valid for ATTRIBUTE_CONFLICT_DETECTION jobs"
             )
         if not isinstance(self.status, ProcessingJobStatus):
             raise ValueError("status must be a ProcessingJobStatus")
@@ -156,6 +167,7 @@ class ProcessingJob:
         job_type: ProcessingJobType,
         classification_id: UUID | None = None,
         attribute_extraction_id: UUID | None = None,
+        attribute_normalization_id: UUID | None = None,
         attempt: int = 1,
         now: datetime | None = None,
     ) -> Self:
@@ -166,6 +178,7 @@ class ProcessingJob:
             source_id=source_id,
             classification_id=classification_id,
             attribute_extraction_id=attribute_extraction_id,
+            attribute_normalization_id=attribute_normalization_id,
             job_type=job_type,
             status=ProcessingJobStatus.PENDING,
             attempt=attempt,

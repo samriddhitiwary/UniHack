@@ -76,6 +76,11 @@ class Settings(BaseSettings):
     attribute_normalization_max_decimal_places: int = Field(default=6, ge=0, le=18)
     attribute_normalization_max_candidates: int = Field(default=5_000, gt=0)
     attribute_normalization_max_normalized_value_characters: int = Field(default=10_000, gt=0)
+    attribute_conflict_numeric_relative_tolerance_bp: int = Field(default=50, ge=0, le=10_000)
+    attribute_conflict_numeric_absolute_tolerance: str = "0.000001"
+    attribute_conflict_max_candidates_per_attribute: int = Field(default=100, gt=0)
+    attribute_conflict_max_attributes: int = Field(default=100, gt=0)
+    attribute_conflict_max_groups_per_attribute: int = Field(default=100, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

@@ -72,6 +72,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     category_schemas = MagicMock()
     attribute_results = MagicMock()
     normalization_results = MagicMock()
+    conflict_results = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
@@ -96,6 +97,11 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
         "create_attribute_normalization_results_table",
         normalization_results,
     )
+    monkeypatch.setattr(
+        create_tables,
+        "create_attribute_conflict_detection_results_table",
+        conflict_results,
+    )
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
@@ -109,6 +115,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     category_schemas.assert_called_once_with()
     attribute_results.assert_called_once_with()
     normalization_results.assert_called_once_with()
+    conflict_results.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
@@ -326,6 +333,23 @@ def test_attribute_normalization_results_table_definition(monkeypatch: MonkeyPat
     request = client.create_table.call_args.kwargs
     assert request["KeySchema"] == [
         {"AttributeName": "normalizationId", "KeyType": "HASH"},
+        {"AttributeName": "recordKey", "KeyType": "RANGE"},
+    ]
+    assert request["GlobalSecondaryIndexes"][0]["IndexName"] == "JobIdIndex"
+
+
+def test_attribute_conflict_detection_results_table_definition(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-attribute-conflict-detection-results"
+    client = MagicMock()
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+    assert create_tables.create_attribute_conflict_detection_results_table() is True
+    request = client.create_table.call_args.kwargs
+    assert request["KeySchema"] == [
+        {"AttributeName": "conflictDetectionId", "KeyType": "HASH"},
         {"AttributeName": "recordKey", "KeyType": "RANGE"},
     ]
     assert request["GlobalSecondaryIndexes"][0]["IndexName"] == "JobIdIndex"

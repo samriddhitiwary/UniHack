@@ -799,3 +799,62 @@ class AttributeNormalizationResultAlreadyExistsError(AttributeNormalizationRepos
 
 class AttributeNormalizationSerializationError(AttributeNormalizationRepositoryError):
     """Raised when a normalization partition is malformed or incomplete."""
+
+
+class AttributeConflictDetectionError(Exception):
+    code = "ATTRIBUTE_CONFLICT_ENGINE_FAILED"
+    safe_message = "Attribute conflict detection could not be completed."
+
+
+class InvalidAttributeConflictDetectionJobError(AttributeConflictDetectionError):
+    code = "INVALID_ATTRIBUTE_CONFLICT_DETECTION_JOB"
+    safe_message = "The processing job is not eligible for conflict detection."
+
+
+class AttributeConflictNormalizationRequiredError(AttributeConflictDetectionError):
+    code = "ATTRIBUTE_CONFLICT_NORMALIZATION_REQUIRED"
+    safe_message = "The required attribute normalization result is unavailable."
+
+
+class AttributeConflictCrossProductLineageError(AttributeConflictDetectionError):
+    code = "ATTRIBUTE_CONFLICT_CROSS_PRODUCT_LINEAGE"
+    safe_message = "The normalization result does not belong to this product."
+
+
+class AttributeConflictLimitExceededError(AttributeConflictDetectionError):
+    code = "ATTRIBUTE_CONFLICT_LIMIT_EXCEEDED"
+    safe_message = "Attribute conflict detection exceeds a configured limit."
+
+
+class AttributeConflictAttributeLimitExceededError(AttributeConflictLimitExceededError):
+    code = "ATTRIBUTE_CONFLICT_ATTRIBUTE_LIMIT_EXCEEDED"
+
+
+class AttributeConflictCandidateLimitExceededError(AttributeConflictLimitExceededError):
+    code = "ATTRIBUTE_CONFLICT_CANDIDATE_LIMIT_EXCEEDED"
+
+
+class AttributeConflictGroupLimitExceededError(AttributeConflictLimitExceededError):
+    code = "ATTRIBUTE_CONFLICT_GROUP_LIMIT_EXCEEDED"
+
+
+class AttributeConflictResultItemTooLargeError(AttributeConflictDetectionError):
+    code = "ATTRIBUTE_CONFLICT_RESULT_ITEM_TOO_LARGE"
+    safe_message = "An attribute conflict record exceeds the safe storage limit."
+
+
+class AttributeConflictResultStorageError(AttributeConflictDetectionError):
+    code = "ATTRIBUTE_CONFLICT_STORAGE_FAILED"
+    safe_message = "The attribute conflict detection result could not be stored."
+
+
+class AttributeConflictRepositoryError(Exception):
+    """Base error for attribute-conflict persistence failures."""
+
+
+class AttributeConflictResultAlreadyExistsError(AttributeConflictRepositoryError):
+    """Raised when conditional creation finds an existing result."""
+
+
+class AttributeConflictSerializationError(AttributeConflictRepositoryError):
+    """Raised when a conflict result partition is incomplete or malformed."""

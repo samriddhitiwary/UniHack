@@ -43,6 +43,9 @@ started/completed timestamp. No source status changes and no processing starts.
 It is deliberately unsupported by this source-scoped create endpoint and returns the same HTTP 422
 compatibility error. SPEC-021 adds no classification execution or result endpoint.
 
+`ATTRIBUTE_CONFLICT_DETECTION` is likewise internal and product-level. Its record has
+`sourceId: null` and one explicit `attributeNormalizationId`; this public endpoint rejects it.
+
 ## Retrieve a job
 
 `GET /api/v1/processing-jobs/{job_id}` returns the camel-case safe record with HTTP 200.

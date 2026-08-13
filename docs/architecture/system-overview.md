@@ -207,3 +207,18 @@ Immutable versions use deterministic content fingerprints; local bootstrap skips
 and rejects drift instead of overwriting. `UNCLASSIFIED` has no schema. No evidence inspection,
 attribute value, conversion, missing-field detection, actual product validation, API, frontend, or
 schema activation/editing workflow is introduced.
+
+SPEC-025 adds deterministic agreement and conflict detection over immutable normalized candidates:
+
+```text
+AttributeConflictDetectionService -> Product/ProcessingJob repositories (validation/lifecycle)
+                                  -> AttributeNormalizationResultRepository (explicit lineage)
+                                  -> AttributeConflictDetectionEngine (Decimal/exact rules)
+                                  -> AttributeConflictDetectionResultRepository
+                                       (META + ATTRIBUTE + GROUP evidence)
+```
+
+The engine groups only like-named attributes, preserves candidate/source provenance, distinguishes
+exact and tolerance agreement, excludes invalid/unsupported candidates, and treats missing-unit
+mixes as indeterminate. Conflicts complete successfully. It does not select a winner, infer missing
+fields, apply business validation, mutate Product, expose an API, or use AI.

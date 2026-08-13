@@ -113,6 +113,13 @@ The structured-attribute extraction engine consumes an explicitly linked classif
 
 The attribute normalization engine consumes one explicitly linked extraction and exact immutable schema version. It uses Decimal arithmetic and a fixed motor/pump unit registry to produce canonical candidate values while retaining raw values and evidence. Missing/unsupported units and invalid values remain auditable warning candidates. It performs no final selection, conflict resolution, completeness detection, or business validation and exposes no API. See the [attribute normalization architecture](docs/architecture/attribute-normalization.md).
 
+The candidate agreement and conflict-detection engine consumes one explicit normalization result,
+groups candidates by attribute, and reports exact agreement, tolerance agreement, conflict,
+indeterminate, single-candidate, or no-valid-candidate outcomes. Decimal comparison, canonical unit
+rules, source independence, and immutable agreement groups keep every conclusion explainable. It
+does not choose a winner or final value, detect missing fields, perform business validation, mutate
+products, or expose an API. See the [conflict-detection architecture](docs/architecture/attribute-conflict-detection.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -139,6 +146,7 @@ The attribute normalization engine consumes one explicitly linked extraction and
 - [SPEC-022](docs/specs/SPEC-022-category-attribute-schema-engine.md)
 - [SPEC-023](docs/specs/SPEC-023-structured-attribute-extraction-engine.md)
 - [SPEC-024](docs/specs/SPEC-024-attribute-and-unit-normalization-engine.md)
+- [SPEC-025](docs/specs/SPEC-025-candidate-agreement-and-conflict-detection-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -154,6 +162,7 @@ The attribute normalization engine consumes one explicitly linked extraction and
 - [Category attribute schemas](docs/architecture/category-attribute-schemas.md)
 - [Structured attribute extraction](docs/architecture/structured-attribute-extraction.md)
 - [Attribute and unit normalization](docs/architecture/attribute-normalization.md)
+- [Candidate agreement and conflict detection](docs/architecture/attribute-conflict-detection.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

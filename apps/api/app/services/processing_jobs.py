@@ -58,6 +58,7 @@ class ProcessingJobService:
             ProcessingJobType.PRODUCT_CLASSIFICATION,
             ProcessingJobType.ATTRIBUTE_EXTRACTION,
             ProcessingJobType.ATTRIBUTE_NORMALIZATION,
+            ProcessingJobType.ATTRIBUTE_CONFLICT_DETECTION,
         }:
             raise ProcessingJobTypeNotSupportedForSourceError(
                 source.source_type.value,

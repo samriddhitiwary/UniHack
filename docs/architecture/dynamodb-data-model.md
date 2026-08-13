@@ -235,6 +235,19 @@ descending category query limited to 100 records locates ACTIVE without scans or
 Built-in local seeding preflights both version 1 fingerprints, creates missing pump/motor records,
 skips identical records, and rejects drift or conflicting active content without overwrite.
 
+## Attribute conflict detection results table
+
+The attribute-conflict-detection-results table uses partition key `conflictDetectionId` and sort
+key `recordKey`. `META` preserves job/product and normalization/extraction/classification/schema
+lineage plus aggregate status/counts. Ordered `ATTRIBUTE#000001` records preserve per-attribute
+candidate IDs, comparison counts, status, conflict type, warnings, and assessment confidence.
+Ordered `GROUP#000001#000001` records preserve each distinct canonical value/unit cluster and its
+candidate/source IDs. There is no selected value, winner, average, or rank.
+
+Only META carries `jobId` and `createdAt`, making `JobIdIndex` sparse. Conditional writes,
+paginated consistent partition reads, complete reconstruction validation, configured bounds, and
+the 390,000-byte item guard apply. Retrieval by ID and job uses queries only; no scan is used.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -244,7 +257,7 @@ uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
 or `make dynamodb-create-tables`. The script creates products, sources, processing-jobs,
-extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, and category-attribute-schemas tables with their documented indexes. It waits for each table and
+extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, category-attribute-schemas, attribute-normalization-results, and attribute-conflict-detection-results tables with their documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.
