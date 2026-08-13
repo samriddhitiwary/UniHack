@@ -35,7 +35,7 @@ npm --prefix=apps/web run dev
 
 Open the web app at <http://localhost:5173>. API liveness is at <http://localhost:8000/api/v1/health>; readiness is at <http://localhost:8000/api/v1/health/ready>.
 
-The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, category-attribute-schemas, and structured-attribute-extraction-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command. Run `make dynamodb-seed-category-schemas` afterward to idempotently seed the two local built-in schema versions; drift is reported and never overwritten.
+The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, category-attribute-schemas, structured-attribute-extraction-results, and attribute-normalization-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command. Run `make dynamodb-seed-category-schemas` afterward to idempotently seed the two local built-in schema versions; drift is reported and never overwritten.
 
 `STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
 
@@ -111,6 +111,8 @@ The category-attribute-schema engine defines immutable ACTIVE version 1 technica
 
 The structured-attribute extraction engine consumes an explicitly linked classification and its active category schema, aggregates bounded persisted evidence, and emits provenance-rich raw candidates with deterministic matching, parsing, confidence, warnings, and duplicate suppression. It does not normalize units, choose final values, resolve conflicts, validate product values, or expose an API. See the [structured attribute extraction architecture](docs/architecture/structured-attribute-extraction.md).
 
+The attribute normalization engine consumes one explicitly linked extraction and exact immutable schema version. It uses Decimal arithmetic and a fixed motor/pump unit registry to produce canonical candidate values while retaining raw values and evidence. Missing/unsupported units and invalid values remain auditable warning candidates. It performs no final selection, conflict resolution, completeness detection, or business validation and exposes no API. See the [attribute normalization architecture](docs/architecture/attribute-normalization.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -136,6 +138,7 @@ The structured-attribute extraction engine consumes an explicitly linked classif
 - [SPEC-021](docs/specs/SPEC-021-product-classification-engine.md)
 - [SPEC-022](docs/specs/SPEC-022-category-attribute-schema-engine.md)
 - [SPEC-023](docs/specs/SPEC-023-structured-attribute-extraction-engine.md)
+- [SPEC-024](docs/specs/SPEC-024-attribute-and-unit-normalization-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -150,6 +153,7 @@ The structured-attribute extraction engine consumes an explicitly linked classif
 - [Product classification](docs/architecture/product-classification.md)
 - [Category attribute schemas](docs/architecture/category-attribute-schemas.md)
 - [Structured attribute extraction](docs/architecture/structured-attribute-extraction.md)
+- [Attribute and unit normalization](docs/architecture/attribute-normalization.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

@@ -73,6 +73,9 @@ class Settings(BaseSettings):
     attribute_extraction_max_candidates: int = Field(default=5_000, gt=0)
     attribute_extraction_max_candidates_per_attribute: int = Field(default=100, gt=0)
     attribute_extraction_max_excerpt_characters: int = Field(default=1_000, gt=0)
+    attribute_normalization_max_decimal_places: int = Field(default=6, ge=0, le=18)
+    attribute_normalization_max_candidates: int = Field(default=5_000, gt=0)
+    attribute_normalization_max_normalized_value_characters: int = Field(default=10_000, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

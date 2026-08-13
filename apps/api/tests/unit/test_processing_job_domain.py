@@ -43,6 +43,24 @@ def test_attribute_extraction_job_requires_lineage_and_rejects_source_scope() ->
         ProcessingJob.create(
             product_id=PRODUCT_ID, source_id=None, job_type=ProcessingJobType.ATTRIBUTE_EXTRACTION
         )
+
+
+def test_attribute_normalization_job_is_product_scoped_with_explicit_extraction() -> None:
+    extraction_id = uuid4()
+    job = ProcessingJob.create(
+        product_id=PRODUCT_ID,
+        source_id=None,
+        job_type=ProcessingJobType.ATTRIBUTE_NORMALIZATION,
+        attribute_extraction_id=extraction_id,
+        now=JOB_CREATED_AT,
+    )
+    assert job.source_id is None and job.attribute_extraction_id == extraction_id
+    with pytest.raises(ValueError):
+        ProcessingJob.create(
+            product_id=PRODUCT_ID,
+            source_id=None,
+            job_type=ProcessingJobType.ATTRIBUTE_NORMALIZATION,
+        )
     with pytest.raises(ValueError):
         ProcessingJob.create(
             product_id=PRODUCT_ID,

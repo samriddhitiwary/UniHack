@@ -57,6 +57,7 @@ class ProcessingJobService:
         if job_type in {
             ProcessingJobType.PRODUCT_CLASSIFICATION,
             ProcessingJobType.ATTRIBUTE_EXTRACTION,
+            ProcessingJobType.ATTRIBUTE_NORMALIZATION,
         }:
             raise ProcessingJobTypeNotSupportedForSourceError(
                 source.source_type.value,

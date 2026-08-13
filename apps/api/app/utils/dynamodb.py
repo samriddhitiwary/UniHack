@@ -256,6 +256,8 @@ def processing_job_to_item(job: ProcessingJob) -> dict[str, object]:
         item["sourceScope"] = processing_job_source_scope(job.product_id, job.source_id)
     if job.classification_id is not None:
         item["classificationId"] = job.classification_id
+    if job.attribute_extraction_id is not None:
+        item["attributeExtractionId"] = job.attribute_extraction_id
     return item
 
 
@@ -275,6 +277,11 @@ def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
             source_id=source_id,
             classification_id=(
                 UUID(str(item["classificationId"])) if "classificationId" in item else None
+            ),
+            attribute_extraction_id=(
+                UUID(str(item["attributeExtractionId"]))
+                if "attributeExtractionId" in item
+                else None
             ),
             job_type=ProcessingJobType(str(item["jobType"])),
             status=ProcessingJobStatus(str(item["status"])),

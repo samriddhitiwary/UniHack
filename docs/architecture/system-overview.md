@@ -20,6 +20,12 @@ The frontend owns presentation and browser-side state. The API owns validated co
 
 SPEC-023 adds an internal product-level structured-attribute workflow. An explicitly linked CLASSIFIED result selects the category, and the active immutable schema supplies labels and data types. Persisted direct text, PDF text/table, safe single-row CSV, and OCR evidence becomes raw, traceable candidates. The engine deliberately stops before normalization, final selection, conflict resolution, missing-field detection, and product-value validation.
 
+SPEC-024 adds an internal product-level normalization workflow. It consumes one
+explicit structured-extraction result and its exact immutable schema version,
+then applies Decimal scalar normalization and fixed schema-compatible unit
+conversions to each candidate independently. Raw provenance and conflicts remain
+unchanged, and normalized data is stored only in a separate composite result.
+
 The local products table supports repository development. SPEC-006 exposes create, list, retrieve, partial-update, and conditional-delete routes through this dependency chain:
 
 ```text

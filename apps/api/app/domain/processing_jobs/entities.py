@@ -37,6 +37,7 @@ class ProcessingJob:
     product_id: UUID
     source_id: UUID | None
     classification_id: UUID | None = None
+    attribute_extraction_id: UUID | None = None
     job_type: ProcessingJobType
     status: ProcessingJobStatus
     attempt: int
@@ -60,6 +61,7 @@ class ProcessingJob:
         if self.job_type in {
             ProcessingJobType.PRODUCT_CLASSIFICATION,
             ProcessingJobType.ATTRIBUTE_EXTRACTION,
+            ProcessingJobType.ATTRIBUTE_NORMALIZATION,
         }:
             if self.source_id is not None:
                 raise ValueError("product-level jobs must not have a source_id")
@@ -70,6 +72,13 @@ class ProcessingJob:
                 raise ValueError("ATTRIBUTE_EXTRACTION jobs require a classification_id")
         elif self.classification_id is not None:
             raise ValueError("classification_id is only valid for ATTRIBUTE_EXTRACTION jobs")
+        if self.job_type is ProcessingJobType.ATTRIBUTE_NORMALIZATION:
+            if not isinstance(self.attribute_extraction_id, UUID):
+                raise ValueError("ATTRIBUTE_NORMALIZATION jobs require an attribute_extraction_id")
+        elif self.attribute_extraction_id is not None:
+            raise ValueError(
+                "attribute_extraction_id is only valid for ATTRIBUTE_NORMALIZATION jobs"
+            )
         if not isinstance(self.status, ProcessingJobStatus):
             raise ValueError("status must be a ProcessingJobStatus")
         if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
@@ -146,6 +155,7 @@ class ProcessingJob:
         source_id: UUID | None,
         job_type: ProcessingJobType,
         classification_id: UUID | None = None,
+        attribute_extraction_id: UUID | None = None,
         attempt: int = 1,
         now: datetime | None = None,
     ) -> Self:
@@ -155,6 +165,7 @@ class ProcessingJob:
             product_id=product_id,
             source_id=source_id,
             classification_id=classification_id,
+            attribute_extraction_id=attribute_extraction_id,
             job_type=job_type,
             status=ProcessingJobStatus.PENDING,
             attempt=attempt,

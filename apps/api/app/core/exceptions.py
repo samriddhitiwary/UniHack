@@ -747,3 +747,55 @@ class StructuredAttributeExtractionResultAlreadyExistsError(
 
 class StructuredAttributeExtractionSerializationError(StructuredAttributeExtractionRepositoryError):
     """Raised when extraction records cannot safely cross persistence."""
+
+
+class AttributeNormalizationError(Exception):
+    code = "ATTRIBUTE_NORMALIZATION_ENGINE_FAILED"
+    safe_message = "Attribute normalization could not be completed."
+
+
+class InvalidAttributeNormalizationJobError(AttributeNormalizationError):
+    code = "INVALID_ATTRIBUTE_NORMALIZATION_JOB"
+    safe_message = "The processing job is not eligible for attribute normalization."
+
+
+class AttributeNormalizationExtractionRequiredError(AttributeNormalizationError):
+    code = "ATTRIBUTE_NORMALIZATION_EXTRACTION_REQUIRED"
+    safe_message = "The required attribute extraction result is unavailable."
+
+
+class AttributeNormalizationSchemaNotAvailableError(AttributeNormalizationError):
+    code = "ATTRIBUTE_NORMALIZATION_SCHEMA_NOT_AVAILABLE"
+    safe_message = "The exact attribute schema is unavailable for normalization."
+
+
+class AttributeNormalizationSchemaMismatchError(AttributeNormalizationError):
+    code = "ATTRIBUTE_NORMALIZATION_SCHEMA_MISMATCH"
+    safe_message = "The attribute schema fingerprint does not match extraction lineage."
+
+
+class AttributeNormalizationCandidateLimitExceededError(AttributeNormalizationError):
+    code = "ATTRIBUTE_NORMALIZATION_CANDIDATE_LIMIT_EXCEEDED"
+    safe_message = "Attribute normalization candidates exceed a configured limit."
+
+
+class AttributeNormalizationResultItemTooLargeError(AttributeNormalizationError):
+    code = "ATTRIBUTE_NORMALIZATION_RESULT_ITEM_TOO_LARGE"
+    safe_message = "An attribute normalization record exceeds the safe storage limit."
+
+
+class AttributeNormalizationResultStorageError(AttributeNormalizationError):
+    code = "ATTRIBUTE_NORMALIZATION_STORAGE_FAILED"
+    safe_message = "The attribute normalization result could not be stored."
+
+
+class AttributeNormalizationRepositoryError(Exception):
+    """Base error for attribute-normalization persistence failures."""
+
+
+class AttributeNormalizationResultAlreadyExistsError(AttributeNormalizationRepositoryError):
+    """Raised when a conditional normalization create finds existing data."""
+
+
+class AttributeNormalizationSerializationError(AttributeNormalizationRepositoryError):
+    """Raised when a normalization partition is malformed or incomplete."""
