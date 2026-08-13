@@ -184,3 +184,18 @@ OCR evidence is normalized only for matching, remains traceable, and is hard bou
 ambiguous, insufficient, and conflicting outcomes all complete successfully. Confidence is score
 separation in basis points rather than ML probability. No LLM, file access, API, frontend, attribute
 extraction, or automatic `Product.category` mutation is added.
+
+SPEC-022 adds versioned category-specific reference metadata without a processing job:
+
+```text
+CategoryAttributeSchemaService -> CategoryAttributeSchemaRepository
+                               -> category/version DynamoDB records
+                               -> built-in pump and motor v1 schemas
+```
+
+The schemas define technical fields, requiredness, types, valid-unit labels, aliases, examples,
+display order, and inert validation metadata. Alias resolution is normalized but category-scoped.
+Immutable versions use deterministic content fingerprints; local bootstrap skips identical records
+and rejects drift instead of overwriting. `UNCLASSIFIED` has no schema. No evidence inspection,
+attribute value, conversion, missing-field detection, actual product validation, API, frontend, or
+schema activation/editing workflow is introduced.

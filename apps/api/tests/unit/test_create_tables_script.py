@@ -69,6 +69,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     image_results = MagicMock()
     ocr_results = MagicMock()
     classification_results = MagicMock()
+    category_schemas = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
@@ -82,6 +83,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
         "create_product_classification_results_table",
         classification_results,
     )
+    monkeypatch.setattr(create_tables, "create_category_attribute_schemas_table", category_schemas)
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
@@ -92,6 +94,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     image_results.assert_called_once_with()
     ocr_results.assert_called_once_with()
     classification_results.assert_called_once_with()
+    category_schemas.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
@@ -257,3 +260,26 @@ def test_product_classification_results_table_definition(monkeypatch: MonkeyPatc
         {"AttributeName": "recordKey", "KeyType": "RANGE"},
     ]
     assert request["GlobalSecondaryIndexes"][0]["IndexName"] == "JobIdIndex"
+
+
+def test_category_attribute_schemas_table_definition_and_idempotence(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-category-attribute-schemas"
+    client = MagicMock()
+    client.create_table.side_effect = [{}, _resource_in_use()]
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+    assert create_tables.create_category_attribute_schemas_table() is True
+    assert create_tables.create_category_attribute_schemas_table() is False
+    request = client.create_table.call_args_list[0].kwargs
+    assert request["AttributeDefinitions"] == [
+        {"AttributeName": "category", "AttributeType": "S"},
+        {"AttributeName": "version", "AttributeType": "N"},
+    ]
+    assert request["KeySchema"] == [
+        {"AttributeName": "category", "KeyType": "HASH"},
+        {"AttributeName": "version", "KeyType": "RANGE"},
+    ]
+    assert "GlobalSecondaryIndexes" not in request

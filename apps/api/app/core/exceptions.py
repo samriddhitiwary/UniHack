@@ -661,3 +661,45 @@ class ProductClassificationResultAlreadyExistsError(ProductClassificationReposit
 
 class ProductClassificationSerializationError(ProductClassificationRepositoryError):
     """Raised when classification records cannot safely cross persistence."""
+
+
+class CategoryAttributeSchemaError(Exception):
+    code = "CATEGORY_ATTRIBUTE_SCHEMA_FAILED"
+    safe_message = "The category attribute schema operation could not be completed."
+
+
+class CategoryAttributeSchemaNotAvailableError(CategoryAttributeSchemaError):
+    code = "CATEGORY_ATTRIBUTE_SCHEMA_NOT_AVAILABLE"
+    safe_message = "No category attribute schema is available."
+
+
+class CategoryAttributeSchemaValidationError(CategoryAttributeSchemaError):
+    code = "CATEGORY_ATTRIBUTE_SCHEMA_INVALID"
+    safe_message = "The category attribute schema is invalid."
+
+
+class CategoryAttributeAliasConflictError(CategoryAttributeSchemaValidationError):
+    code = "CATEGORY_ATTRIBUTE_ALIAS_CONFLICT"
+    safe_message = "A category attribute alias maps to more than one attribute."
+
+
+class CategoryAttributeSchemaVersionDriftError(CategoryAttributeSchemaError):
+    code = "CATEGORY_ATTRIBUTE_SCHEMA_VERSION_DRIFT"
+    safe_message = "A persisted schema version differs from the built-in immutable version."
+
+
+class CategoryAttributeSchemaItemTooLargeError(CategoryAttributeSchemaError):
+    code = "CATEGORY_ATTRIBUTE_SCHEMA_ITEM_TOO_LARGE"
+    safe_message = "The category attribute schema exceeds the safe storage limit."
+
+
+class CategoryAttributeSchemaRepositoryError(Exception):
+    """Base error for category-attribute-schema persistence failures."""
+
+
+class CategoryAttributeSchemaAlreadyExistsError(CategoryAttributeSchemaRepositoryError):
+    """Raised when an immutable category/version already exists or conflicts."""
+
+
+class CategoryAttributeSchemaSerializationError(CategoryAttributeSchemaRepositoryError):
+    """Raised when schema data cannot safely cross the persistence boundary."""

@@ -461,6 +461,41 @@ def create_product_classification_results_table() -> bool:
     return created
 
 
+def create_category_attribute_schemas_table() -> bool:
+    """Create the immutable category/version schema table idempotently."""
+    settings = get_settings()
+    if not settings.dynamodb_endpoint_url:
+        raise RuntimeError("DYNAMODB_ENDPOINT_URL is required for local table creation")
+    client = create_dynamodb_client(settings)
+    wait_for_dynamodb(client)
+    table_name = settings.table_name("category-attribute-schemas")
+    created = False
+    try:
+        client.create_table(
+            TableName=table_name,
+            AttributeDefinitions=[
+                {"AttributeName": "category", "AttributeType": "S"},
+                {"AttributeName": "version", "AttributeType": "N"},
+            ],
+            KeySchema=[
+                {"AttributeName": "category", "KeyType": "HASH"},
+                {"AttributeName": "version", "KeyType": "RANGE"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        created = True
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") != "ResourceInUseException":
+            raise
+    client.get_waiter("table_exists").wait(TableName=table_name)
+    logger.info(
+        "Category-attribute-schemas table %s is %s",
+        table_name,
+        "created" if created else "already present",
+    )
+    return created
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     create_products_table()
@@ -472,6 +507,7 @@ def main() -> int:
     create_image_analysis_results_table()
     create_image_ocr_results_table()
     create_product_classification_results_table()
+    create_category_attribute_schemas_table()
     return 0
 
 

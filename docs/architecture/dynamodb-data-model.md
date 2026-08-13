@@ -1,6 +1,6 @@
 # DynamoDB Data Model
 
-The local model contains configuration-derived products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, and image-analysis-results tables. No production table is provisioned by this repository.
+The local model contains configuration-derived products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, and category-attribute-schemas tables. No production table is provisioned by this repository.
 
 ## Item shape
 
@@ -207,6 +207,24 @@ complete reconstruction validation, and the 390,000-byte item guard apply. No sc
 | Retrieve by classification ID | Paginated consistent partition query |
 | Retrieve by job ID | `JobIdIndex` query followed by classification partition query |
 
+## Category attribute schemas table
+
+The category-attribute-schemas table uses string partition key `category` and numeric sort key
+`version`. One item stores the deterministic schema ID, ACTIVE/INACTIVE status, bounded nested
+attribute/unit/alias/example/validation metadata, SHA-256 fingerprint, and timestamps. Conditional
+creation makes category/version immutable. Direct consistent `GetItem` retrieves a version; a
+descending category query limited to 100 records locates ACTIVE without scans or a GSI. Items above
+390,000 serialized bytes are rejected.
+
+| Category-schema access pattern | Operation |
+| --- | --- |
+| Create immutable version | Conditional `PutItem` on category/version |
+| Retrieve category/version | Consistent composite-key `GetItem` |
+| Retrieve active version | Bounded descending category partition query |
+
+Built-in local seeding preflights both version 1 fingerprints, creates missing pump/motor records,
+skips identical records, and rejects drift or conflicting active content without overwrite.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -216,7 +234,7 @@ uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
 or `make dynamodb-create-tables`. The script creates products, sources, processing-jobs,
-extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, and product-classification-results tables with their documented indexes. It waits for each table and
+extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, and category-attribute-schemas tables with their documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

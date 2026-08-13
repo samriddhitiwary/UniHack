@@ -1,4 +1,4 @@
-.PHONY: setup dev api web dynamodb-up dynamodb-down dynamodb-create-tables dynamodb-reset test test-api test-web lint format typecheck-api build-web clean
+.PHONY: setup dev api web dynamodb-up dynamodb-down dynamodb-create-tables dynamodb-seed-category-schemas dynamodb-reset test test-api test-web lint format typecheck-api build-web clean
 
 setup:
 	uv sync --project apps/api --all-groups
@@ -21,6 +21,9 @@ dynamodb-down:
 
 dynamodb-create-tables:
 	uv run --project apps/api python scripts/dynamodb/create_tables.py
+
+dynamodb-seed-category-schemas:
+	uv run --project apps/api python scripts/dynamodb/seed_category_attribute_schemas.py
 
 dynamodb-reset:
 	docker compose down

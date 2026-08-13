@@ -35,7 +35,7 @@ npm --prefix=apps/web run dev
 
 Open the web app at <http://localhost:5173>. API liveness is at <http://localhost:8000/api/v1/health>; readiness is at <http://localhost:8000/api/v1/health/ready>.
 
-The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, and image-ocr-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
+The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, and category-attribute-schemas tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command. Run `make dynamodb-seed-category-schemas` afterward to idempotently seed the two local built-in schema versions; drift is reported and never overwritten.
 
 `STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
 
@@ -107,6 +107,8 @@ The image-OCR service processes only PENDING `IMAGE_OCR` jobs after a compatible
 
 The product-classification service processes internal PENDING product-level `PRODUCT_CLASSIFICATION` jobs. It aggregates bounded evidence from direct text and available PDF, table, CSV, and OCR results, then uses phrase-aware deterministic pump/motor rules with integer scores, confidence basis points, ambiguity, and cross-source conflict handling. Results preserve bounded matched provenance in META/MATCH records. Every valid uncertainty outcome completes successfully, and `Product.category` is never changed automatically. There is no classification API. See the [product classification architecture](docs/architecture/product-classification.md).
 
+The category-attribute-schema engine defines immutable ACTIVE version 1 technical-field contracts for centrifugal pumps and induction motors. Definitions include stable camelCase names, requiredness, types, allowed-unit metadata, bounded aliases/examples, inert validation metadata, display order, and deterministic SHA-256 fingerprints. Local bootstrap is idempotent and detects version drift without overwriting. It performs no extraction, conversion, missing-field detection, or product-value validation and exposes no API. See the [category attribute schema architecture](docs/architecture/category-attribute-schemas.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -130,6 +132,7 @@ The product-classification service processes internal PENDING product-level `PRO
 - [SPEC-019](docs/specs/SPEC-019-image-and-nameplate-analysis-foundation.md)
 - [SPEC-020](docs/specs/SPEC-020-ocr-and-nameplate-text-recognition-engine.md)
 - [SPEC-021](docs/specs/SPEC-021-product-classification-engine.md)
+- [SPEC-022](docs/specs/SPEC-022-category-attribute-schema-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -142,6 +145,7 @@ The product-classification service processes internal PENDING product-level `PRO
 - [Image and nameplate analysis](docs/architecture/image-analysis.md)
 - [OCR and nameplate text recognition](docs/architecture/image-ocr.md)
 - [Product classification](docs/architecture/product-classification.md)
+- [Category attribute schemas](docs/architecture/category-attribute-schemas.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

@@ -12,6 +12,8 @@ from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from pydantic import BaseModel
 
 from app.core.exceptions import (
+    CategoryAttributeSchemaSerializationError,
+    CategoryAttributeSchemaValidationError,
     CsvProcessingSerializationError,
     ImageAnalysisSerializationError,
     ImageOcrSerializationError,
@@ -21,6 +23,14 @@ from app.core.exceptions import (
     ProductClassificationSerializationError,
     ProductSerializationError,
     ProductSourceSerializationError,
+)
+from app.domain.category_schemas import (
+    AttributeDataType,
+    AttributeDefinition,
+    AttributeValidationRules,
+    CategoryAttributeSchema,
+    CategoryAttributeSchemaStatus,
+    UnitDefinition,
 )
 from app.domain.csv_processing import (
     CsvCell,
@@ -279,6 +289,126 @@ def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
     except (KeyError, TypeError, ValueError, ProductSerializationError) as exc:
         raise ProcessingJobSerializationError(
             "DynamoDB item is not a valid processing job"
+        ) from exc
+
+
+def category_attribute_schema_to_item(schema: CategoryAttributeSchema) -> dict[str, object]:
+    return {
+        "category": schema.category,
+        "version": schema.version,
+        "schemaId": schema.schema_id,
+        "status": schema.status,
+        "description": schema.description,
+        "attributes": [
+            {
+                "attributeId": attribute.attribute_id,
+                "canonicalName": attribute.canonical_name,
+                "displayName": attribute.display_name,
+                "description": attribute.description,
+                "dataType": attribute.data_type,
+                "required": attribute.required,
+                "allowedUnits": [
+                    {
+                        "symbol": unit.symbol,
+                        "canonical": unit.canonical,
+                        "dimension": unit.dimension,
+                    }
+                    for unit in attribute.allowed_units
+                ],
+                "aliases": attribute.aliases,
+                "exampleValues": attribute.example_values,
+                "validationRules": {
+                    "minValue": attribute.validation_rules.min_value,
+                    "maxValue": attribute.validation_rules.max_value,
+                    "allowedValues": attribute.validation_rules.allowed_values,
+                    "pattern": attribute.validation_rules.pattern,
+                },
+                "displayOrder": attribute.display_order,
+            }
+            for attribute in sorted(schema.attributes, key=lambda value: value.display_order)
+        ],
+        "schemaFingerprint": schema.schema_fingerprint,
+        "createdAt": schema.created_at,
+        "updatedAt": schema.updated_at,
+    }
+
+
+def _schema_sequence(value: object, field: str) -> Sequence[object]:
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise ValueError(f"{field} must be a sequence")
+    return value
+
+
+def _schema_mapping(value: object, field: str) -> Mapping[str, object]:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{field} must be a mapping")
+    return cast(Mapping[str, object], value)
+
+
+def _category_attribute_from_item(value: object) -> AttributeDefinition:
+    item = _schema_mapping(value, "attribute")
+    units = tuple(
+        UnitDefinition(
+            symbol=str(unit["symbol"]),
+            canonical=str(unit["canonical"]),
+            dimension=_optional_string(unit.get("dimension")),
+        )
+        for raw_unit in _schema_sequence(item["allowedUnits"], "allowedUnits")
+        for unit in (_schema_mapping(raw_unit, "unit"),)
+    )
+    rules = _schema_mapping(item["validationRules"], "validationRules")
+    return AttributeDefinition(
+        attribute_id=str(item["attributeId"]),
+        canonical_name=str(item["canonicalName"]),
+        display_name=str(item["displayName"]),
+        description=str(item["description"]),
+        data_type=AttributeDataType(str(item["dataType"])),
+        required=_boolean(item["required"], "required"),
+        allowed_units=units,
+        aliases=tuple(str(alias) for alias in _schema_sequence(item["aliases"], "aliases")),
+        example_values=tuple(
+            str(example) for example in _schema_sequence(item["exampleValues"], "exampleValues")
+        ),
+        validation_rules=AttributeValidationRules(
+            min_value=cast(int | Decimal | None, rules.get("minValue")),
+            max_value=cast(int | Decimal | None, rules.get("maxValue")),
+            allowed_values=tuple(
+                str(allowed)
+                for allowed in _schema_sequence(rules["allowedValues"], "allowedValues")
+            ),
+            pattern=_optional_string(rules.get("pattern")),
+        ),
+        display_order=_integer(item["displayOrder"], "displayOrder"),
+    )
+
+
+def category_attribute_schema_from_item(item: Mapping[str, object]) -> CategoryAttributeSchema:
+    try:
+        return CategoryAttributeSchema(
+            schema_id=str(item["schemaId"]),
+            category=ProductCategory(str(item["category"])),
+            version=_integer(item["version"], "version"),
+            status=CategoryAttributeSchemaStatus(str(item["status"])),
+            description=str(item["description"]),
+            attributes=tuple(
+                _category_attribute_from_item(attribute)
+                for attribute in _schema_sequence(item["attributes"], "attributes")
+            ),
+            schema_fingerprint=str(item["schemaFingerprint"]),
+            created_at=parse_utc(item["createdAt"]),
+            updated_at=parse_utc(item["updatedAt"]),
+        )
+    except CategoryAttributeSchemaSerializationError:
+        raise
+    except (
+        KeyError,
+        TypeError,
+        ValueError,
+        ProductSerializationError,
+        CategoryAttributeSchemaValidationError,
+    ) as exc:
+        raise CategoryAttributeSchemaSerializationError(
+            "DynamoDB item is not a valid category attribute schema"
         ) from exc
 
 
