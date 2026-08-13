@@ -222,3 +222,9 @@ The engine groups only like-named attributes, preserves candidate/source provena
 exact and tolerance agreement, excludes invalid/unsupported candidates, and treats missing-unit
 mixes as indeterminate. Conflicts complete successfully. It does not select a winner, infer missing
 fields, apply business validation, mutate Product, expose an API, or use AI.
+
+SPEC-026 adds exact-schema completeness evaluation. The internal service loads one explicit
+SPEC-025 result and its exact SPEC-022 schema, evaluates every schema field in display order, and
+persists available/resolved/verified required, optional, and total metrics. Missing, invalid,
+conflicted, and indeterminate evidence remain distinct. No value is selected, resolved, generated,
+or business-validated, and no API or frontend behavior is added.

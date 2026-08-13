@@ -248,6 +248,16 @@ Only META carries `jobId` and `createdAt`, making `JobIdIndex` sparse. Condition
 paginated consistent partition reads, complete reconstruction validation, configured bounds, and
 the 390,000-byte item guard apply. Retrieval by ID and job uses queries only; no scan is used.
 
+## Attribute completeness results table
+
+The attribute-completeness-results table uses partition key `completenessId` and sort key
+`recordKey`. META stores exact upstream/schema lineage, status, required/optional/total counts,
+integer basis-point percentages, warnings, engine/version, and creation time. Ordered ATTRIBUTE
+records store schema identity/order, completeness state, consensus metadata, booleans, candidate
+IDs, and warnings. META alone carries `jobId`/`createdAt` for sparse `JobIdIndex`. Conditional
+writes, consistent paginated reads, complete reconstruction, configured bounds, and the
+390,000-byte guard apply. No scan or selected value exists.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -257,7 +267,10 @@ uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
 or `make dynamodb-create-tables`. The script creates products, sources, processing-jobs,
-extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, category-attribute-schemas, attribute-normalization-results, and attribute-conflict-detection-results tables with their documented indexes. It waits for each table and
+extraction-results, table-extraction-results, csv-processing-results, image-analysis-results,
+image-ocr-results, product-classification-results, category-attribute-schemas,
+attribute-normalization-results, attribute-conflict-detection-results, and
+attribute-completeness-results tables with their documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

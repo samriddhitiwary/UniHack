@@ -120,6 +120,13 @@ rules, source independence, and immutable agreement groups keep every conclusion
 does not choose a winner or final value, detect missing fields, perform business validation, mutate
 products, or expose an API. See the [conflict-detection architecture](docs/architecture/attribute-conflict-detection.md).
 
+The attribute-completeness engine consumes one explicit conflict-detection result and its exact
+immutable category schema. It evaluates every schema attribute in display order, distinguishes
+missing, invalid, conflicted, indeterminate, single-source, and corroborated evidence, and persists
+required, optional, and overall counts with integer basis-point percentages. It does not select or
+generate values, resolve conflicts, perform business validation, mutate products, or expose an API.
+See the [attribute-completeness architecture](docs/architecture/attribute-completeness.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -147,6 +154,7 @@ products, or expose an API. See the [conflict-detection architecture](docs/archi
 - [SPEC-023](docs/specs/SPEC-023-structured-attribute-extraction-engine.md)
 - [SPEC-024](docs/specs/SPEC-024-attribute-and-unit-normalization-engine.md)
 - [SPEC-025](docs/specs/SPEC-025-candidate-agreement-and-conflict-detection-engine.md)
+- [SPEC-026](docs/specs/SPEC-026-missing-required-attribute-and-completeness-detection-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -163,6 +171,7 @@ products, or expose an API. See the [conflict-detection architecture](docs/archi
 - [Structured attribute extraction](docs/architecture/structured-attribute-extraction.md)
 - [Attribute and unit normalization](docs/architecture/attribute-normalization.md)
 - [Candidate agreement and conflict detection](docs/architecture/attribute-conflict-detection.md)
+- [Attribute completeness](docs/architecture/attribute-completeness.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

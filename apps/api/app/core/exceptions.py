@@ -858,3 +858,65 @@ class AttributeConflictResultAlreadyExistsError(AttributeConflictRepositoryError
 
 class AttributeConflictSerializationError(AttributeConflictRepositoryError):
     """Raised when a conflict result partition is incomplete or malformed."""
+
+
+class AttributeCompletenessError(Exception):
+    code = "ATTRIBUTE_COMPLETENESS_ENGINE_FAILED"
+    safe_message = "Attribute completeness evaluation could not be completed."
+
+
+class InvalidAttributeCompletenessJobError(AttributeCompletenessError):
+    code = "INVALID_ATTRIBUTE_COMPLETENESS_JOB"
+    safe_message = "The processing job is not eligible for completeness evaluation."
+
+
+class AttributeCompletenessConflictResultRequiredError(AttributeCompletenessError):
+    code = "ATTRIBUTE_COMPLETENESS_CONFLICT_RESULT_REQUIRED"
+    safe_message = "The required conflict-detection result is unavailable."
+
+
+class AttributeCompletenessCrossProductLineageError(AttributeCompletenessError):
+    code = "ATTRIBUTE_COMPLETENESS_CROSS_PRODUCT_LINEAGE"
+    safe_message = "The conflict-detection result does not belong to this product."
+
+
+class AttributeCompletenessSchemaNotAvailableError(AttributeCompletenessError):
+    code = "ATTRIBUTE_COMPLETENESS_SCHEMA_NOT_AVAILABLE"
+    safe_message = "The exact category schema is unavailable for completeness evaluation."
+
+
+class AttributeCompletenessSchemaMismatchError(AttributeCompletenessError):
+    code = "ATTRIBUTE_COMPLETENESS_SCHEMA_MISMATCH"
+    safe_message = "The category schema fingerprint does not match completeness lineage."
+
+
+class AttributeCompletenessAttributeLimitExceededError(AttributeCompletenessError):
+    code = "ATTRIBUTE_COMPLETENESS_ATTRIBUTE_LIMIT_EXCEEDED"
+    safe_message = "Completeness attributes exceed the configured limit."
+
+
+class AttributeCompletenessCandidateIdLimitExceededError(AttributeCompletenessError):
+    code = "ATTRIBUTE_COMPLETENESS_CANDIDATE_ID_LIMIT_EXCEEDED"
+    safe_message = "Completeness candidate identifiers exceed the configured limit."
+
+
+class AttributeCompletenessResultItemTooLargeError(AttributeCompletenessError):
+    code = "ATTRIBUTE_COMPLETENESS_RESULT_ITEM_TOO_LARGE"
+    safe_message = "An attribute completeness record exceeds the safe storage limit."
+
+
+class AttributeCompletenessResultStorageError(AttributeCompletenessError):
+    code = "ATTRIBUTE_COMPLETENESS_STORAGE_FAILED"
+    safe_message = "The attribute completeness result could not be stored."
+
+
+class AttributeCompletenessRepositoryError(Exception):
+    """Base error for attribute-completeness persistence failures."""
+
+
+class AttributeCompletenessResultAlreadyExistsError(AttributeCompletenessRepositoryError):
+    """Raised when conditional creation finds an existing result."""
+
+
+class AttributeCompletenessSerializationError(AttributeCompletenessRepositoryError):
+    """Raised when a completeness partition is incomplete or malformed."""

@@ -46,6 +46,9 @@ compatibility error. SPEC-021 adds no classification execution or result endpoin
 `ATTRIBUTE_CONFLICT_DETECTION` is likewise internal and product-level. Its record has
 `sourceId: null` and one explicit `attributeNormalizationId`; this public endpoint rejects it.
 
+`ATTRIBUTE_COMPLETENESS` is internal and product-level with one explicit
+`attributeConflictDetectionId`; this public endpoint also rejects it.
+
 ## Retrieve a job
 
 `GET /api/v1/processing-jobs/{job_id}` returns the camel-case safe record with HTTP 200.
