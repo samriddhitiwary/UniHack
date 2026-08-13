@@ -70,6 +70,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     ocr_results = MagicMock()
     classification_results = MagicMock()
     category_schemas = MagicMock()
+    attribute_results = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
@@ -84,6 +85,11 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
         classification_results,
     )
     monkeypatch.setattr(create_tables, "create_category_attribute_schemas_table", category_schemas)
+    monkeypatch.setattr(
+        create_tables,
+        "create_structured_attribute_extraction_results_table",
+        attribute_results,
+    )
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
@@ -95,6 +101,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     ocr_results.assert_called_once_with()
     classification_results.assert_called_once_with()
     category_schemas.assert_called_once_with()
+    attribute_results.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
@@ -283,3 +290,20 @@ def test_category_attribute_schemas_table_definition_and_idempotence(
         {"AttributeName": "version", "KeyType": "RANGE"},
     ]
     assert "GlobalSecondaryIndexes" not in request
+
+
+def test_structured_attribute_extraction_results_table_definition(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-structured-attribute-extraction-results"
+    client = MagicMock()
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+    assert create_tables.create_structured_attribute_extraction_results_table() is True
+    request = client.create_table.call_args.kwargs
+    assert request["KeySchema"] == [
+        {"AttributeName": "extractionId", "KeyType": "HASH"},
+        {"AttributeName": "recordKey", "KeyType": "RANGE"},
+    ]
+    assert request["GlobalSecondaryIndexes"][0]["IndexName"] == "JobIdIndex"

@@ -67,6 +67,12 @@ class Settings(BaseSettings):
     product_classification_max_matches: int = Field(default=1_000, gt=0)
     category_attribute_schema_max_attributes: int = Field(default=100, gt=0)
     category_attribute_schema_max_aliases_per_attribute: int = Field(default=30, gt=0)
+    attribute_extraction_max_evidence_items: int = Field(default=10_000, gt=0)
+    attribute_extraction_max_total_characters: int = Field(default=1_000_000, gt=0)
+    attribute_extraction_max_item_characters: int = Field(default=10_000, gt=0)
+    attribute_extraction_max_candidates: int = Field(default=5_000, gt=0)
+    attribute_extraction_max_candidates_per_attribute: int = Field(default=100, gt=0)
+    attribute_extraction_max_excerpt_characters: int = Field(default=1_000, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

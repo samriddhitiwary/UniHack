@@ -1,6 +1,8 @@
 # DynamoDB Data Model
 
-The local model contains configuration-derived products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, and category-attribute-schemas tables. No production table is provisioned by this repository.
+The local model contains configuration-derived products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, category-attribute-schemas, and structured-attribute-extraction-results tables. No production table is provisioned by this repository.
+
+The structured-attribute-extraction-results table uses `extractionId` and `recordKey` (`META` or ordered `CANDIDATE#000001`). Its sparse `JobIdIndex` uses `jobId` and `createdAt`. Metadata stores product, classification, category, schema-version/fingerprint, status, counts, warnings, and engine lineage; candidate records store raw values, raw units, confidence, parse/match state, and complete source evidence provenance. Writes are conditional, records are bounded below 390 KB, and complete ID reconstruction paginates with consistent reads.
 
 ## Item shape
 

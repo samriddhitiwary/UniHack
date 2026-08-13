@@ -18,6 +18,8 @@ Browser -> React/Vite application
 
 The frontend owns presentation and browser-side state. The API owns validated configuration and application behavior. Product and product-source domain models are independent of Boto3. Their repository protocols return domain entities, while DynamoDB implementations own item naming, serialization, conditional writes, index queries, and cursors.
 
+SPEC-023 adds an internal product-level structured-attribute workflow. An explicitly linked CLASSIFIED result selects the category, and the active immutable schema supplies labels and data types. Persisted direct text, PDF text/table, safe single-row CSV, and OCR evidence becomes raw, traceable candidates. The engine deliberately stops before normalization, final selection, conflict resolution, missing-field detection, and product-value validation.
+
 The local products table supports repository development. SPEC-006 exposes create, list, retrieve, partial-update, and conditional-delete routes through this dependency chain:
 
 ```text

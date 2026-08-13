@@ -703,3 +703,47 @@ class CategoryAttributeSchemaAlreadyExistsError(CategoryAttributeSchemaRepositor
 
 class CategoryAttributeSchemaSerializationError(CategoryAttributeSchemaRepositoryError):
     """Raised when schema data cannot safely cross the persistence boundary."""
+
+
+class StructuredAttributeExtractionError(Exception):
+    code = "ATTRIBUTE_EXTRACTION_FAILED"
+    safe_message = "Structured attribute extraction could not be completed."
+
+
+class InvalidStructuredAttributeExtractionJobError(StructuredAttributeExtractionError):
+    code = "INVALID_ATTRIBUTE_EXTRACTION_JOB"
+    safe_message = "The processing job is not eligible for attribute extraction."
+
+
+class StructuredAttributeExtractionPrerequisiteError(StructuredAttributeExtractionError):
+    code = "ATTRIBUTE_EXTRACTION_PREREQUISITE_FAILED"
+    safe_message = "Attribute extraction prerequisites are not available."
+
+
+class StructuredAttributeExtractionLimitExceededError(StructuredAttributeExtractionError):
+    code = "ATTRIBUTE_EXTRACTION_LIMIT_EXCEEDED"
+    safe_message = "Attribute extraction exceeds a configured limit."
+
+
+class StructuredAttributeExtractionResultStorageError(StructuredAttributeExtractionError):
+    code = "ATTRIBUTE_EXTRACTION_STORAGE_FAILED"
+    safe_message = "The attribute extraction result could not be stored."
+
+
+class StructuredAttributeExtractionResultItemTooLargeError(StructuredAttributeExtractionError):
+    code = "ATTRIBUTE_EXTRACTION_RESULT_ITEM_TOO_LARGE"
+    safe_message = "An attribute extraction record exceeds the safe storage limit."
+
+
+class StructuredAttributeExtractionRepositoryError(Exception):
+    """Base error for structured-attribute result persistence failures."""
+
+
+class StructuredAttributeExtractionResultAlreadyExistsError(
+    StructuredAttributeExtractionRepositoryError
+):
+    """Raised when conditional creation finds an existing extraction identity."""
+
+
+class StructuredAttributeExtractionSerializationError(StructuredAttributeExtractionRepositoryError):
+    """Raised when extraction records cannot safely cross persistence."""

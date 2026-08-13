@@ -36,6 +36,7 @@ class ProcessingJob:
     job_id: UUID
     product_id: UUID
     source_id: UUID | None
+    classification_id: UUID | None = None
     job_type: ProcessingJobType
     status: ProcessingJobStatus
     attempt: int
@@ -56,11 +57,19 @@ class ProcessingJob:
             raise ValueError("product_id must be a UUID")
         if not isinstance(self.job_type, ProcessingJobType):
             raise ValueError("job_type must be a ProcessingJobType")
-        if self.job_type is ProcessingJobType.PRODUCT_CLASSIFICATION:
+        if self.job_type in {
+            ProcessingJobType.PRODUCT_CLASSIFICATION,
+            ProcessingJobType.ATTRIBUTE_EXTRACTION,
+        }:
             if self.source_id is not None:
-                raise ValueError("PRODUCT_CLASSIFICATION jobs must not have a source_id")
+                raise ValueError("product-level jobs must not have a source_id")
         elif not isinstance(self.source_id, UUID):
             raise ValueError("source_id must be a UUID for source-scoped jobs")
+        if self.job_type is ProcessingJobType.ATTRIBUTE_EXTRACTION:
+            if not isinstance(self.classification_id, UUID):
+                raise ValueError("ATTRIBUTE_EXTRACTION jobs require a classification_id")
+        elif self.classification_id is not None:
+            raise ValueError("classification_id is only valid for ATTRIBUTE_EXTRACTION jobs")
         if not isinstance(self.status, ProcessingJobStatus):
             raise ValueError("status must be a ProcessingJobStatus")
         if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
@@ -136,6 +145,7 @@ class ProcessingJob:
         product_id: UUID,
         source_id: UUID | None,
         job_type: ProcessingJobType,
+        classification_id: UUID | None = None,
         attempt: int = 1,
         now: datetime | None = None,
     ) -> Self:
@@ -144,6 +154,7 @@ class ProcessingJob:
             job_id=uuid4(),
             product_id=product_id,
             source_id=source_id,
+            classification_id=classification_id,
             job_type=job_type,
             status=ProcessingJobStatus.PENDING,
             attempt=attempt,

@@ -2,6 +2,7 @@
 
 from dataclasses import FrozenInstanceError
 from datetime import UTC
+from uuid import uuid4
 
 import pytest
 
@@ -23,6 +24,32 @@ def test_create_job_uses_pending_defaults_uuid_and_utc() -> None:
     assert job.attempt == 1 and job.progress_percent == 0 and job.version == 1
     assert job.created_at == job.updated_at == JOB_CREATED_AT
     assert job.created_at.tzinfo is UTC
+
+
+def test_attribute_extraction_job_is_product_scoped_with_explicit_lineage() -> None:
+    classification_id = uuid4()
+    job = ProcessingJob.create(
+        product_id=PRODUCT_ID,
+        source_id=None,
+        job_type=ProcessingJobType.ATTRIBUTE_EXTRACTION,
+        classification_id=classification_id,
+        now=JOB_CREATED_AT,
+    )
+    assert job.source_id is None and job.classification_id == classification_id
+
+
+def test_attribute_extraction_job_requires_lineage_and_rejects_source_scope() -> None:
+    with pytest.raises(ValueError):
+        ProcessingJob.create(
+            product_id=PRODUCT_ID, source_id=None, job_type=ProcessingJobType.ATTRIBUTE_EXTRACTION
+        )
+    with pytest.raises(ValueError):
+        ProcessingJob.create(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            job_type=ProcessingJobType.ATTRIBUTE_EXTRACTION,
+            classification_id=uuid4(),
+        )
 
 
 def test_job_is_immutable() -> None:

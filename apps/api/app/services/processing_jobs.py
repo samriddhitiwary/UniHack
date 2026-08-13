@@ -54,7 +54,10 @@ class ProcessingJobService:
         )
         self._require_product(product_id)
         source = self._require_source(product_id, source_id)
-        if job_type is ProcessingJobType.PRODUCT_CLASSIFICATION:
+        if job_type in {
+            ProcessingJobType.PRODUCT_CLASSIFICATION,
+            ProcessingJobType.ATTRIBUTE_EXTRACTION,
+        }:
             raise ProcessingJobTypeNotSupportedForSourceError(
                 source.source_type.value,
                 job_type.value,
