@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-019: Image and Nameplate Analysis Foundation**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-020: OCR and Nameplate Text Recognition Engine**.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ npm --prefix=apps/web run dev
 
 Open the web app at <http://localhost:5173>. API liveness is at <http://localhost:8000/api/v1/health>; readiness is at <http://localhost:8000/api/v1/health/ready>.
 
-The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, and image-analysis-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
+The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, and image-ocr-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command.
 
 `STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains product, product-source, processing-job, object-storage, PDF extraction, CSV processing, and image-analysis foundations. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code, store evidence separately, and update job lifecycle without changing source status. Content/file replacement, bulk deletion, restore, and download are not exposed. No classification, attribute extraction, OCR, AI, S3, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains product, product-source, processing-job, object-storage, PDF extraction, CSV processing, image-analysis, and local image-OCR foundations. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code, store evidence separately, and update job lifecycle without changing source status. Content/file replacement, bulk deletion, restore, and download are not exposed. No product classification, structured attribute extraction, unit normalization, hosted OCR/AI, S3, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
 
 ## Product API
 
@@ -103,6 +103,8 @@ The CSV processing service processes only PENDING `CSV_PROCESSING` jobs. It uses
 
 The image-analysis service processes only PENDING `IMAGE_ANALYSIS` jobs for stored IMAGE sources. Pillow validates PNG, JPEG, and WEBP format/MIME agreement under bounded byte, dimension, pixel, animation, and decompression-bomb controls. Results contain safe metadata, six deterministic regions, and a geometry-only nameplate-candidate heuristic in composite META/REGION records. It performs no OCR, object detection, AI vision, or attribute extraction and exposes no execution or result API. See the [image analysis architecture](docs/architecture/image-analysis.md).
 
+The image-OCR service processes only PENDING `IMAGE_OCR` jobs after a compatible completed SPEC-019 analysis. It uses local RapidOCR ONNX Runtime models, reuses and maps deterministic regions into an oriented full-image coordinate system, and stores bounded normalized text, reading order, boxes, and integer confidence basis points in META/BLOCK records. NO_TEXT and LOW_CONFIDENCE_TEXT are successful outcomes. The nameplate-text score is deterministic and non-AI; no product category, structured attribute, or normalized unit is produced. There is no OCR execution/result API. See the [image OCR architecture](docs/architecture/image-ocr.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -124,6 +126,7 @@ The image-analysis service processes only PENDING `IMAGE_ANALYSIS` jobs for stor
 - [SPEC-017](docs/specs/SPEC-017-pdf-table-extraction-engine.md)
 - [SPEC-018](docs/specs/SPEC-018-csv-processing-engine.md)
 - [SPEC-019](docs/specs/SPEC-019-image-and-nameplate-analysis-foundation.md)
+- [SPEC-020](docs/specs/SPEC-020-ocr-and-nameplate-text-recognition-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -134,6 +137,7 @@ The image-analysis service processes only PENDING `IMAGE_ANALYSIS` jobs for stor
 - [PDF table extraction](docs/architecture/pdf-table-extraction.md)
 - [CSV processing](docs/architecture/csv-processing.md)
 - [Image and nameplate analysis](docs/architecture/image-analysis.md)
+- [OCR and nameplate text recognition](docs/architecture/image-ocr.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

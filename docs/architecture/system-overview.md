@@ -154,3 +154,16 @@ ImageAnalysisService -> ProcessingJobRepository (RUNNING/COMPLETED/FAILED)
 ```
 
 PNG, JPEG, and WEBP inputs are decoded with format/MIME matching, animation rejection, decompression-bomb safeguards, and explicit byte/dimension/pixel limits. The service stores safe metadata plus six deterministic geometry regions and a pre-OCR suitability heuristic. It performs no OCR, object detection, classification, AI vision, or attribute extraction and exposes no execution or result API.
+
+SPEC-020 adds direct local OCR orchestration:
+
+```text
+ImageOcrService -> ProcessingJobRepository (analysis history + lifecycle)
+                -> ProductSourceRepository (scoped IMAGE metadata)
+                -> ImageAnalysisResultRepository (SPEC-019 regions)
+                -> ObjectStorage.open (bounded analyzed bytes)
+                -> OcrEngine / RapidOCR ONNX Runtime (in-memory local OCR)
+                -> ImageOcrResultRepository (META + BLOCK evidence)
+```
+
+A dedicated `IMAGE_OCR` job avoids reusing a completed analysis job. The service maps SPEC-019 regions into a deterministic oriented-image coordinate system, preserves normalized text, reading order, integer confidence basis points, and boxes, suppresses only overlapping whitespace-equivalent duplicates, and completes successfully for TEXT_FOUND, LOW_CONFIDENCE_TEXT, or NO_TEXT. Its nameplate-text score is a deterministic evidence heuristic only. No product classification, structured attribute extraction, unit normalization, LLM, hosted OCR, worker, execution/result API, or frontend behavior is added.

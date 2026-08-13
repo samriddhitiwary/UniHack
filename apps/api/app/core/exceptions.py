@@ -474,6 +474,88 @@ class ImageAnalysisResultStorageError(ImageAnalysisError):
     safe_message = "The image-analysis result could not be stored."
 
 
+class ImageOcrError(Exception):
+    code = "IMAGE_OCR_FAILED"
+    safe_message = "The image OCR operation could not be completed."
+
+
+class InvalidImageOcrJobError(ImageOcrError):
+    code = "INVALID_IMAGE_OCR_JOB"
+    safe_message = "The processing job is not eligible for image OCR."
+
+
+class InvalidImageOcrSourceError(ImageOcrError):
+    code = "INVALID_IMAGE_OCR_SOURCE"
+    safe_message = "The product source is not eligible for image OCR."
+
+
+class ImageAnalysisResultRequiredError(ImageOcrError):
+    code = "IMAGE_ANALYSIS_RESULT_REQUIRED"
+    safe_message = "A compatible completed image-analysis result is required."
+
+
+class ImageOcrEngineUnavailableError(ImageOcrError):
+    code = "IMAGE_OCR_ENGINE_UNAVAILABLE"
+    safe_message = "The configured local OCR engine is unavailable."
+
+
+class ImageOcrEngineError(ImageOcrError):
+    code = "IMAGE_OCR_ENGINE_FAILED"
+    safe_message = "The local OCR engine could not process the image."
+
+
+class ImageOcrRegionInvalidError(ImageOcrError):
+    code = "IMAGE_OCR_REGION_INVALID"
+    safe_message = "Image-analysis region evidence is invalid for OCR."
+
+
+class ImageOcrRegionLimitExceededError(ImageOcrError):
+    code = "IMAGE_OCR_REGION_LIMIT_EXCEEDED"
+    safe_message = "The OCR region limit was exceeded."
+
+
+class ImageOcrBlockLimitExceededError(ImageOcrError):
+    code = "IMAGE_OCR_BLOCK_LIMIT_EXCEEDED"
+    safe_message = "The OCR block limit was exceeded."
+
+
+class ImageOcrTextLimitExceededError(ImageOcrError):
+    code = "IMAGE_OCR_TEXT_LIMIT_EXCEEDED"
+    safe_message = "The OCR text limit was exceeded."
+
+
+class ImageOcrResultItemTooLargeError(ImageOcrError):
+    code = "IMAGE_OCR_RESULT_ITEM_TOO_LARGE"
+    safe_message = "An OCR evidence record exceeds the safe storage limit."
+
+
+class ImageOcrObjectNotFoundError(ImageOcrError):
+    code = "IMAGE_OCR_OBJECT_NOT_FOUND"
+    safe_message = "The stored image object could not be found for OCR."
+
+
+class ImageOcrObjectStorageError(ImageOcrError):
+    code = "IMAGE_OCR_OBJECT_STORAGE_FAILED"
+    safe_message = "The stored image object is temporarily unavailable for OCR."
+
+
+class ImageOcrResultStorageError(ImageOcrError):
+    code = "IMAGE_OCR_STORAGE_FAILED"
+    safe_message = "The image OCR result could not be stored."
+
+
+class ImageOcrRepositoryError(Exception):
+    """Base error for image OCR result persistence failures."""
+
+
+class ImageOcrResultAlreadyExistsError(ImageOcrRepositoryError):
+    """Raised when conditional creation finds an existing OCR identity."""
+
+
+class ImageOcrSerializationError(ImageOcrRepositoryError):
+    """Raised when OCR evidence cannot safely cross the DynamoDB boundary."""
+
+
 class InvalidProductSourceCursorError(ProductSourceRepositoryError):
     """Raised when an opaque product-source cursor is invalid."""
 

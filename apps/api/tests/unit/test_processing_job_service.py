@@ -199,6 +199,7 @@ def source_of_type(source_type: ProductSourceType) -> ProductSource:
         (ProductSourceType.PDF, ProcessingJobType.PDF_TEXT_EXTRACTION),
         (ProductSourceType.PDF, ProcessingJobType.PDF_TABLE_EXTRACTION),
         (ProductSourceType.IMAGE, ProcessingJobType.IMAGE_ANALYSIS),
+        (ProductSourceType.IMAGE, ProcessingJobType.IMAGE_OCR),
         (ProductSourceType.CSV, ProcessingJobType.CSV_PROCESSING),
     ],
 )

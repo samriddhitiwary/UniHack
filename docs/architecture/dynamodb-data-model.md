@@ -101,7 +101,7 @@ The processing-jobs table stores safe tracking metadata for future attempts and 
 }
 ```
 
-Job types are `SOURCE_PROCESSING`, `PDF_TEXT_EXTRACTION`, `PDF_TABLE_EXTRACTION`, `IMAGE_ANALYSIS`, and `CSV_PROCESSING`. Statuses are `PENDING`, `RUNNING`, `COMPLETED`, `FAILED`, and `CANCELLED`. Approved transitions are PENDING to RUNNING/CANCELLED and RUNNING to COMPLETED/FAILED/CANCELLED; terminal states do not transition.
+Job types are `SOURCE_PROCESSING`, `PDF_TEXT_EXTRACTION`, `PDF_TABLE_EXTRACTION`, `IMAGE_ANALYSIS`, `IMAGE_OCR`, and `CSV_PROCESSING`. Statuses are `PENDING`, `RUNNING`, `COMPLETED`, `FAILED`, and `CANCELLED`. Approved transitions are PENDING to RUNNING/CANCELLED and RUNNING to COMPLETED/FAILED/CANCELLED; terminal states do not transition.
 
 | Job access pattern | Operation |
 | --- | --- |
@@ -175,6 +175,23 @@ One record per deterministic region keeps geometry evidence separate from aggreg
 | Retrieve by analysis ID | Paginated consistent partition query |
 | Retrieve by job ID | `JobIdIndex` query followed by analysis partition query |
 
+## Image OCR results table
+
+The image-ocr-results table uses partition key `ocrId` and sort key `recordKey`.
+
+| Record | Contents |
+| --- | --- |
+| `META` | Job/product/source/analysis IDs, local engine/version, oriented dimensions, counts, quality, nameplate-text status/score, warnings, creation time |
+| `BLOCK#000001` | Region ID, per-region reading order, normalized OCR text, confidence basis points, oriented pixel box, relative basis-point box |
+
+Blocks remain separate from META so evidence growth is bounded per item. Every serialized record is rejected above 390,000 bytes. META alone carries `jobId` and `createdAt`, making `JobIdIndex` sparse. Creation is conditional; consistent partition reads paginate and validate contiguous block records; job lookup uses the index and then the partition. No image bytes, raw engine response, scans, global list, update, delete, or public result API exists.
+
+| Image-OCR access pattern | Operation |
+| --- | --- |
+| Create result | Conditional META `PutItem`, followed by bounded BLOCK records |
+| Retrieve by OCR ID | Paginated consistent partition query |
+| Retrieve by job ID | `JobIdIndex` query followed by OCR partition query |
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -184,7 +201,7 @@ uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
 or `make dynamodb-create-tables`. The script creates products, sources, processing-jobs,
-extraction-results, table-extraction-results, csv-processing-results, and image-analysis-results tables with their documented indexes. It waits for each table and
+extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, and image-ocr-results tables with their documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

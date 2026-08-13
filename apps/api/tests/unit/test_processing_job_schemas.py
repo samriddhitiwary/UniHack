@@ -23,6 +23,11 @@ def test_create_accepts_only_approved_fields_and_defaults_attempt() -> None:
     assert request.attempt == 1
 
 
+def test_create_schema_accepts_dedicated_image_ocr_job_type() -> None:
+    request = ProcessingJobCreate(productId=PRODUCT_ID, sourceId=SOURCE_ID, jobType="IMAGE_OCR")
+    assert request.job_type.value == "IMAGE_OCR"
+
+
 @pytest.mark.parametrize(
     "field",
     [

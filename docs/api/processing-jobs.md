@@ -31,7 +31,7 @@ or version.
 | --- | --- |
 | `TEXT` | `SOURCE_PROCESSING` |
 | `PDF` | `SOURCE_PROCESSING`, `PDF_TEXT_EXTRACTION`, `PDF_TABLE_EXTRACTION` |
-| `IMAGE` | `SOURCE_PROCESSING`, `IMAGE_ANALYSIS` |
+| `IMAGE` | `SOURCE_PROCESSING`, `IMAGE_ANALYSIS`, `IMAGE_OCR` |
 | `CSV` | `SOURCE_PROCESSING`, `CSV_PROCESSING` |
 
 Incompatible pairs return HTTP 422 with
@@ -88,5 +88,5 @@ No total count or raw DynamoDB pagination key is exposed.
 | 500 | `INTERNAL_SERVER_ERROR` | Unexpected safe server failure |
 
 The OpenAPI document contains no job update, delete, start, cancel, retry, or global-list
-operation. Workers, queues, schedulers, parsing, extraction, OCR, AI, S3, and frontend
-job UI remain absent.
+operation. `IMAGE_OCR` is metadata creation only; it does not execute OCR through the API.
+Workers, queues, schedulers, hosted OCR/AI, S3, and frontend job UI remain absent.

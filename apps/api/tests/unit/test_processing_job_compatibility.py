@@ -15,6 +15,7 @@ SUPPORTED = {
     ProductSourceType.IMAGE: {
         ProcessingJobType.SOURCE_PROCESSING,
         ProcessingJobType.IMAGE_ANALYSIS,
+        ProcessingJobType.IMAGE_OCR,
     },
     ProductSourceType.CSV: {
         ProcessingJobType.SOURCE_PROCESSING,

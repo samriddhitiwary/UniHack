@@ -31,3 +31,5 @@ The `{prefix}-image-analysis-results` table uses `analysisId` and `recordKey`. O
 The service validates the job, source, MIME metadata, and duplicate-result state before starting. It then transitions `PENDING` to `RUNNING`, opens the object through the storage protocol, inspects and persists the result, and transitions to `COMPLETED` with progress 100 and `image-analysis-results/{analysisId}`. Controlled failures after start attempt `FAILED`. If the final job update fails after result persistence, the evidence is preserved and a safe consistency-risk event is logged.
 
 There is no execution endpoint, result endpoint, worker, scheduler, queue, frontend, S3 implementation, authentication, or deployment change in this feature.
+
+SPEC-020 consumes this evidence through a separate `IMAGE_OCR` job. It locates the newest completed analysis through existing source-job history, retrieves the result by its analysis job ID, and maps these stored regions into the oriented OCR coordinate system. SPEC-019 remains a standalone validation/geometry phase and is never completed twice.

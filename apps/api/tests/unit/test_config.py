@@ -106,3 +106,23 @@ def test_csv_processing_limits_must_be_positive(field: str) -> None:
 def test_image_analysis_limits_must_be_positive(field: str) -> None:
     with pytest.raises(ValidationError):
         Settings(**{field: 0})
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "image_ocr_max_regions",
+        "image_ocr_max_blocks",
+        "image_ocr_max_total_characters",
+        "image_ocr_max_block_characters",
+    ],
+)
+def test_image_ocr_limits_must_be_positive(field: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**{field: 0})
+
+
+@pytest.mark.parametrize("value", [-1, 10_001])
+def test_image_ocr_confidence_threshold_is_bounded(value: int) -> None:
+    with pytest.raises(ValidationError):
+        Settings(image_ocr_min_confidence_bp=value)

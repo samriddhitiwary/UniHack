@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     image_analysis_max_height: int = Field(default=12_000, gt=0)
     image_analysis_max_pixels: int = Field(default=80_000_000, gt=0)
     image_analysis_max_regions: int = Field(default=16, gt=0)
+    image_ocr_max_regions: int = Field(default=6, gt=0)
+    image_ocr_max_blocks: int = Field(default=5_000, gt=0)
+    image_ocr_max_total_characters: int = Field(default=500_000, gt=0)
+    image_ocr_max_block_characters: int = Field(default=10_000, gt=0)
+    image_ocr_min_confidence_bp: int = Field(default=4_000, ge=0, le=10_000)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

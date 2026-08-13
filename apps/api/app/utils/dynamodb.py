@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from app.core.exceptions import (
     CsvProcessingSerializationError,
     ImageAnalysisSerializationError,
+    ImageOcrSerializationError,
     PdfExtractionSerializationError,
     PdfTableExtractionSerializationError,
     ProcessingJobSerializationError,
@@ -34,6 +35,12 @@ from app.domain.image_analysis import (
     ImageOrientation,
     ImageRegionType,
     NameplateCandidateStatus,
+)
+from app.domain.image_ocr import (
+    ImageOcrQualityStatus,
+    ImageOcrResult,
+    NameplateTextStatus,
+    OcrTextBlock,
 )
 from app.domain.pdf_extraction import (
     PdfExtractionPage,
@@ -716,6 +723,117 @@ def _image_region_from_item(item: Mapping[str, object]) -> ImageAnalysisRegion:
         relative_width_bp=_integer(item["relativeWidthBp"], "relativeWidthBp"),
         relative_height_bp=_integer(item["relativeHeightBp"], "relativeHeightBp"),
         heuristic_score=_integer(item["heuristicScore"], "heuristicScore"),
+    )
+
+
+def image_ocr_metadata_to_item(result: ImageOcrResult) -> dict[str, object]:
+    return {
+        "ocrId": result.ocr_id,
+        "recordKey": "META",
+        "jobId": result.job_id,
+        "productId": result.product_id,
+        "sourceId": result.source_id,
+        "imageAnalysisId": result.image_analysis_id,
+        "engine": result.engine,
+        "engineVersion": result.engine_version,
+        "imageWidth": result.image_width,
+        "imageHeight": result.image_height,
+        "regionCount": result.region_count,
+        "blockCount": result.block_count,
+        "duplicateBlockCount": result.duplicate_block_count,
+        "totalCharacterCount": result.total_character_count,
+        "averageConfidenceBp": result.average_confidence_bp,
+        "qualityStatus": result.quality_status,
+        "nameplateTextStatus": result.nameplate_text_status,
+        "nameplateHeuristicScore": result.nameplate_heuristic_score,
+        "warningCodes": result.warning_codes,
+        "createdAt": result.created_at,
+    }
+
+
+def image_ocr_block_to_item(ocr_id: UUID, index: int, block: OcrTextBlock) -> dict[str, object]:
+    return {
+        "ocrId": ocr_id,
+        "recordKey": f"BLOCK#{index:06d}",
+        "blockId": block.block_id,
+        "regionId": block.region_id,
+        "readingOrder": block.reading_order,
+        "text": block.text,
+        "confidenceBp": block.confidence_bp,
+        "x": block.x,
+        "y": block.y,
+        "width": block.width,
+        "height": block.height,
+        "relativeXBp": block.relative_x_bp,
+        "relativeYBp": block.relative_y_bp,
+        "relativeWidthBp": block.relative_width_bp,
+        "relativeHeightBp": block.relative_height_bp,
+    }
+
+
+def image_ocr_result_from_items(items: Sequence[Mapping[str, object]]) -> ImageOcrResult:
+    try:
+        metadata_items = [item for item in items if item.get("recordKey") == "META"]
+        if len(metadata_items) != 1:
+            raise ValueError("one image OCR metadata record is required")
+        item = metadata_items[0]
+        block_items = sorted(
+            (value for value in items if str(value.get("recordKey", "")).startswith("BLOCK#")),
+            key=lambda value: str(value["recordKey"]),
+        )
+        expected_count = _integer(item["blockCount"], "blockCount")
+        if len(block_items) != expected_count or tuple(
+            str(value["recordKey"]) for value in block_items
+        ) != tuple(f"BLOCK#{index:06d}" for index in range(1, expected_count + 1)):
+            raise ValueError("OCR block records must be complete and contiguous")
+        warnings = item.get("warningCodes", [])
+        if not isinstance(warnings, Sequence) or isinstance(warnings, (str, bytes)):
+            raise ValueError("warningCodes must be a sequence")
+        return ImageOcrResult(
+            ocr_id=UUID(str(item["ocrId"])),
+            job_id=UUID(str(item["jobId"])),
+            product_id=UUID(str(item["productId"])),
+            source_id=UUID(str(item["sourceId"])),
+            image_analysis_id=UUID(str(item["imageAnalysisId"])),
+            engine=_required_string(item["engine"], "engine"),
+            engine_version=_required_string(item["engineVersion"], "engineVersion"),
+            image_width=_integer(item["imageWidth"], "imageWidth"),
+            image_height=_integer(item["imageHeight"], "imageHeight"),
+            region_count=_integer(item["regionCount"], "regionCount"),
+            block_count=expected_count,
+            duplicate_block_count=_integer(item["duplicateBlockCount"], "duplicateBlockCount"),
+            total_character_count=_integer(item["totalCharacterCount"], "totalCharacterCount"),
+            average_confidence_bp=_integer(item["averageConfidenceBp"], "averageConfidenceBp"),
+            quality_status=ImageOcrQualityStatus(str(item["qualityStatus"])),
+            nameplate_text_status=NameplateTextStatus(str(item["nameplateTextStatus"])),
+            nameplate_heuristic_score=_integer(
+                item["nameplateHeuristicScore"], "nameplateHeuristicScore"
+            ),
+            blocks=tuple(_image_ocr_block_from_item(value) for value in block_items),
+            warning_codes=tuple(_required_string(code, "warningCode") for code in warnings),
+            created_at=parse_utc(item["createdAt"]),
+        )
+    except ImageOcrSerializationError:
+        raise
+    except (KeyError, TypeError, ValueError, ProductSerializationError) as exc:
+        raise ImageOcrSerializationError("DynamoDB items are not a valid image OCR result") from exc
+
+
+def _image_ocr_block_from_item(item: Mapping[str, object]) -> OcrTextBlock:
+    return OcrTextBlock(
+        block_id=_required_string(item["blockId"], "blockId"),
+        region_id=_required_string(item["regionId"], "regionId"),
+        reading_order=_integer(item["readingOrder"], "readingOrder"),
+        text=_required_string(item["text"], "text"),
+        confidence_bp=_integer(item["confidenceBp"], "confidenceBp"),
+        x=_integer(item["x"], "x"),
+        y=_integer(item["y"], "y"),
+        width=_integer(item["width"], "width"),
+        height=_integer(item["height"], "height"),
+        relative_x_bp=_integer(item["relativeXBp"], "relativeXBp"),
+        relative_y_bp=_integer(item["relativeYBp"], "relativeYBp"),
+        relative_width_bp=_integer(item["relativeWidthBp"], "relativeWidthBp"),
+        relative_height_bp=_integer(item["relativeHeightBp"], "relativeHeightBp"),
     )
 
 

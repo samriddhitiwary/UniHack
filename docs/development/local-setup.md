@@ -13,6 +13,8 @@ Relative storage paths resolve from `apps/api`, making the example root the repo
 
 Upload byte limits use `MAX_PDF_UPLOAD_BYTES` and `MAX_IMAGE_UPLOAD_BYTES` (10 MiB defaults) plus `MAX_CSV_UPLOAD_BYTES` (5 MiB default). Every value must be positive.
 
+SPEC-020 OCR uses the `rapidocr-onnxruntime` Python dependency and packaged local ONNX models installed by `uv sync`; Tesseract and hosted credentials are not required. Normal tests use a fake engine. Set `RUN_RAPIDOCR_INTEGRATION=1` only when you want to run the optional generated-image test against the real local models.
+
 Create the local products and product-sources tables with:
 
 ```powershell

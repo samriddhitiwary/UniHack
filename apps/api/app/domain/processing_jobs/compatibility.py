@@ -13,7 +13,11 @@ _SUPPORTED_JOB_TYPES: dict[ProductSourceType, frozenset[ProcessingJobType]] = {
         }
     ),
     ProductSourceType.IMAGE: frozenset(
-        {ProcessingJobType.SOURCE_PROCESSING, ProcessingJobType.IMAGE_ANALYSIS}
+        {
+            ProcessingJobType.SOURCE_PROCESSING,
+            ProcessingJobType.IMAGE_ANALYSIS,
+            ProcessingJobType.IMAGE_OCR,
+        }
     ),
     ProductSourceType.CSV: frozenset(
         {ProcessingJobType.SOURCE_PROCESSING, ProcessingJobType.CSV_PROCESSING}
