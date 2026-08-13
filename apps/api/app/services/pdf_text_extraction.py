@@ -62,6 +62,7 @@ class PdfTextExtractionService:
         if (
             job.job_type is not ProcessingJobType.PDF_TEXT_EXTRACTION
             or job.status is not ProcessingJobStatus.PENDING
+            or job.source_id is None
         ):
             raise InvalidPdfExtractionJobError()
 

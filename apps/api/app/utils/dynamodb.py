@@ -18,6 +18,7 @@ from app.core.exceptions import (
     PdfExtractionSerializationError,
     PdfTableExtractionSerializationError,
     ProcessingJobSerializationError,
+    ProductClassificationSerializationError,
     ProductSerializationError,
     ProductSourceSerializationError,
 )
@@ -55,6 +56,13 @@ from app.domain.pdf_table_extraction import (
     PdfTableRow,
 )
 from app.domain.processing_jobs import ProcessingJob, ProcessingJobStatus, ProcessingJobType
+from app.domain.product_classification import (
+    ClassificationEvidenceType,
+    ClassificationMatch,
+    ClassificationSignalStrength,
+    ProductClassificationResult,
+    ProductClassificationStatus,
+)
 from app.domain.product_sources import ProductSource, ProductSourceStatus, ProductSourceType
 from app.domain.products.entities import Product
 from app.domain.products.enums import ProductCategory, ProductStatus
@@ -217,11 +225,9 @@ def processing_job_source_scope(product_id: UUID, source_id: UUID) -> str:
 
 
 def processing_job_to_item(job: ProcessingJob) -> dict[str, object]:
-    return {
+    item: dict[str, object] = {
         "jobId": job.job_id,
         "productId": job.product_id,
-        "sourceId": job.source_id,
-        "sourceScope": processing_job_source_scope(job.product_id, job.source_id),
         "jobType": job.job_type,
         "status": job.status,
         "attempt": job.attempt,
@@ -235,14 +241,22 @@ def processing_job_to_item(job: ProcessingJob) -> dict[str, object]:
         "completedAt": job.completed_at,
         "updatedAt": job.updated_at,
     }
+    if job.source_id is not None:
+        item["sourceId"] = job.source_id
+        item["sourceScope"] = processing_job_source_scope(job.product_id, job.source_id)
+    return item
 
 
 def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
     try:
         product_id = UUID(str(item["productId"]))
-        source_id = UUID(str(item["sourceId"]))
-        if item.get("sourceScope") != processing_job_source_scope(product_id, source_id):
+        source_id = UUID(str(item["sourceId"])) if "sourceId" in item else None
+        if source_id is not None and item.get("sourceScope") != processing_job_source_scope(
+            product_id, source_id
+        ):
             raise ValueError("sourceScope does not match job ownership")
+        if source_id is None and "sourceScope" in item:
+            raise ValueError("sourceScope requires sourceId")
         return ProcessingJob(
             job_id=UUID(str(item["jobId"])),
             product_id=product_id,
@@ -266,6 +280,103 @@ def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
         raise ProcessingJobSerializationError(
             "DynamoDB item is not a valid processing job"
         ) from exc
+
+
+def product_classification_metadata_to_item(
+    result: ProductClassificationResult,
+) -> dict[str, object]:
+    return {
+        "classificationId": result.classification_id,
+        "recordKey": "META",
+        "jobId": result.job_id,
+        "productId": result.product_id,
+        "category": result.category,
+        "status": result.status,
+        "confidenceBp": result.confidence_bp,
+        "pumpScore": result.pump_score,
+        "motorScore": result.motor_score,
+        "evidenceItemCount": result.evidence_item_count,
+        "matchedEvidenceCount": result.matched_evidence_count,
+        "conflictingEvidenceCount": result.conflicting_evidence_count,
+        "engine": result.engine,
+        "engineVersion": result.engine_version,
+        "warningCodes": result.warning_codes,
+        "matchCount": len(result.matches),
+        "createdAt": result.created_at,
+    }
+
+
+def product_classification_match_to_item(
+    classification_id: UUID, index: int, match: ClassificationMatch
+) -> dict[str, object]:
+    return {
+        "classificationId": classification_id,
+        "recordKey": f"MATCH#{index:06d}",
+        "matchId": match.match_id,
+        "evidenceId": match.evidence_id,
+        "sourceId": match.source_id,
+        "evidenceType": match.evidence_type,
+        "category": match.category,
+        "matchedSignal": match.matched_signal,
+        "signalStrength": match.signal_strength.name,
+        "weightedScore": match.weighted_score,
+        "location": match.location,
+        "excerpt": match.excerpt,
+    }
+
+
+def product_classification_result_from_items(
+    items: Sequence[Mapping[str, object]],
+) -> ProductClassificationResult:
+    try:
+        metadata = next(item for item in items if item["recordKey"] == "META")
+        records = sorted(
+            (item for item in items if str(item["recordKey"]).startswith("MATCH#")),
+            key=lambda item: str(item["recordKey"]),
+        )
+        matches = tuple(
+            ClassificationMatch(
+                match_id=str(item["matchId"]),
+                evidence_id=str(item["evidenceId"]),
+                source_id=UUID(str(item["sourceId"])),
+                evidence_type=ClassificationEvidenceType(str(item["evidenceType"])),
+                category=ProductCategory(str(item["category"])),
+                matched_signal=str(item["matchedSignal"]),
+                signal_strength=ClassificationSignalStrength[str(item["signalStrength"])],
+                weighted_score=_integer(item["weightedScore"], "weightedScore"),
+                location=str(item["location"]),
+                excerpt=str(item["excerpt"]),
+            )
+            for item in records
+        )
+        if _integer(metadata["matchCount"], "matchCount") != len(matches):
+            raise ValueError("matchCount does not match records")
+        return ProductClassificationResult(
+            classification_id=UUID(str(metadata["classificationId"])),
+            job_id=UUID(str(metadata["jobId"])),
+            product_id=UUID(str(metadata["productId"])),
+            category=ProductCategory(str(metadata["category"])),
+            status=ProductClassificationStatus(str(metadata["status"])),
+            confidence_bp=_integer(metadata["confidenceBp"], "confidenceBp"),
+            pump_score=_integer(metadata["pumpScore"], "pumpScore"),
+            motor_score=_integer(metadata["motorScore"], "motorScore"),
+            evidence_item_count=_integer(metadata["evidenceItemCount"], "evidenceItemCount"),
+            matched_evidence_count=_integer(
+                metadata["matchedEvidenceCount"], "matchedEvidenceCount"
+            ),
+            conflicting_evidence_count=_integer(
+                metadata["conflictingEvidenceCount"], "conflictingEvidenceCount"
+            ),
+            matches=matches,
+            warning_codes=tuple(
+                str(code) for code in cast(Sequence[object], metadata["warningCodes"])
+            ),
+            engine=str(metadata["engine"]),
+            engine_version=str(metadata["engineVersion"]),
+            created_at=parse_utc(metadata["createdAt"]),
+        )
+    except (KeyError, StopIteration, TypeError, ValueError, ProductSerializationError) as exc:
+        raise ProductClassificationSerializationError("classification records are invalid") from exc
 
 
 def pdf_extraction_metadata_to_item(result: PdfTextExtractionResult) -> dict[str, object]:

@@ -105,6 +105,8 @@ The image-analysis service processes only PENDING `IMAGE_ANALYSIS` jobs for stor
 
 The image-OCR service processes only PENDING `IMAGE_OCR` jobs after a compatible completed SPEC-019 analysis. It uses local RapidOCR ONNX Runtime models, reuses and maps deterministic regions into an oriented full-image coordinate system, and stores bounded normalized text, reading order, boxes, and integer confidence basis points in META/BLOCK records. NO_TEXT and LOW_CONFIDENCE_TEXT are successful outcomes. The nameplate-text score is deterministic and non-AI; no product category, structured attribute, or normalized unit is produced. There is no OCR execution/result API. See the [image OCR architecture](docs/architecture/image-ocr.md).
 
+The product-classification service processes internal PENDING product-level `PRODUCT_CLASSIFICATION` jobs. It aggregates bounded evidence from direct text and available PDF, table, CSV, and OCR results, then uses phrase-aware deterministic pump/motor rules with integer scores, confidence basis points, ambiguity, and cross-source conflict handling. Results preserve bounded matched provenance in META/MATCH records. Every valid uncertainty outcome completes successfully, and `Product.category` is never changed automatically. There is no classification API. See the [product classification architecture](docs/architecture/product-classification.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -127,6 +129,7 @@ The image-OCR service processes only PENDING `IMAGE_OCR` jobs after a compatible
 - [SPEC-018](docs/specs/SPEC-018-csv-processing-engine.md)
 - [SPEC-019](docs/specs/SPEC-019-image-and-nameplate-analysis-foundation.md)
 - [SPEC-020](docs/specs/SPEC-020-ocr-and-nameplate-text-recognition-engine.md)
+- [SPEC-021](docs/specs/SPEC-021-product-classification-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -138,6 +141,7 @@ The image-OCR service processes only PENDING `IMAGE_OCR` jobs after a compatible
 - [CSV processing](docs/architecture/csv-processing.md)
 - [Image and nameplate analysis](docs/architecture/image-analysis.md)
 - [OCR and nameplate text recognition](docs/architecture/image-ocr.md)
+- [Product classification](docs/architecture/product-classification.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

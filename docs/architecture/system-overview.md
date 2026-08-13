@@ -167,3 +167,20 @@ ImageOcrService -> ProcessingJobRepository (analysis history + lifecycle)
 ```
 
 A dedicated `IMAGE_OCR` job avoids reusing a completed analysis job. The service maps SPEC-019 regions into a deterministic oriented-image coordinate system, preserves normalized text, reading order, integer confidence basis points, and boxes, suppresses only overlapping whitespace-equivalent duplicates, and completes successfully for TEXT_FOUND, LOW_CONFIDENCE_TEXT, or NO_TEXT. Its nameplate-text score is a deterministic evidence heuristic only. No product classification, structured attribute extraction, unit normalization, LLM, hosted OCR, worker, execution/result API, or frontend behavior is added.
+
+SPEC-021 adds internal product-level deterministic classification:
+
+```text
+ProductClassificationService -> Product/ProcessingJob repositories (validation/lifecycle)
+                             -> ProductClassificationEvidenceAggregator
+                                  -> source and extraction-result repositories
+                             -> ProductClassificationEngine (bounded integer rules)
+                             -> ProductClassificationResultRepository (META + MATCH evidence)
+```
+
+Unlike prior jobs, `PRODUCT_CLASSIFICATION` has no source ID and is omitted from the sparse source
+index. The source-scoped public job API rejects it. Available direct text, PDF text/table, CSV, and
+OCR evidence is normalized only for matching, remains traceable, and is hard bounded. Classified,
+ambiguous, insufficient, and conflicting outcomes all complete successfully. Confidence is score
+separation in basis points rather than ML probability. No LLM, file access, API, frontend, attribute
+extraction, or automatic `Product.category` mutation is added.

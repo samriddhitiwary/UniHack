@@ -35,7 +35,7 @@ def _optional_text(value: str | None, field: str, maximum: int) -> str | None:
 class ProcessingJob:
     job_id: UUID
     product_id: UUID
-    source_id: UUID
+    source_id: UUID | None
     job_type: ProcessingJobType
     status: ProcessingJobStatus
     attempt: int
@@ -54,10 +54,13 @@ class ProcessingJob:
             raise ValueError("job_id must be a UUID")
         if not isinstance(self.product_id, UUID):
             raise ValueError("product_id must be a UUID")
-        if not isinstance(self.source_id, UUID):
-            raise ValueError("source_id must be a UUID")
         if not isinstance(self.job_type, ProcessingJobType):
             raise ValueError("job_type must be a ProcessingJobType")
+        if self.job_type is ProcessingJobType.PRODUCT_CLASSIFICATION:
+            if self.source_id is not None:
+                raise ValueError("PRODUCT_CLASSIFICATION jobs must not have a source_id")
+        elif not isinstance(self.source_id, UUID):
+            raise ValueError("source_id must be a UUID for source-scoped jobs")
         if not isinstance(self.status, ProcessingJobStatus):
             raise ValueError("status must be a ProcessingJobStatus")
         if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
@@ -131,7 +134,7 @@ class ProcessingJob:
         cls,
         *,
         product_id: UUID,
-        source_id: UUID,
+        source_id: UUID | None,
         job_type: ProcessingJobType,
         attempt: int = 1,
         now: datetime | None = None,

@@ -54,6 +54,11 @@ class ProcessingJobService:
         )
         self._require_product(product_id)
         source = self._require_source(product_id, source_id)
+        if job_type is ProcessingJobType.PRODUCT_CLASSIFICATION:
+            raise ProcessingJobTypeNotSupportedForSourceError(
+                source.source_type.value,
+                job_type.value,
+            )
         if not is_processing_job_type_supported(source.source_type, job_type):
             logger.info(
                 "event=processing_job.create_rejected product_id=%s source_id=%s "

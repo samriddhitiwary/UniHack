@@ -66,6 +66,7 @@ class ImageAnalysisService:
             job is None
             or job.job_type is not ProcessingJobType.IMAGE_ANALYSIS
             or job.status is not ProcessingJobStatus.PENDING
+            or job.source_id is None
         ):
             raise InvalidImageAnalysisJobError()
         source = self._source_repository.get_by_id(job.product_id, job.source_id)

@@ -10,6 +10,7 @@ class ProcessingJobType(StrEnum):
     IMAGE_ANALYSIS = "IMAGE_ANALYSIS"
     IMAGE_OCR = "IMAGE_OCR"
     CSV_PROCESSING = "CSV_PROCESSING"
+    PRODUCT_CLASSIFICATION = "PRODUCT_CLASSIFICATION"
 
 
 class ProcessingJobStatus(StrEnum):

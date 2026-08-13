@@ -614,3 +614,50 @@ class ObjectMetadataError(ObjectStorageError):
 
 class ObjectStorageConfigurationError(ObjectStorageError):
     """Raised when object storage cannot be constructed from configuration."""
+
+
+class ProductClassificationError(Exception):
+    code = "PRODUCT_CLASSIFICATION_ENGINE_FAILED"
+    safe_message = "Product classification could not be completed."
+
+
+class InvalidProductClassificationJobError(ProductClassificationError):
+    code = "INVALID_PRODUCT_CLASSIFICATION_JOB"
+    safe_message = "The processing job is not eligible for product classification."
+
+
+class ProductClassificationProductNotFoundError(ProductClassificationError):
+    code = "PRODUCT_CLASSIFICATION_PRODUCT_NOT_FOUND"
+    safe_message = "The product required for classification does not exist."
+
+
+class ProductClassificationEvidenceLimitExceededError(ProductClassificationError):
+    code = "PRODUCT_CLASSIFICATION_EVIDENCE_LIMIT_EXCEEDED"
+    safe_message = "Product classification evidence exceeds a configured limit."
+
+
+class ProductClassificationMatchLimitExceededError(ProductClassificationError):
+    code = "PRODUCT_CLASSIFICATION_MATCH_LIMIT_EXCEEDED"
+    safe_message = "Product classification matches exceed the configured limit."
+
+
+class ProductClassificationResultItemTooLargeError(ProductClassificationError):
+    code = "PRODUCT_CLASSIFICATION_RESULT_ITEM_TOO_LARGE"
+    safe_message = "A classification result record exceeds the safe storage limit."
+
+
+class ProductClassificationResultStorageError(ProductClassificationError):
+    code = "PRODUCT_CLASSIFICATION_STORAGE_FAILED"
+    safe_message = "The classification result could not be stored."
+
+
+class ProductClassificationRepositoryError(Exception):
+    """Base error for classification-result persistence failures."""
+
+
+class ProductClassificationResultAlreadyExistsError(ProductClassificationRepositoryError):
+    """Raised when conditional creation finds an existing classification identity."""
+
+
+class ProductClassificationSerializationError(ProductClassificationRepositoryError):
+    """Raised when classification records cannot safely cross persistence."""

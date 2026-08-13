@@ -51,7 +51,7 @@ class ProcessingJobSchema(BaseModel):
 
 class ProcessingJobCreate(ProcessingJobSchema):
     product_id: UUID
-    source_id: UUID
+    source_id: UUID | None
     job_type: ProcessingJobType
     attempt: int = Field(default=1, ge=1, strict=True)
 
@@ -102,7 +102,7 @@ class ProcessingJobRecord(ProcessingJobSchema):
 
     job_id: UUID
     product_id: UUID
-    source_id: UUID
+    source_id: UUID | None
     job_type: ProcessingJobType
     status: ProcessingJobStatus
     attempt: int = Field(ge=1)

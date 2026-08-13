@@ -192,6 +192,21 @@ Blocks remain separate from META so evidence growth is bounded per item. Every s
 | Retrieve by OCR ID | Paginated consistent partition query |
 | Retrieve by job ID | `JobIdIndex` query followed by OCR partition query |
 
+## Product classification results table
+
+The product-classification-results table uses partition key `classificationId` and sort key
+`recordKey`. META contains job/product identity, decision, integer confidence/scores, evidence and
+conflict counts, engine/version, warnings, match count, and creation time. Ordered
+`MATCH#000001` records contain bounded matched-signal provenance and excerpts. Only META contains
+`jobId` and `createdAt`, making `JobIdIndex` sparse. Conditional writes, paginated consistent reads,
+complete reconstruction validation, and the 390,000-byte item guard apply. No scans are used.
+
+| Classification access pattern | Operation |
+| --- | --- |
+| Create result | Conditional META and ordered MATCH `PutItem` operations |
+| Retrieve by classification ID | Paginated consistent partition query |
+| Retrieve by job ID | `JobIdIndex` query followed by classification partition query |
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -201,7 +216,7 @@ uv run --project apps/api python scripts/dynamodb/create_tables.py
 ```
 
 or `make dynamodb-create-tables`. The script creates products, sources, processing-jobs,
-extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, and image-ocr-results tables with their documented indexes. It waits for each table and
+extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, and product-classification-results tables with their documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

@@ -39,6 +39,10 @@ Incompatible pairs return HTTP 422 with
 with `PENDING`, attempt 1, progress 0, version 1, no errors or result reference, and no
 started/completed timestamp. No source status changes and no processing starts.
 
+`PRODUCT_CLASSIFICATION` is an internal product-level job type whose record has `sourceId: null`.
+It is deliberately unsupported by this source-scoped create endpoint and returns the same HTTP 422
+compatibility error. SPEC-021 adds no classification execution or result endpoint.
+
 ## Retrieve a job
 
 `GET /api/v1/processing-jobs/{job_id}` returns the camel-case safe record with HTTP 200.

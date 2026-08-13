@@ -75,6 +75,7 @@ class ImageOcrService:
             job is None
             or job.job_type is not ProcessingJobType.IMAGE_OCR
             or job.status is not ProcessingJobStatus.PENDING
+            or job.source_id is None
         ):
             raise InvalidImageOcrJobError()
         source = self._source_repository.get_by_id(job.product_id, job.source_id)
@@ -230,6 +231,8 @@ class ImageOcrService:
         )
 
     def _find_analysis(self, job: ProcessingJob) -> ImageAnalysisResult | None:
+        if job.source_id is None:
+            return None
         cursor: str | None = None
         while True:
             page = self._job_repository.list_by_source(

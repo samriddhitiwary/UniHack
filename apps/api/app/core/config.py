@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     image_ocr_max_total_characters: int = Field(default=500_000, gt=0)
     image_ocr_max_block_characters: int = Field(default=10_000, gt=0)
     image_ocr_min_confidence_bp: int = Field(default=4_000, ge=0, le=10_000)
+    product_classification_max_evidence_items: int = Field(default=5_000, gt=0)
+    product_classification_max_total_characters: int = Field(default=500_000, gt=0)
+    product_classification_max_item_characters: int = Field(default=5_000, gt=0)
+    product_classification_max_matches: int = Field(default=1_000, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

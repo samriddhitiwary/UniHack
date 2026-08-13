@@ -61,6 +61,7 @@ class CsvProcessingService:
             job is None
             or job.job_type is not ProcessingJobType.CSV_PROCESSING
             or job.status is not ProcessingJobStatus.PENDING
+            or job.source_id is None
         ):
             raise InvalidCsvProcessingJobError()
         source = self._source_repository.get_by_id(job.product_id, job.source_id)
