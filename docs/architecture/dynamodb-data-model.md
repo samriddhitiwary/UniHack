@@ -307,6 +307,20 @@ review without entering either GSI. Conditional writes never overwrite data. Res
 review lookups use queries only and reconstruct the complete partition; missing records fail
 integrity validation. The 390,000-byte item guard and configured attribute/value limits apply.
 
+## Catalog projection results table
+
+The catalog-projection-results table uses `projectionId` and `recordKey`. `META` stores the Product
+identity/version snapshot, exact SPEC-030 and upstream/schema lineage, readiness status and stable
+blocking/warning arrays, counts, engine/version, and timestamp. Ordered `ATTRIBUTE#000001` records
+store compact reviewed values and decision/candidate/source lineage without raw evidence.
+
+Only META carries `jobId`, `materializationId`, and `createdAt`, making `JobIdIndex` and
+`MaterializationIdIndex` sparse. A conditional `MATERIALIZATION#{materializationId}` /
+`CATALOG_PROJECTION` item enforces uniqueness without entering either GSI. Conditional writes
+never overwrite. Projection, job, and materialization lookups use queries only and reject
+incomplete partitions. The 390,000-byte item guard and configured attribute/value/reason/Product
+text limits apply.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -320,8 +334,8 @@ extraction-results, table-extraction-results, csv-processing-results, image-anal
 image-ocr-results, product-classification-results, category-attribute-schemas,
 attribute-normalization-results, attribute-conflict-detection-results, and
 attribute-completeness-results, attribute-validation-results, attribute-selection-results,
-product-reviews, and reviewed-attribute-results tables with their documented indexes. It waits for
-each table and
+product-reviews, reviewed-attribute-results, and catalog-projection-results tables with their
+documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

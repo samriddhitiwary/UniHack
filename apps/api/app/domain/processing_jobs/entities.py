@@ -43,6 +43,7 @@ class ProcessingJob:
     attribute_validation_id: UUID | None = None
     attribute_completeness_id: UUID | None = None
     review_id: UUID | None = None
+    reviewed_attribute_materialization_id: UUID | None = None
     job_type: ProcessingJobType
     status: ProcessingJobStatus
     attempt: int
@@ -72,6 +73,7 @@ class ProcessingJob:
             ProcessingJobType.ATTRIBUTE_VALIDATION,
             ProcessingJobType.ATTRIBUTE_SELECTION,
             ProcessingJobType.REVIEWED_ATTRIBUTE_MATERIALIZATION,
+            ProcessingJobType.CATALOG_PROJECTION,
         }:
             if self.source_id is not None:
                 raise ValueError("product-level jobs must not have a source_id")
@@ -128,6 +130,13 @@ class ProcessingJob:
                 raise ValueError("reviewed materialization jobs require a review_id")
         elif self.review_id is not None:
             raise ValueError("review_id is only valid for reviewed materialization jobs")
+        if self.job_type is ProcessingJobType.CATALOG_PROJECTION:
+            if not isinstance(self.reviewed_attribute_materialization_id, UUID):
+                raise ValueError("catalog projection jobs require a materialization identifier")
+        elif self.reviewed_attribute_materialization_id is not None:
+            raise ValueError(
+                "reviewed_attribute_materialization_id is only valid for catalog projection jobs"
+            )
         if not isinstance(self.status, ProcessingJobStatus):
             raise ValueError("status must be a ProcessingJobStatus")
         if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
@@ -210,6 +219,7 @@ class ProcessingJob:
         attribute_validation_id: UUID | None = None,
         attribute_completeness_id: UUID | None = None,
         review_id: UUID | None = None,
+        reviewed_attribute_materialization_id: UUID | None = None,
         attempt: int = 1,
         now: datetime | None = None,
     ) -> Self:
@@ -225,6 +235,7 @@ class ProcessingJob:
             attribute_validation_id=attribute_validation_id,
             attribute_completeness_id=attribute_completeness_id,
             review_id=review_id,
+            reviewed_attribute_materialization_id=reviewed_attribute_materialization_id,
             job_type=job_type,
             status=ProcessingJobStatus.PENDING,
             attempt=attempt,

@@ -78,6 +78,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     selection_results = MagicMock()
     review_results = MagicMock()
     reviewed_attribute_results = MagicMock()
+    catalog_projection_results = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
@@ -126,6 +127,9 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         create_tables, "create_reviewed_attribute_results_table", reviewed_attribute_results
     )
+    monkeypatch.setattr(
+        create_tables, "create_catalog_projection_results_table", catalog_projection_results
+    )
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
@@ -145,6 +149,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     selection_results.assert_called_once_with()
     review_results.assert_called_once_with()
     reviewed_attribute_results.assert_called_once_with()
+    catalog_projection_results.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
@@ -461,4 +466,22 @@ def test_reviewed_attribute_results_table_definition(monkeypatch: MonkeyPatch) -
     assert [item["IndexName"] for item in request["GlobalSecondaryIndexes"]] == [
         "JobIdIndex",
         "ReviewIdIndex",
+    ]
+
+
+def test_catalog_projection_results_table_definition(monkeypatch: MonkeyPatch) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-catalog-projection-results"
+    client = MagicMock()
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+    assert create_tables.create_catalog_projection_results_table() is True
+    request = client.create_table.call_args.kwargs
+    assert request["KeySchema"] == [
+        {"AttributeName": "projectionId", "KeyType": "HASH"},
+        {"AttributeName": "recordKey", "KeyType": "RANGE"},
+    ]
+    assert [item["IndexName"] for item in request["GlobalSecondaryIndexes"]] == [
+        "JobIdIndex",
+        "MaterializationIdIndex",
     ]

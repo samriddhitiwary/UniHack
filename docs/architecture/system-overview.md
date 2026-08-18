@@ -262,3 +262,18 @@ retain candidate/source, confidence, and validation lineage; manual overrides re
 input and no candidate lineage. All required fields must resolve, while absent optional fields are
 counted without null placeholders. The artifact is persisted before job completion and remains
 separate from Product records, publishing/readiness, APIs, frontend, AI, and deployment.
+
+SPEC-031 creates the first immutable commerce-facing projection and internal publishing-readiness
+assessment:
+
+```text
+CatalogProjectionService -> Product identity/version + explicit SPEC-030 materialization
+                         -> identity and reviewed-attribute projectors
+                         -> deterministic readiness evaluator
+                         -> immutable catalog-projection-results artifact
+```
+
+READY, READY_WITH_WARNINGS, and BLOCKED describe the projection, not Product status. Missing
+optional identity, human overrides, validation warnings, and unresolved optional attributes remain
+auditable warnings. Category/ownership/upstream corruption fails technically. No Product mutation,
+external publishing, export, enrichment, API, frontend, AI, S3, or deployment behavior is added.

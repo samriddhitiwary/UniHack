@@ -18,3 +18,15 @@ If the final job update fails after result persistence, the immutable artifact r
 and a completion-consistency-risk event is logged.
 
 No execution endpoint, worker, retry operation, or scheduling behavior is introduced by SPEC-030.
+
+## Catalog projection
+
+SPEC-031 adds product-level `CATALOG_PROJECTION`. It requires an explicit
+`reviewedAttributeMaterializationId`, requires `sourceId` to be null, and is rejected by the public
+source-oriented creation route. Product, materialization, ownership/category, reviewed integrity,
+and idempotency checks all occur before RUNNING.
+
+Successful READY, READY_WITH_WARNINGS, and business BLOCKED results all complete the job with
+`catalog-projection-results/{projectionId}`. Technical failures after RUNNING attempt FAILED. The
+projection is retained and a consistency-risk event is logged if the terminal job update fails.
+SPEC-031 adds no executor endpoint, scheduling, retry, publishing, or Product-status transition.

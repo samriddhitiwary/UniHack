@@ -1280,3 +1280,86 @@ class ReviewedAttributeRepositoryError(Exception):
 
 class ReviewedAttributeSerializationError(ReviewedAttributeRepositoryError):
     """Raised when a reviewed-attribute partition is malformed or incomplete."""
+
+
+class CatalogProjectionError(Exception):
+    code = "CATALOG_PROJECTION_ENGINE_FAILED"
+    safe_message = "The commerce catalog projection could not be completed."
+
+
+class InvalidCatalogProjectionJobError(CatalogProjectionError):
+    code = "INVALID_CATALOG_PROJECTION_JOB"
+    safe_message = "The processing job is not eligible for catalog projection."
+
+
+class CatalogProjectionProductRequiredError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_PRODUCT_REQUIRED"
+    safe_message = "The catalog projection Product is unavailable."
+
+
+class CatalogProjectionMaterializationRequiredError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_REVIEWED_ATTRIBUTES_MISSING"
+    safe_message = "The required reviewed attribute materialization is unavailable."
+
+
+class CatalogProjectionCrossProductLineageError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_CROSS_PRODUCT_LINEAGE"
+    safe_message = "The reviewed materialization does not belong to the projection Product."
+
+
+class CatalogProjectionCategoryMismatchError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_CATEGORY_MISMATCH"
+    safe_message = "Product and reviewed materialization categories do not match."
+
+
+class CatalogProjectionLineageInvalidError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_LINEAGE_INVALID"
+    safe_message = "Reviewed attribute lineage is inconsistent."
+
+
+class CatalogProjectionRequiredAttributesIncompleteError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_REQUIRED_ATTRIBUTES_INCOMPLETE"
+    safe_message = "Required reviewed attributes are incomplete."
+
+
+class CatalogProjectionAlreadyExistsError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_ALREADY_EXISTS"
+    safe_message = "A catalog projection already exists for this materialization."
+
+
+class CatalogProjectionAttributeLimitExceededError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_ATTRIBUTE_LIMIT_EXCEEDED"
+    safe_message = "Catalog projection attributes exceed the configured limit."
+
+
+class CatalogProjectionReasonLimitExceededError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_REASON_LIMIT_EXCEEDED"
+    safe_message = "Catalog projection reason codes exceed the configured limit."
+
+
+class CatalogProjectionProductTextLimitExceededError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_PRODUCT_TEXT_LIMIT_EXCEEDED"
+    safe_message = "Catalog projection Product identity exceeds the configured limit."
+
+
+class CatalogProjectionValueLimitExceededError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_VALUE_LIMIT_EXCEEDED"
+    safe_message = "A catalog projection attribute value exceeds the configured limit."
+
+
+class CatalogProjectionResultItemTooLargeError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_RESULT_ITEM_TOO_LARGE"
+    safe_message = "A catalog projection record exceeds the safe storage limit."
+
+
+class CatalogProjectionResultStorageError(CatalogProjectionError):
+    code = "CATALOG_PROJECTION_STORAGE_FAILED"
+    safe_message = "The commerce catalog projection could not be stored."
+
+
+class CatalogProjectionRepositoryError(Exception):
+    """Base commerce catalog projection persistence failure."""
+
+
+class CatalogProjectionSerializationError(CatalogProjectionRepositoryError):
+    """Raised when a catalog projection partition is malformed or incomplete."""

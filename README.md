@@ -35,7 +35,7 @@ npm --prefix=apps/web run dev
 
 Open the web app at <http://localhost:5173>. API liveness is at <http://localhost:8000/api/v1/health>; readiness is at <http://localhost:8000/api/v1/health/ready>.
 
-The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction and processing result tables, category schemas, review records, and reviewed-attribute results with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command. Run `make dynamodb-seed-category-schemas` afterward to idempotently seed the two local built-in schema versions; drift is reported and never overwritten.
+The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction and processing result tables, category schemas, review records, reviewed-attribute results, and catalog projections with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command. Run `make dynamodb-seed-category-schemas` afterward to idempotently seed the two local built-in schema versions; drift is reported and never overwritten.
 
 `STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
 
@@ -154,6 +154,11 @@ immutable authoritative artifact with exact candidate or manual lineage. It does
 Product record, publish content, or expose a new API. See the
 [reviewed-attribute materialization architecture](docs/architecture/reviewed-attribute-materialization.md).
 
+The commerce catalog projection engine combines one explicit reviewed-attribute artifact with an
+immutable snapshot of existing Product identity/version, then returns READY, READY_WITH_WARNINGS,
+or BLOCKED using stable reasons. It does not change Product status or publish/export/enrich data.
+See the [catalog projection architecture](docs/architecture/catalog-projection.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -186,6 +191,7 @@ Product record, publish content, or expose a new API. See the
 - [SPEC-028](docs/specs/SPEC-028-final-attribute-candidate-selection-and-review-preparation-engine.md)
 - [SPEC-029](docs/specs/SPEC-029-human-review-decision-domain-and-review-api-foundation.md)
 - [SPEC-030](docs/specs/SPEC-030-final-reviewed-attribute-materialization-engine.md)
+- [SPEC-031](docs/specs/SPEC-031-commerce-catalog-projection-and-product-publishing-readiness-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -208,6 +214,7 @@ Product record, publish content, or expose a new API. See the
 - [Attribute selection](docs/architecture/attribute-selection.md)
 - [Product review](docs/architecture/product-review.md)
 - [Reviewed attribute materialization](docs/architecture/reviewed-attribute-materialization.md)
+- [Commerce catalog projection](docs/architecture/catalog-projection.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
