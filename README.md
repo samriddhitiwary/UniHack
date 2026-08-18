@@ -35,7 +35,7 @@ npm --prefix=apps/web run dev
 
 Open the web app at <http://localhost:5173>. API liveness is at <http://localhost:8000/api/v1/health>; readiness is at <http://localhost:8000/api/v1/health/ready>.
 
-The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction-results, table-extraction-results, csv-processing-results, image-analysis-results, image-ocr-results, product-classification-results, category-attribute-schemas, structured-attribute-extraction-results, and attribute-normalization-results tables with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command. Run `make dynamodb-seed-category-schemas` afterward to idempotently seed the two local built-in schema versions; drift is reported and never overwritten.
+The table command is idempotent: it creates the configured products, sources, processing-jobs, extraction and processing result tables, category schemas, review records, and reviewed-attribute results with only their documented indexes, or reports that a table already exists without deleting data. `make dynamodb-create-tables` is the equivalent Make command. Run `make dynamodb-seed-category-schemas` afterward to idempotently seed the two local built-in schema versions; drift is reported and never overwritten.
 
 `STORAGE_BACKEND=local` selects development-only filesystem storage. `LOCAL_STORAGE_ROOT=../../storage` is resolved from `apps/api`, and the root is created when storage is first requested. Stored objects use generated logical keys, streamed writes, SHA-256 metadata, size enforcement, exclusive no-overwrite finalization, and path-containment checks. There is no S3 implementation. See the [object-storage architecture](docs/architecture/object-storage.md).
 
@@ -148,6 +148,12 @@ completion readiness without deleting history. Reviewed values remain separate f
 attributes and publication. See the [product-review architecture](docs/architecture/product-review.md)
 and [review API](docs/api/reviews.md).
 
+The reviewed-attribute materialization engine consumes one explicit COMPLETED review, resolves
+only its effective CURRENT decisions, enforces every required schema attribute, and writes one
+immutable authoritative artifact with exact candidate or manual lineage. It does not mutate the
+Product record, publish content, or expose a new API. See the
+[reviewed-attribute materialization architecture](docs/architecture/reviewed-attribute-materialization.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -179,6 +185,7 @@ and [review API](docs/api/reviews.md).
 - [SPEC-027](docs/specs/SPEC-027-attribute-validation-engine.md)
 - [SPEC-028](docs/specs/SPEC-028-final-attribute-candidate-selection-and-review-preparation-engine.md)
 - [SPEC-029](docs/specs/SPEC-029-human-review-decision-domain-and-review-api-foundation.md)
+- [SPEC-030](docs/specs/SPEC-030-final-reviewed-attribute-materialization-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -200,6 +207,7 @@ and [review API](docs/api/reviews.md).
 - [Attribute validation](docs/architecture/attribute-validation.md)
 - [Attribute selection](docs/architecture/attribute-selection.md)
 - [Product review](docs/architecture/product-review.md)
+- [Reviewed attribute materialization](docs/architecture/reviewed-attribute-materialization.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

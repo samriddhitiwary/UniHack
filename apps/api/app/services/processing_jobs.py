@@ -62,6 +62,7 @@ class ProcessingJobService:
             ProcessingJobType.ATTRIBUTE_COMPLETENESS,
             ProcessingJobType.ATTRIBUTE_VALIDATION,
             ProcessingJobType.ATTRIBUTE_SELECTION,
+            ProcessingJobType.REVIEWED_ATTRIBUTE_MATERIALIZATION,
         }:
             raise ProcessingJobTypeNotSupportedForSourceError(
                 source.source_type.value,

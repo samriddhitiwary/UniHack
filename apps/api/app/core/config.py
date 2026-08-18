@@ -99,6 +99,9 @@ class Settings(BaseSettings):
     review_max_reviewer_id_characters: int = Field(default=200, gt=0)
     review_max_manual_value_characters: int = Field(default=10_000, gt=0)
     review_max_attributes: int = Field(default=100, gt=0)
+    reviewed_materialization_max_attributes: int = Field(default=100, gt=0)
+    reviewed_materialization_max_value_characters: int = Field(default=10_000, gt=0)
+    reviewed_materialization_max_manual_raw_characters: int = Field(default=10_000, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

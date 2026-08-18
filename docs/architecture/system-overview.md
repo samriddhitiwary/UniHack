@@ -247,3 +247,18 @@ schema-validated manual overrides append immutable decisions while CURRENT proje
 deterministic readiness. Atomic conditional writes enforce version and sequence advancement;
 COMPLETED is terminal. Reviewed values are not written to Product records, and no publication,
 authentication, frontend, AI, S3, or deployment behavior is introduced.
+
+SPEC-030 adds product-level reviewed-attribute materialization after a review is COMPLETED:
+
+```text
+ReviewedAttributeMaterializationService -> completed review + CURRENT/history decisions
+                                        -> exact schema/selection/validation/normalization lineage
+                                        -> ReviewedAttributeMaterializationEngine
+                                        -> immutable reviewed-attribute-results artifact
+```
+
+The engine uses only the latest effective human decision per schema attribute. Candidate approvals
+retain candidate/source, confidence, and validation lineage; manual overrides retain raw human
+input and no candidate lineage. All required fields must resolve, while absent optional fields are
+counted without null placeholders. The artifact is persisted before job completion and remains
+separate from Product records, publishing/readiness, APIs, frontend, AI, and deployment.

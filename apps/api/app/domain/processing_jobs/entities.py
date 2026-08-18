@@ -42,6 +42,7 @@ class ProcessingJob:
     attribute_conflict_detection_id: UUID | None = None
     attribute_validation_id: UUID | None = None
     attribute_completeness_id: UUID | None = None
+    review_id: UUID | None = None
     job_type: ProcessingJobType
     status: ProcessingJobStatus
     attempt: int
@@ -70,6 +71,7 @@ class ProcessingJob:
             ProcessingJobType.ATTRIBUTE_COMPLETENESS,
             ProcessingJobType.ATTRIBUTE_VALIDATION,
             ProcessingJobType.ATTRIBUTE_SELECTION,
+            ProcessingJobType.REVIEWED_ATTRIBUTE_MATERIALIZATION,
         }:
             if self.source_id is not None:
                 raise ValueError("product-level jobs must not have a source_id")
@@ -121,6 +123,11 @@ class ProcessingJob:
                 )
         elif self.attribute_validation_id is not None or self.attribute_completeness_id is not None:
             raise ValueError("selection lineage identifiers are only valid for ATTRIBUTE_SELECTION")
+        if self.job_type is ProcessingJobType.REVIEWED_ATTRIBUTE_MATERIALIZATION:
+            if not isinstance(self.review_id, UUID):
+                raise ValueError("reviewed materialization jobs require a review_id")
+        elif self.review_id is not None:
+            raise ValueError("review_id is only valid for reviewed materialization jobs")
         if not isinstance(self.status, ProcessingJobStatus):
             raise ValueError("status must be a ProcessingJobStatus")
         if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
@@ -202,6 +209,7 @@ class ProcessingJob:
         attribute_conflict_detection_id: UUID | None = None,
         attribute_validation_id: UUID | None = None,
         attribute_completeness_id: UUID | None = None,
+        review_id: UUID | None = None,
         attempt: int = 1,
         now: datetime | None = None,
     ) -> Self:
@@ -216,6 +224,7 @@ class ProcessingJob:
             attribute_conflict_detection_id=attribute_conflict_detection_id,
             attribute_validation_id=attribute_validation_id,
             attribute_completeness_id=attribute_completeness_id,
+            review_id=review_id,
             job_type=job_type,
             status=ProcessingJobStatus.PENDING,
             attempt=attempt,

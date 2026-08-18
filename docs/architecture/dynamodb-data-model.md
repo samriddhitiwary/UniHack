@@ -293,6 +293,20 @@ conditional exact-version terminal update. Decision history uses an ascending pa
 an opaque review-bound cursor. Exact keys and queries are used throughout; no scan or GSI is needed
 because list-reviews is not part of v1. Every record has a 390,000-byte guard.
 
+## Reviewed attribute results table
+
+The reviewed-attribute-results table uses `materializationId` and `recordKey`. `META` preserves the
+completed review and exact selection, conflict, validation, completeness, normalization,
+extraction, classification, category, and schema lineage plus coherent required/optional counts.
+Ordered `ATTRIBUTE#000001` records preserve final canonical strings, schema metadata, effective
+review decision/reviewer, and candidate/source or manual-override lineage.
+
+Only META carries `jobId`, `reviewId`, and `createdAt`, making `JobIdIndex` and `ReviewIdIndex`
+sparse. A conditional `REVIEW#{reviewId}` / `MATERIALIZATION` guard enforces one artifact per
+review without entering either GSI. Conditional writes never overwrite data. Result, job, and
+review lookups use queries only and reconstruct the complete partition; missing records fail
+integrity validation. The 390,000-byte item guard and configured attribute/value limits apply.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -305,10 +319,9 @@ or `make dynamodb-create-tables`. The script creates products, sources, processi
 extraction-results, table-extraction-results, csv-processing-results, image-analysis-results,
 image-ocr-results, product-classification-results, category-attribute-schemas,
 attribute-normalization-results, attribute-conflict-detection-results, and
-attribute-completeness-results, attribute-validation-results, attribute-selection-results, and
-product-reviews
-tables with their documented
-indexes. It waits for each table and
+attribute-completeness-results, attribute-validation-results, attribute-selection-results,
+product-reviews, and reviewed-attribute-results tables with their documented indexes. It waits for
+each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

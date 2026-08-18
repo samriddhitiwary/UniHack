@@ -1190,3 +1190,93 @@ class ProductReviewRepositoryError(Exception):
 
 class ProductReviewSerializationError(ProductReviewRepositoryError):
     """Raised for malformed or inconsistent review partitions."""
+
+
+class ReviewedAttributeMaterializationError(Exception):
+    code = "REVIEWED_MATERIALIZATION_ENGINE_FAILED"
+    safe_message = "Reviewed attribute materialization could not be completed."
+
+
+class InvalidReviewedAttributeMaterializationJobError(ReviewedAttributeMaterializationError):
+    code = "INVALID_REVIEWED_ATTRIBUTE_MATERIALIZATION_JOB"
+    safe_message = "The processing job is not eligible for reviewed attribute materialization."
+
+
+class ReviewedMaterializationReviewRequiredError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_REVIEW_REQUIRED"
+    safe_message = "The required product review is unavailable."
+
+
+class ReviewedMaterializationReviewNotCompletedError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_REVIEW_NOT_COMPLETED"
+    safe_message = "The product review must be completed before materialization."
+
+
+class ReviewedMaterializationCrossProductLineageError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_CROSS_PRODUCT_LINEAGE"
+    safe_message = "The review does not belong to the materialization product."
+
+
+class ReviewedMaterializationLineageMismatchError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_LINEAGE_MISMATCH"
+    safe_message = "Reviewed materialization lineage is inconsistent."
+
+
+class ReviewedMaterializationSchemaNotAvailableError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_SCHEMA_NOT_AVAILABLE"
+    safe_message = "The exact reviewed attribute schema is unavailable."
+
+
+class ReviewedMaterializationSchemaMismatchError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_SCHEMA_MISMATCH"
+    safe_message = "The reviewed attribute schema fingerprint does not match."
+
+
+class ReviewedMaterializationReviewStateInvalidError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_REVIEW_STATE_INVALID"
+    safe_message = "The current review state is inconsistent."
+
+
+class ReviewedMaterializationRequiredAttributeUnresolvedError(
+    ReviewedAttributeMaterializationError
+):
+    code = "REVIEWED_MATERIALIZATION_REQUIRED_ATTRIBUTE_UNRESOLVED"
+    safe_message = "A required reviewed attribute remains unresolved."
+
+
+class ReviewedMaterializationUnknownAttributeError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_UNKNOWN_ATTRIBUTE"
+    safe_message = "The review contains an attribute absent from the exact schema."
+
+
+class ReviewedMaterializationDecisionInvalidError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_DECISION_INVALID"
+    safe_message = "A current review decision cannot be materialized."
+
+
+class ReviewedMaterializationAlreadyExistsError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_ALREADY_EXISTS"
+    safe_message = "A reviewed materialization already exists for this review."
+
+
+class ReviewedMaterializationAttributeLimitExceededError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_ATTRIBUTE_LIMIT_EXCEEDED"
+    safe_message = "Reviewed attributes exceed the configured limit."
+
+
+class ReviewedMaterializationResultItemTooLargeError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_RESULT_ITEM_TOO_LARGE"
+    safe_message = "A reviewed materialization record exceeds the safe storage limit."
+
+
+class ReviewedMaterializationResultStorageError(ReviewedAttributeMaterializationError):
+    code = "REVIEWED_MATERIALIZATION_STORAGE_FAILED"
+    safe_message = "The reviewed attribute result could not be stored."
+
+
+class ReviewedAttributeRepositoryError(Exception):
+    """Base reviewed-attribute result persistence failure."""
+
+
+class ReviewedAttributeSerializationError(ReviewedAttributeRepositoryError):
+    """Raised when a reviewed-attribute partition is malformed or incomplete."""

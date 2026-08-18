@@ -266,6 +266,8 @@ def processing_job_to_item(job: ProcessingJob) -> dict[str, object]:
         item["attributeValidationId"] = job.attribute_validation_id
     if job.attribute_completeness_id is not None:
         item["attributeCompletenessId"] = job.attribute_completeness_id
+    if job.review_id is not None:
+        item["reviewId"] = job.review_id
     return item
 
 
@@ -311,6 +313,7 @@ def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
                 if "attributeCompletenessId" in item
                 else None
             ),
+            review_id=(UUID(str(item["reviewId"])) if "reviewId" in item else None),
             job_type=ProcessingJobType(str(item["jobType"])),
             status=ProcessingJobStatus(str(item["status"])),
             attempt=_integer(item["attempt"], "attempt"),

@@ -1,0 +1,13 @@
+"""Final reviewed attribute repository contract."""
+
+from typing import Protocol
+from uuid import UUID
+
+from app.domain.reviewed_attributes import FinalReviewedAttributeSet
+
+
+class FinalReviewedAttributeRepository(Protocol):
+    def create(self, result: FinalReviewedAttributeSet) -> FinalReviewedAttributeSet: ...
+    def get_by_id(self, materialization_id: UUID) -> FinalReviewedAttributeSet | None: ...
+    def get_by_job_id(self, job_id: UUID) -> FinalReviewedAttributeSet | None: ...
+    def get_by_review_id(self, review_id: UUID) -> FinalReviewedAttributeSet | None: ...

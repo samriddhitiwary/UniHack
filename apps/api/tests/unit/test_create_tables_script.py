@@ -77,6 +77,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     validation_results = MagicMock()
     selection_results = MagicMock()
     review_results = MagicMock()
+    reviewed_attribute_results = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
@@ -122,6 +123,9 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
         selection_results,
     )
     monkeypatch.setattr(create_tables, "create_product_reviews_table", review_results)
+    monkeypatch.setattr(
+        create_tables, "create_reviewed_attribute_results_table", reviewed_attribute_results
+    )
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
@@ -140,6 +144,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     validation_results.assert_called_once_with()
     selection_results.assert_called_once_with()
     review_results.assert_called_once_with()
+    reviewed_attribute_results.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
@@ -439,3 +444,21 @@ def test_product_reviews_table_definition_and_idempotence(monkeypatch: MonkeyPat
         {"AttributeName": "recordKey", "KeyType": "RANGE"},
     ]
     assert "GlobalSecondaryIndexes" not in request
+
+
+def test_reviewed_attribute_results_table_definition(monkeypatch: MonkeyPatch) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-reviewed-attribute-results"
+    client = MagicMock()
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+    assert create_tables.create_reviewed_attribute_results_table() is True
+    request = client.create_table.call_args.kwargs
+    assert request["KeySchema"] == [
+        {"AttributeName": "materializationId", "KeyType": "HASH"},
+        {"AttributeName": "recordKey", "KeyType": "RANGE"},
+    ]
+    assert [item["IndexName"] for item in request["GlobalSecondaryIndexes"]] == [
+        "JobIdIndex",
+        "ReviewIdIndex",
+    ]
