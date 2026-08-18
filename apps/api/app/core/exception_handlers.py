@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.core.exceptions import (
+    CatalogProjectionRepositoryError,
     InvalidProcessingJobCursorError,
     InvalidProductCursorError,
     InvalidProductSourceCursorError,
@@ -32,6 +33,7 @@ from app.core.exceptions import (
     ProductSourceStorageConsistencyError,
     ProductSourceVersionConflictError,
     ProductVersionConflictError,
+    PublishingReadinessError,
     UnsupportedProductSourceFileTypeError,
 )
 
@@ -44,6 +46,10 @@ def register_exception_handlers(application: FastAPI) -> None:
     application.add_exception_handler(InvalidProductCursorError, invalid_product_cursor_handler)
     application.add_exception_handler(ProductVersionConflictError, product_version_conflict_handler)
     application.add_exception_handler(ProductRepositoryError, product_repository_handler)
+    application.add_exception_handler(
+        CatalogProjectionRepositoryError, catalog_projection_repository_handler
+    )
+    application.add_exception_handler(PublishingReadinessError, publishing_readiness_error_handler)
     application.add_exception_handler(
         ProductSourceAlreadyExistsError, product_source_already_exists_handler
     )
@@ -157,6 +163,31 @@ async def product_repository_handler(request: Request, exc: Exception) -> JSONRe
         status_code=503,
         code="PRODUCT_STORAGE_UNAVAILABLE",
         message="Product storage is temporarily unavailable.",
+    )
+
+
+async def catalog_projection_repository_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(
+        "event=catalog_projection.persistence_failed request_id=%s error_type=%s",
+        _request_id(request),
+        type(exc).__name__,
+    )
+    return _error_response(
+        request,
+        status_code=503,
+        code="CATALOG_PROJECTION_STORAGE_UNAVAILABLE",
+        message="Catalog projection storage is temporarily unavailable.",
+    )
+
+
+async def publishing_readiness_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    error = _expect_exception(exc, PublishingReadinessError)
+    return _error_response(
+        request,
+        status_code=error.status_code,
+        code=error.code,
+        message=error.safe_message,
+        details=error.details,
     )
 
 

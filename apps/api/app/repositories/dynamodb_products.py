@@ -13,6 +13,7 @@ from app.core.exceptions import (
     ProductAlreadyExistsError,
     ProductNotFoundError,
     ProductRepositoryError,
+    ProductStatusConflictError,
     ProductVersionConflictError,
 )
 from app.domain.products import Product, ProductPage, ProductStatus
@@ -141,6 +142,62 @@ class DynamoDBProductRepository:
             cursor=cursor,
             cursor_keys={"productId", "entityType", "createdAt"},
         )
+
+    def mark_ready_to_publish(
+        self,
+        *,
+        product_id: UUID,
+        expected_version: int,
+        expected_status: ProductStatus,
+    ) -> Product:
+        """Atomically apply the sole SPEC-032 Product lifecycle transition."""
+        _validate_expected_version(expected_version)
+        updated_at = self._clock().astimezone(UTC)
+        try:
+            response = self._client.update_item(
+                TableName=self._table_name,
+                Key=serialize_item({"productId": product_id}),
+                UpdateExpression=(
+                    "SET #status = :newStatus, #updatedAt = :updatedAt, #version = :newVersion"
+                ),
+                ConditionExpression=(
+                    "attribute_exists(#productId) AND #version = :expectedVersion "
+                    "AND #status = :expectedStatus"
+                ),
+                ExpressionAttributeNames={
+                    "#productId": "productId",
+                    "#status": "status",
+                    "#updatedAt": "updatedAt",
+                    "#version": "version",
+                },
+                ExpressionAttributeValues=serialize_item(
+                    {
+                        ":newStatus": ProductStatus.READY_TO_PUBLISH,
+                        ":updatedAt": updated_at,
+                        ":newVersion": expected_version + 1,
+                        ":expectedVersion": expected_version,
+                        ":expectedStatus": expected_status,
+                    }
+                ),
+                ReturnValues="ALL_NEW",
+            )
+            raw_item = response.get("Attributes")
+            if raw_item is None:
+                raise ProductRepositoryError("transitioned product was not returned")
+            return _to_product(cast(Mapping[str, AttributeValue], raw_item))
+        except ClientError as exc:
+            if _error_code(exc) == "ConditionalCheckFailedException":
+                current = self.get_by_id(product_id)
+                if current is None:
+                    raise ProductNotFoundError(product_id) from exc
+                if current.version != expected_version:
+                    raise ProductVersionConflictError(
+                        f"product {product_id} is not at expected version {expected_version}"
+                    ) from exc
+                raise ProductStatusConflictError(current.status.value) from exc
+            raise ProductRepositoryError("product readiness could not be applied") from exc
+        except BotoCoreError as exc:
+            raise ProductRepositoryError("product readiness could not be applied") from exc
 
     def list_by_status(
         self,

@@ -277,3 +277,17 @@ READY, READY_WITH_WARNINGS, and BLOCKED describe the projection, not Product sta
 optional identity, human overrides, validation warnings, and unresolved optional attributes remain
 auditable warnings. Category/ownership/upstream corruption fails technically. No Product mutation,
 external publishing, export, enrichment, API, frontend, AI, S3, or deployment behavior is added.
+
+SPEC-032 exposes that immutable projection and current eligibility through two read-only APIs, then
+adds one explicit synchronous readiness command:
+
+```text
+Catalog API -> PublishingReadinessApplicationService
+              |-> explicit catalog-projection-results query
+              `-> conditional Product REVIEW_REQUIRED -> READY_TO_PUBLISH update
+```
+
+The command independently checks the caller's Product version and the projection's Product-version
+snapshot before DynamoDB atomically checks both version and source status. READY_WITH_WARNINGS is
+eligible and retains warnings; BLOCKED is never applied. READY_TO_PUBLISH remains internal—there is
+no external publisher, marketplace, export, new job, new table, AI, frontend, or deployment work.

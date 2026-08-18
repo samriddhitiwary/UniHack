@@ -27,6 +27,14 @@ class ProductVersionConflictError(ProductRepositoryError):
     """Raised when optimistic concurrency rejects a stale product mutation."""
 
 
+class ProductStatusConflictError(ProductRepositoryError):
+    """Raised when a conditional lifecycle mutation finds another Product status."""
+
+    def __init__(self, current_status: str) -> None:
+        self.current_status = current_status
+        super().__init__("product status does not match the expected lifecycle state")
+
+
 class InvalidProductCursorError(ProductRepositoryError):
     """Raised when an opaque product pagination cursor is invalid."""
 
@@ -1363,3 +1371,71 @@ class CatalogProjectionRepositoryError(Exception):
 
 class CatalogProjectionSerializationError(CatalogProjectionRepositoryError):
     """Raised when a catalog projection partition is malformed or incomplete."""
+
+
+class PublishingReadinessError(Exception):
+    """Base controlled error for publishing-readiness API operations."""
+
+    status_code = 409
+    code = "PUBLISHING_READINESS_FAILED"
+    safe_message = "Publishing readiness could not be applied."
+
+    @property
+    def details(self) -> dict[str, object]:
+        return {}
+
+
+class CatalogProjectionNotFoundError(PublishingReadinessError):
+    status_code = 404
+    code = "CATALOG_PROJECTION_NOT_FOUND"
+    safe_message = "The requested catalog projection does not exist."
+
+    def __init__(self, projection_id: UUID | str) -> None:
+        self.projection_id = str(projection_id)
+        super().__init__(self.safe_message)
+
+    @property
+    def details(self) -> dict[str, object]:
+        return {"projectionId": self.projection_id}
+
+
+class PublishingReadinessCrossProductProjectionError(PublishingReadinessError):
+    status_code = 422
+    code = "PUBLISHING_READINESS_CROSS_PRODUCT_PROJECTION"
+    safe_message = "The catalog projection does not belong to the requested product."
+
+
+class PublishingReadinessBlockedError(PublishingReadinessError):
+    code = "PUBLISHING_READINESS_BLOCKED"
+    safe_message = "The catalog projection contains publishing-readiness blockers."
+
+    def __init__(self, blocking_reason_codes: tuple[str, ...]) -> None:
+        self.blocking_reason_codes = blocking_reason_codes
+        super().__init__(self.safe_message)
+
+    @property
+    def details(self) -> dict[str, object]:
+        return {"blockingReasonCodes": list(self.blocking_reason_codes)}
+
+
+class PublishingReadinessProductChangedError(PublishingReadinessError):
+    code = "PUBLISHING_READINESS_PRODUCT_CHANGED"
+    safe_message = "The product has changed since this catalog projection was created."
+
+
+class PublishingReadinessStatusTransitionNotAllowedError(PublishingReadinessError):
+    code = "PUBLISHING_READINESS_STATUS_TRANSITION_NOT_ALLOWED"
+    safe_message = "The product status does not allow publishing readiness to be applied."
+
+    def __init__(self, current_status: str) -> None:
+        self.current_status = current_status
+        super().__init__(self.safe_message)
+
+    @property
+    def details(self) -> dict[str, object]:
+        return {"currentStatus": self.current_status}
+
+
+class ProductAlreadyReadyToPublishError(PublishingReadinessError):
+    code = "PRODUCT_ALREADY_READY_TO_PUBLISH"
+    safe_message = "The product is already ready to publish."

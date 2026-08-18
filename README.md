@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-020: OCR and Nameplate Text Recognition Engine**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-032: Product Publishing Readiness Application and Catalog Read API**.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains product, product-source, processing-job, object-storage, PDF extraction, CSV processing, image-analysis, and local image-OCR foundations. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code, store evidence separately, and update job lifecycle without changing source status. Content/file replacement, bulk deletion, restore, and download are not exposed. No product classification, structured attribute extraction, unit normalization, hosted OCR/AI, S3, workers, frontend processing UI, authentication, real AWS resources, or deployment pipeline exists.
+The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, human-review APIs, and catalog/readiness APIs. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code and store evidence separately. Content/file replacement, bulk deletion, restore, download, external publishing, hosted AI, S3, workers, frontend processing UI, authentication, real AWS resources, and deployment remain unavailable.
 
 ## Product API
 
@@ -159,6 +159,12 @@ immutable snapshot of existing Product identity/version, then returns READY, REA
 or BLOCKED using stable reasons. It does not change Product status or publish/export/enrich data.
 See the [catalog projection architecture](docs/architecture/catalog-projection.md).
 
+The catalog API returns an explicit immutable projection and calculates its current readiness
+against the Product. A separate POST command may atomically transition only REVIEW_REQUIRED to
+READY_TO_PUBLISH when both caller and projection versions are current. This status is internal;
+nothing is published externally. See the [catalog API](docs/api/catalog.md) and
+[publishing-readiness architecture](docs/architecture/publishing-readiness-application.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -192,10 +198,12 @@ See the [catalog projection architecture](docs/architecture/catalog-projection.m
 - [SPEC-029](docs/specs/SPEC-029-human-review-decision-domain-and-review-api-foundation.md)
 - [SPEC-030](docs/specs/SPEC-030-final-reviewed-attribute-materialization-engine.md)
 - [SPEC-031](docs/specs/SPEC-031-commerce-catalog-projection-and-product-publishing-readiness-engine.md)
+- [SPEC-032](docs/specs/SPEC-032-product-publishing-readiness-application-and-catalog-read-api.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
 - [Product Review API](docs/api/reviews.md)
+- [Catalog and Publishing Readiness API](docs/api/catalog.md)
 - [System overview](docs/architecture/system-overview.md)
 - [DynamoDB data model](docs/architecture/dynamodb-data-model.md)
 - [Object storage](docs/architecture/object-storage.md)
@@ -215,6 +223,8 @@ See the [catalog projection architecture](docs/architecture/catalog-projection.m
 - [Product review](docs/architecture/product-review.md)
 - [Reviewed attribute materialization](docs/architecture/reviewed-attribute-materialization.md)
 - [Commerce catalog projection](docs/architecture/catalog-projection.md)
+- [Product domain and lifecycle](docs/architecture/product-domain.md)
+- [Publishing readiness application](docs/architecture/publishing-readiness-application.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

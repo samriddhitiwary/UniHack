@@ -15,6 +15,14 @@ class ProductRepository(Protocol):
 
     def update(self, product: Product, expected_version: int) -> Product: ...
 
+    def mark_ready_to_publish(
+        self,
+        *,
+        product_id: UUID,
+        expected_version: int,
+        expected_status: ProductStatus,
+    ) -> Product: ...
+
     def list_products(self, *, limit: int = 25, cursor: str | None = None) -> ProductPage: ...
 
     def list_by_status(
