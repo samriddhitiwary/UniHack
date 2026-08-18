@@ -127,6 +127,13 @@ required, optional, and overall counts with integer basis-point percentages. It 
 generate values, resolve conflicts, perform business validation, mutate products, or expose an API.
 See the [attribute-completeness architecture](docs/architecture/attribute-completeness.md).
 
+The attribute-validation engine consumes one explicitly linked normalization result and its exact
+immutable category schema. Every candidate is checked independently for canonical type, configured
+inclusive range, allowed value, trusted bounded pattern, and unit compatibility. Safe issues explain
+invalid and not-validatable evidence while candidates and upstream conflicts remain unchanged. It
+does not select or generate values, resolve conflicts, mutate products, or expose an API. See the
+[attribute-validation architecture](docs/architecture/attribute-validation.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -155,6 +162,7 @@ See the [attribute-completeness architecture](docs/architecture/attribute-comple
 - [SPEC-024](docs/specs/SPEC-024-attribute-and-unit-normalization-engine.md)
 - [SPEC-025](docs/specs/SPEC-025-candidate-agreement-and-conflict-detection-engine.md)
 - [SPEC-026](docs/specs/SPEC-026-missing-required-attribute-and-completeness-detection-engine.md)
+- [SPEC-027](docs/specs/SPEC-027-attribute-validation-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -172,6 +180,7 @@ See the [attribute-completeness architecture](docs/architecture/attribute-comple
 - [Attribute and unit normalization](docs/architecture/attribute-normalization.md)
 - [Candidate agreement and conflict detection](docs/architecture/attribute-conflict-detection.md)
 - [Attribute completeness](docs/architecture/attribute-completeness.md)
+- [Attribute validation](docs/architecture/attribute-validation.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

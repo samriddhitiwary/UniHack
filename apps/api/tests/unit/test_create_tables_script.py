@@ -74,6 +74,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     normalization_results = MagicMock()
     conflict_results = MagicMock()
     completeness_results = MagicMock()
+    validation_results = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
@@ -108,6 +109,11 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
         "create_attribute_completeness_results_table",
         completeness_results,
     )
+    monkeypatch.setattr(
+        create_tables,
+        "create_attribute_validation_results_table",
+        validation_results,
+    )
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
@@ -123,6 +129,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     normalization_results.assert_called_once_with()
     conflict_results.assert_called_once_with()
     completeness_results.assert_called_once_with()
+    validation_results.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
@@ -372,6 +379,21 @@ def test_attribute_completeness_results_table_definition(monkeypatch: MonkeyPatc
     request = client.create_table.call_args.kwargs
     assert request["KeySchema"] == [
         {"AttributeName": "completenessId", "KeyType": "HASH"},
+        {"AttributeName": "recordKey", "KeyType": "RANGE"},
+    ]
+    assert request["GlobalSecondaryIndexes"][0]["IndexName"] == "JobIdIndex"
+
+
+def test_attribute_validation_results_table_definition(monkeypatch: MonkeyPatch) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-attribute-validation-results"
+    client = MagicMock()
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+    assert create_tables.create_attribute_validation_results_table() is True
+    request = client.create_table.call_args.kwargs
+    assert request["KeySchema"] == [
+        {"AttributeName": "validationId", "KeyType": "HASH"},
         {"AttributeName": "recordKey", "KeyType": "RANGE"},
     ]
     assert request["GlobalSecondaryIndexes"][0]["IndexName"] == "JobIdIndex"

@@ -258,6 +258,16 @@ IDs, and warnings. META alone carries `jobId`/`createdAt` for sparse `JobIdIndex
 writes, consistent paginated reads, complete reconstruction, configured bounds, and the
 390,000-byte guard apply. No scan or selected value exists.
 
+## Attribute validation results table
+
+The attribute-validation-results table uses partition key `validationId` and sort key `recordKey`.
+META stores exact normalization/schema lineage, result status, candidate/issue counts, warnings,
+engine/version, and creation time. Ordered ASSESSMENT records store candidate identity, normalized
+value/unit, status, bounded embedded issues, source/evidence lineage, and timestamps. Ordered
+SUMMARY records contain attribute-level counts only. META alone carries `jobId` and `createdAt` for
+sparse `JobIdIndex`. Conditional writes, consistent paginated reads, complete reconstruction, and
+the 390,000-byte guard apply; no scan or selected value exists.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -270,7 +280,8 @@ or `make dynamodb-create-tables`. The script creates products, sources, processi
 extraction-results, table-extraction-results, csv-processing-results, image-analysis-results,
 image-ocr-results, product-classification-results, category-attribute-schemas,
 attribute-normalization-results, attribute-conflict-detection-results, and
-attribute-completeness-results tables with their documented indexes. It waits for each table and
+attribute-completeness-results and attribute-validation-results tables with their documented
+indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
 Future table specifications must continue to state access patterns, keys, indexes, conditional-write needs, pagination behavior, and item-size strategy before implementation.

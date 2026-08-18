@@ -228,3 +228,9 @@ SPEC-025 result and its exact SPEC-022 schema, evaluates every schema field in d
 persists available/resolved/verified required, optional, and total metrics. Missing, invalid,
 conflicted, and indeterminate evidence remain distinct. No value is selected, resolved, generated,
 or business-validated, and no API or frontend behavior is added.
+
+SPEC-027 adds candidate-level validation against one exact SPEC-022 schema and one explicit
+SPEC-024 normalization result. Decimal type/range checks, exact allowed values, bounded full-match
+patterns, and canonical-unit compatibility produce immutable assessments and attribute summaries.
+Invalid candidates remain evidence; conflict and completeness results are untouched. No winner,
+generated value, API, or frontend behavior is added.

@@ -83,6 +83,12 @@ class Settings(BaseSettings):
     attribute_conflict_max_groups_per_attribute: int = Field(default=100, gt=0)
     attribute_completeness_max_attributes: int = Field(default=100, gt=0)
     attribute_completeness_max_candidate_ids_per_attribute: int = Field(default=100, gt=0)
+    attribute_validation_max_candidates: int = Field(default=5_000, gt=0)
+    attribute_validation_max_attributes: int = Field(default=100, gt=0)
+    attribute_validation_max_value_characters: int = Field(default=10_000, gt=0)
+    attribute_validation_max_pattern_characters: int = Field(default=500, gt=0)
+    attribute_validation_max_issues_per_candidate: int = Field(default=20, gt=0)
+    attribute_validation_max_total_issues: int = Field(default=10_000, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

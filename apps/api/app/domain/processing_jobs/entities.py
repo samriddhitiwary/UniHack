@@ -66,6 +66,7 @@ class ProcessingJob:
             ProcessingJobType.ATTRIBUTE_NORMALIZATION,
             ProcessingJobType.ATTRIBUTE_CONFLICT_DETECTION,
             ProcessingJobType.ATTRIBUTE_COMPLETENESS,
+            ProcessingJobType.ATTRIBUTE_VALIDATION,
         }:
             if self.source_id is not None:
                 raise ValueError("product-level jobs must not have a source_id")
@@ -83,14 +84,17 @@ class ProcessingJob:
             raise ValueError(
                 "attribute_extraction_id is only valid for ATTRIBUTE_NORMALIZATION jobs"
             )
-        if self.job_type is ProcessingJobType.ATTRIBUTE_CONFLICT_DETECTION:
+        if self.job_type in {
+            ProcessingJobType.ATTRIBUTE_CONFLICT_DETECTION,
+            ProcessingJobType.ATTRIBUTE_VALIDATION,
+        }:
             if not isinstance(self.attribute_normalization_id, UUID):
                 raise ValueError(
                     "ATTRIBUTE_CONFLICT_DETECTION jobs require an attribute_normalization_id"
                 )
         elif self.attribute_normalization_id is not None:
             raise ValueError(
-                "attribute_normalization_id is only valid for ATTRIBUTE_CONFLICT_DETECTION jobs"
+                "attribute_normalization_id is only valid for conflict-detection or validation jobs"
             )
         if self.job_type is ProcessingJobType.ATTRIBUTE_COMPLETENESS:
             if not isinstance(self.attribute_conflict_detection_id, UUID):

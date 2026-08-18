@@ -920,3 +920,85 @@ class AttributeCompletenessResultAlreadyExistsError(AttributeCompletenessReposit
 
 class AttributeCompletenessSerializationError(AttributeCompletenessRepositoryError):
     """Raised when a completeness partition is incomplete or malformed."""
+
+
+class AttributeValidationError(Exception):
+    code = "ATTRIBUTE_VALIDATION_ENGINE_FAILED"
+    safe_message = "Attribute validation could not be completed."
+
+
+class InvalidAttributeValidationJobError(AttributeValidationError):
+    code = "INVALID_ATTRIBUTE_VALIDATION_JOB"
+    safe_message = "The processing job is not eligible for attribute validation."
+
+
+class AttributeValidationNormalizationRequiredError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_NORMALIZATION_REQUIRED"
+    safe_message = "The required normalization result is unavailable."
+
+
+class AttributeValidationCrossProductLineageError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_CROSS_PRODUCT_LINEAGE"
+    safe_message = "The normalization result does not belong to this product."
+
+
+class AttributeValidationSchemaNotAvailableError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_SCHEMA_NOT_AVAILABLE"
+    safe_message = "The exact category schema is unavailable for attribute validation."
+
+
+class AttributeValidationSchemaMismatchError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_SCHEMA_MISMATCH"
+    safe_message = "The category schema fingerprint does not match validation lineage."
+
+
+class AttributeValidationUnknownAttributeError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_UNKNOWN_ATTRIBUTE"
+    safe_message = "A normalized candidate references an unknown schema attribute."
+
+
+class AttributeValidationSchemaRuleInvalidError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_SCHEMA_RULE_INVALID"
+    safe_message = "An attribute schema validation rule is invalid."
+
+
+class AttributeValidationCandidateLimitExceededError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_CANDIDATE_LIMIT_EXCEEDED"
+    safe_message = "Validation candidates exceed the configured limit."
+
+
+class AttributeValidationAttributeLimitExceededError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_ATTRIBUTE_LIMIT_EXCEEDED"
+    safe_message = "Validation attributes exceed the configured limit."
+
+
+class AttributeValidationValueLimitExceededError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_VALUE_LIMIT_EXCEEDED"
+    safe_message = "A validation value exceeds the configured limit."
+
+
+class AttributeValidationIssueLimitExceededError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_ISSUE_LIMIT_EXCEEDED"
+    safe_message = "Validation issues exceed the configured limit."
+
+
+class AttributeValidationResultItemTooLargeError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_RESULT_ITEM_TOO_LARGE"
+    safe_message = "An attribute validation record exceeds the safe storage limit."
+
+
+class AttributeValidationResultStorageError(AttributeValidationError):
+    code = "ATTRIBUTE_VALIDATION_STORAGE_FAILED"
+    safe_message = "The attribute validation result could not be stored."
+
+
+class AttributeValidationRepositoryError(Exception):
+    """Base error for attribute-validation persistence failures."""
+
+
+class AttributeValidationResultAlreadyExistsError(AttributeValidationRepositoryError):
+    """Raised when conditional creation finds an existing result."""
+
+
+class AttributeValidationSerializationError(AttributeValidationRepositoryError):
+    """Raised when a validation partition is incomplete or malformed."""
