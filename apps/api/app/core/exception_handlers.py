@@ -23,6 +23,8 @@ from app.core.exceptions import (
     ProductAlreadyExistsError,
     ProductNotFoundError,
     ProductRepositoryError,
+    ProductReviewError,
+    ProductReviewRepositoryError,
     ProductSourceAlreadyExistsError,
     ProductSourceMimeTypeMismatchError,
     ProductSourceNotFoundError,
@@ -90,6 +92,10 @@ def register_exception_handlers(application: FastAPI) -> None:
     )
     application.add_exception_handler(
         ProcessingJobRepositoryError, processing_job_repository_handler
+    )
+    application.add_exception_handler(ProductReviewError, product_review_error_handler)
+    application.add_exception_handler(
+        ProductReviewRepositoryError, product_review_repository_handler
     )
     application.add_exception_handler(RequestValidationError, request_validation_handler)
     application.add_exception_handler(Exception, unexpected_error_handler)
@@ -377,6 +383,31 @@ async def processing_job_repository_handler(request: Request, exc: Exception) ->
         status_code=503,
         code="PROCESSING_JOB_STORAGE_UNAVAILABLE",
         message="Processing-job storage is temporarily unavailable.",
+    )
+
+
+async def product_review_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    error = _expect_exception(exc, ProductReviewError)
+    return _error_response(
+        request,
+        status_code=error.status_code,
+        code=error.code,
+        message=error.safe_message,
+        details=error.details,
+    )
+
+
+async def product_review_repository_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(
+        "event=product_review.persistence_failed request_id=%s error_type=%s",
+        _request_id(request),
+        type(exc).__name__,
+    )
+    return _error_response(
+        request,
+        status_code=503,
+        code="REVIEW_STORAGE_UNAVAILABLE",
+        message="Product-review storage is temporarily unavailable.",
     )
 
 

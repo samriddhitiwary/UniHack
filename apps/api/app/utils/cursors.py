@@ -9,12 +9,54 @@ from uuid import UUID
 from app.core.exceptions import (
     InvalidProcessingJobCursorError,
     InvalidProductCursorError,
+    InvalidProductReviewCursorError,
     InvalidProductSourceCursorError,
 )
 
 PRODUCT_SOURCE_CURSOR_SCOPE = "product_sources"
 PROCESSING_JOBS_BY_PRODUCT_SCOPE = "processing_jobs_by_product"
 PROCESSING_JOBS_BY_SOURCE_SCOPE = "processing_jobs_by_source"
+REVIEW_DECISIONS_SCOPE = "review_decisions"
+
+
+def encode_review_decision_cursor(review_id: UUID, key: dict[str, Any] | None) -> str | None:
+    if not key:
+        return None
+    try:
+        payload = json.dumps(
+            {"scope": REVIEW_DECISIONS_SCOPE, "reviewId": str(review_id), "key": key},
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise InvalidProductReviewCursorError() from exc
+    return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+
+
+def decode_review_decision_cursor(cursor: str | None, review_id: UUID) -> dict[str, Any] | None:
+    if cursor is None:
+        return None
+    if not cursor or len(cursor) > 4_096:
+        raise InvalidProductReviewCursorError()
+    try:
+        padding = "=" * (-len(cursor) % 4)
+        raw = base64.b64decode(cursor + padding, altchars=b"-_", validate=True)
+        decoded = json.loads(raw.decode("utf-8"))
+    except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise InvalidProductReviewCursorError() from exc
+    if (
+        not isinstance(decoded, dict)
+        or set(decoded) != {"scope", "reviewId", "key"}
+        or decoded["scope"] != REVIEW_DECISIONS_SCOPE
+        or decoded["reviewId"] != str(review_id)
+        or not isinstance(decoded["key"], dict)
+        or not decoded["key"]
+    ):
+        raise InvalidProductReviewCursorError()
+    key = decoded["key"]
+    if not all(isinstance(name, str) and isinstance(value, dict) for name, value in key.items()):
+        raise InvalidProductReviewCursorError()
+    return key
 
 
 def encode_product_cursor(key: dict[str, Any] | None) -> str | None:

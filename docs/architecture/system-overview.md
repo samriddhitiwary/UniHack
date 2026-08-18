@@ -240,3 +240,10 @@ SPEC-027 lineage. Multi-source, warning-free agreement may yield a proposed norm
 single-source, warning, conflict, indeterminate, missing, and invalid-only conditions remain explicit
 review states. Ranking only orders equivalent evidence and never resolves conflict. Results remain
 separate from Product records, publication, human decisions, APIs, and frontend behavior.
+
+SPEC-029 adds the first human-review API boundary. One OPEN session references an explicit SPEC-028
+selection and exact upstream lineage. Candidate/proposed approvals, reject-all, and normalized,
+schema-validated manual overrides append immutable decisions while CURRENT projections provide
+deterministic readiness. Atomic conditional writes enforce version and sequence advancement;
+COMPLETED is terminal. Reviewed values are not written to Product records, and no publication,
+authentication, frontend, AI, S3, or deployment behavior is introduced.

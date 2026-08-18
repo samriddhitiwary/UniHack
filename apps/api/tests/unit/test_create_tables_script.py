@@ -76,6 +76,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     completeness_results = MagicMock()
     validation_results = MagicMock()
     selection_results = MagicMock()
+    review_results = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
@@ -120,6 +121,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
         "create_attribute_selection_results_table",
         selection_results,
     )
+    monkeypatch.setattr(create_tables, "create_product_reviews_table", review_results)
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
@@ -137,6 +139,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     completeness_results.assert_called_once_with()
     validation_results.assert_called_once_with()
     selection_results.assert_called_once_with()
+    review_results.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
@@ -419,3 +422,20 @@ def test_attribute_selection_results_table_definition(monkeypatch: MonkeyPatch) 
         {"AttributeName": "recordKey", "KeyType": "RANGE"},
     ]
     assert request["GlobalSecondaryIndexes"][0]["IndexName"] == "JobIdIndex"
+
+
+def test_product_reviews_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-product-reviews"
+    client = MagicMock()
+    client.create_table.side_effect = [{}, _resource_in_use()]
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+    assert create_tables.create_product_reviews_table() is True
+    assert create_tables.create_product_reviews_table() is False
+    request = client.create_table.call_args_list[0].kwargs
+    assert request["KeySchema"] == [
+        {"AttributeName": "reviewId", "KeyType": "HASH"},
+        {"AttributeName": "recordKey", "KeyType": "RANGE"},
+    ]
+    assert "GlobalSecondaryIndexes" not in request

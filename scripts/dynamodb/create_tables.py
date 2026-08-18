@@ -778,6 +778,41 @@ def create_attribute_selection_results_table() -> bool:
     return created
 
 
+def create_product_reviews_table() -> bool:
+    """Create the product-review composite table idempotently."""
+    settings = get_settings()
+    if not settings.dynamodb_endpoint_url:
+        raise RuntimeError("DYNAMODB_ENDPOINT_URL is required for local table creation")
+    client = create_dynamodb_client(settings)
+    wait_for_dynamodb(client)
+    table_name = settings.table_name("product-reviews")
+    created = False
+    try:
+        client.create_table(
+            TableName=table_name,
+            AttributeDefinitions=[
+                {"AttributeName": "reviewId", "AttributeType": "S"},
+                {"AttributeName": "recordKey", "AttributeType": "S"},
+            ],
+            KeySchema=[
+                {"AttributeName": "reviewId", "KeyType": "HASH"},
+                {"AttributeName": "recordKey", "KeyType": "RANGE"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        created = True
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") != "ResourceInUseException":
+            raise
+    client.get_waiter("table_exists").wait(TableName=table_name)
+    logger.info(
+        "Product-reviews table %s is %s",
+        table_name,
+        "created" if created else "already present",
+    )
+    return created
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     create_products_table()
@@ -796,6 +831,7 @@ def main() -> int:
     create_attribute_completeness_results_table()
     create_attribute_validation_results_table()
     create_attribute_selection_results_table()
+    create_product_reviews_table()
     return 0
 
 

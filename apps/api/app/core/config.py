@@ -94,6 +94,11 @@ class Settings(BaseSettings):
     attribute_selection_max_attributes: int = Field(default=100, gt=0)
     attribute_selection_max_candidate_ids_per_attribute: int = Field(default=100, gt=0)
     attribute_selection_max_reason_codes_per_attribute: int = Field(default=20, gt=0)
+    review_max_decisions: int = Field(default=1_000, gt=0)
+    review_max_comment_characters: int = Field(default=2_000, gt=0)
+    review_max_reviewer_id_characters: int = Field(default=200, gt=0)
+    review_max_manual_value_characters: int = Field(default=10_000, gt=0)
+    review_max_attributes: int = Field(default=100, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

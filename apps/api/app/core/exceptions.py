@@ -1079,3 +1079,114 @@ class AttributeSelectionResultAlreadyExistsError(AttributeSelectionRepositoryErr
 
 class AttributeSelectionSerializationError(AttributeSelectionRepositoryError):
     """Raised when a selection partition is incomplete or malformed."""
+
+
+class ProductReviewError(Exception):
+    """Base safe review-domain failure."""
+
+    code = "REVIEW_OPERATION_FAILED"
+    safe_message = "The review operation could not be completed."
+    status_code = 422
+    details: dict[str, object]
+
+    def __init__(self, *, details: dict[str, object] | None = None) -> None:
+        self.details = details or {}
+        super().__init__(self.safe_message)
+
+
+class AttributeSelectionNotFoundForReviewError(ProductReviewError):
+    code = "ATTRIBUTE_SELECTION_NOT_FOUND"
+    safe_message = "The requested attribute selection does not exist."
+    status_code = 404
+
+
+class ProductReviewNotFoundError(ProductReviewError):
+    code = "REVIEW_NOT_FOUND"
+    safe_message = "The requested product review does not exist."
+    status_code = 404
+
+
+class ProductReviewAttributeNotFoundError(ProductReviewError):
+    code = "ATTRIBUTE_NOT_IN_SELECTION"
+    safe_message = "The requested attribute is not part of the review selection."
+    status_code = 404
+
+
+class ProductReviewCandidateNotFoundError(ProductReviewError):
+    code = "REVIEW_CANDIDATE_NOT_FOUND"
+    safe_message = "The requested candidate does not belong to this attribute review."
+    status_code = 404
+
+
+class ProductReviewAlreadyExistsError(ProductReviewError):
+    code = "REVIEW_ALREADY_EXISTS_FOR_SELECTION"
+    safe_message = "A review already exists for this attribute selection."
+    status_code = 409
+
+
+class ProductReviewVersionConflictError(ProductReviewError):
+    code = "REVIEW_VERSION_CONFLICT"
+    safe_message = "The review version is stale. Retrieve the review and try again."
+    status_code = 409
+
+
+class ProductReviewAlreadyCompletedError(ProductReviewError):
+    code = "REVIEW_ALREADY_COMPLETED"
+    safe_message = "The completed review cannot be changed."
+    status_code = 409
+
+
+class ProductReviewRequiredAttributesUnresolvedError(ProductReviewError):
+    code = "REVIEW_REQUIRED_ATTRIBUTES_UNRESOLVED"
+    safe_message = "Required review attributes remain unresolved."
+    status_code = 409
+
+
+class ProductReviewSelectionLineageInvalidError(ProductReviewError):
+    code = "REVIEW_SELECTION_LINEAGE_INVALID"
+    safe_message = "The review selection lineage is invalid."
+    status_code = 422
+
+
+class ProductReviewDecisionNotAllowedError(ProductReviewError):
+    code = "REVIEW_DECISION_NOT_ALLOWED"
+    safe_message = "The requested review decision is not allowed."
+    status_code = 422
+
+
+class ProductReviewCandidateNotApprovableError(ProductReviewError):
+    code = "REVIEW_CANDIDATE_NOT_APPROVABLE"
+    safe_message = "The requested candidate is not approvable."
+    status_code = 422
+
+
+class ProductReviewManualOverrideInvalidError(ProductReviewError):
+    code = "REVIEW_MANUAL_OVERRIDE_INVALID"
+    safe_message = "The manual override does not satisfy the attribute schema."
+    status_code = 422
+
+
+class ProductReviewDecisionLimitExceededError(ProductReviewError):
+    code = "REVIEW_DECISION_LIMIT_EXCEEDED"
+    safe_message = "The review exceeds the configured decision limit."
+    status_code = 422
+
+
+class ProductReviewItemTooLargeError(ProductReviewError):
+    code = "REVIEW_ITEM_TOO_LARGE"
+    safe_message = "A product-review record exceeds the safe storage limit."
+    status_code = 422
+
+
+class InvalidProductReviewCursorError(ProductReviewError):
+    code = "INVALID_REVIEW_CURSOR"
+    safe_message = "The review decision cursor is invalid."
+    status_code = 400
+
+
+class ProductReviewRepositoryError(Exception):
+    """Base product-review persistence failure."""
+
+
+class ProductReviewSerializationError(ProductReviewRepositoryError):
+    """Raised for malformed or inconsistent review partitions."""

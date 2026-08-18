@@ -278,6 +278,21 @@ alone carries `jobId`/`createdAt` for sparse `JobIdIndex`. Conditional writes, c
 reads, complete reconstruction, configured limits, and the 390,000-byte guard apply. No scan,
 published Product value, or human decision exists.
 
+## Product reviews table
+
+The product-reviews table uses string partition key `reviewId` and sort key `recordKey`. A review
+partition contains one `META`, immutable chronological `DECISION#000001` records, and replaceable
+`CURRENT#{attributeName}` projections that reference existing decision IDs and sequences. META
+preserves exact selection/upstream/schema lineage, OPEN/COMPLETED status, optimistic version,
+required/optional resolution counts, decision count, and timestamps.
+
+Review creation transactionally writes META plus a separate `SELECTION#{selectionId}` / `REVIEW`
+uniqueness item. Decision transactions conditionally require the exact OPEN META version, append a
+unique decision, update its current projection, and advance META version/counts. Completion uses a
+conditional exact-version terminal update. Decision history uses an ascending partition query with
+an opaque review-bound cursor. Exact keys and queries are used throughout; no scan or GSI is needed
+because list-reviews is not part of v1. Every record has a 390,000-byte guard.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -290,7 +305,8 @@ or `make dynamodb-create-tables`. The script creates products, sources, processi
 extraction-results, table-extraction-results, csv-processing-results, image-analysis-results,
 image-ocr-results, product-classification-results, category-attribute-schemas,
 attribute-normalization-results, attribute-conflict-detection-results, and
-attribute-completeness-results, attribute-validation-results, and attribute-selection-results
+attribute-completeness-results, attribute-validation-results, attribute-selection-results, and
+product-reviews
 tables with their documented
 indexes. It waits for each table and
 exits successfully without altering data when a table is already present.

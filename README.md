@@ -141,6 +141,13 @@ indeterminate evidence, and unresolved required fields are prepared for review. 
 and never overrides conflict. Proposed values remain separate artifacts and are not written to
 Product records. See the [attribute-selection architecture](docs/architecture/attribute-selection.md).
 
+The product-review API creates one versioned human-review session for an explicit selection,
+accepts candidate approvals, proposed approvals, reject-all decisions, and schema-validated manual
+overrides, and preserves every revision as immutable history. Atomic CURRENT projections support
+completion readiness without deleting history. Reviewed values remain separate from Product
+attributes and publication. See the [product-review architecture](docs/architecture/product-review.md)
+and [review API](docs/api/reviews.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -171,9 +178,11 @@ Product records. See the [attribute-selection architecture](docs/architecture/at
 - [SPEC-026](docs/specs/SPEC-026-missing-required-attribute-and-completeness-detection-engine.md)
 - [SPEC-027](docs/specs/SPEC-027-attribute-validation-engine.md)
 - [SPEC-028](docs/specs/SPEC-028-final-attribute-candidate-selection-and-review-preparation-engine.md)
+- [SPEC-029](docs/specs/SPEC-029-human-review-decision-domain-and-review-api-foundation.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
+- [Product Review API](docs/api/reviews.md)
 - [System overview](docs/architecture/system-overview.md)
 - [DynamoDB data model](docs/architecture/dynamodb-data-model.md)
 - [Object storage](docs/architecture/object-storage.md)
@@ -190,6 +199,7 @@ Product records. See the [attribute-selection architecture](docs/architecture/at
 - [Attribute completeness](docs/architecture/attribute-completeness.md)
 - [Attribute validation](docs/architecture/attribute-validation.md)
 - [Attribute selection](docs/architecture/attribute-selection.md)
+- [Product review](docs/architecture/product-review.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
