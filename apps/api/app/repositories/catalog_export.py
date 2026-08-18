@@ -1,0 +1,13 @@
+"""Catalog export result repository contract."""
+
+from typing import Protocol
+from uuid import UUID
+
+from app.domain.catalog_export import CatalogExportResult
+
+
+class CatalogExportResultRepository(Protocol):
+    def create(self, result: CatalogExportResult) -> CatalogExportResult: ...
+    def get_by_id(self, export_id: UUID) -> CatalogExportResult | None: ...
+    def get_by_job_id(self, job_id: UUID) -> CatalogExportResult | None: ...
+    def get_by_projection_id(self, projection_id: UUID) -> CatalogExportResult | None: ...

@@ -106,6 +106,10 @@ class Settings(BaseSettings):
     catalog_projection_max_value_characters: int = Field(default=10_000, gt=0)
     catalog_projection_max_reason_codes: int = Field(default=50, gt=0)
     catalog_projection_max_product_text_characters: int = Field(default=50_000, gt=0)
+    catalog_export_max_json_bytes: int = Field(default=2_000_000, gt=0)
+    catalog_export_max_csv_bytes: int = Field(default=2_000_000, gt=0)
+    catalog_export_max_manifest_bytes: int = Field(default=200_000, gt=0)
+    catalog_export_max_attributes: int = Field(default=100, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

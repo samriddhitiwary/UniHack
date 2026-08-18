@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-032: Product Publishing Readiness Application and Catalog Read API**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-033: Structured Catalog Export and Publication Package Engine**.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, human-review APIs, and catalog/readiness APIs. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code and store evidence separately. Content/file replacement, bulk deletion, restore, download, external publishing, hosted AI, S3, workers, frontend processing UI, authentication, real AWS resources, and deployment remain unavailable.
+The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection and local JSON/CSV/manifest package export, human-review APIs, and catalog/readiness APIs. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code and store evidence separately. Content/file replacement, bulk deletion, restore, download, external publishing, hosted AI, S3, workers, frontend processing UI, authentication, real AWS resources, and deployment remain unavailable.
 
 ## Product API
 
@@ -159,6 +159,12 @@ immutable snapshot of existing Product identity/version, then returns READY, REA
 or BLOCKED using stable reasons. It does not change Product status or publish/export/enrich data.
 See the [catalog projection architecture](docs/architecture/catalog-projection.md).
 
+The structured catalog export engine consumes one explicit READY or READY_WITH_WARNINGS projection
+and writes deterministic `catalog.json`, `catalog.csv`, and `manifest.json` artifacts through local
+object storage. It preserves snapshot lineage, hashes exact bytes, enforces one package per
+projection, and compensates incomplete writes. It does not publish or expose downloads. See the
+[catalog export architecture](docs/architecture/catalog-export.md).
+
 The catalog API returns an explicit immutable projection and calculates its current readiness
 against the Product. A separate POST command may atomically transition only REVIEW_REQUIRED to
 READY_TO_PUBLISH when both caller and projection versions are current. This status is internal;
@@ -199,6 +205,7 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [SPEC-030](docs/specs/SPEC-030-final-reviewed-attribute-materialization-engine.md)
 - [SPEC-031](docs/specs/SPEC-031-commerce-catalog-projection-and-product-publishing-readiness-engine.md)
 - [SPEC-032](docs/specs/SPEC-032-product-publishing-readiness-application-and-catalog-read-api.md)
+- [SPEC-033](docs/specs/SPEC-033-structured-catalog-export-and-publication-package-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -223,6 +230,7 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [Product review](docs/architecture/product-review.md)
 - [Reviewed attribute materialization](docs/architecture/reviewed-attribute-materialization.md)
 - [Commerce catalog projection](docs/architecture/catalog-projection.md)
+- [Structured catalog export](docs/architecture/catalog-export.md)
 - [Product domain and lifecycle](docs/architecture/product-domain.md)
 - [Publishing readiness application](docs/architecture/publishing-readiness-application.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)

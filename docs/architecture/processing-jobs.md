@@ -30,3 +30,15 @@ Successful READY, READY_WITH_WARNINGS, and business BLOCKED results all complete
 `catalog-projection-results/{projectionId}`. Technical failures after RUNNING attempt FAILED. The
 projection is retained and a consistency-risk event is logged if the terminal job update fails.
 SPEC-031 adds no executor endpoint, scheduling, retry, publishing, or Product-status transition.
+
+## Catalog export
+
+SPEC-033 adds product-level `CATALOG_EXPORT`. It requires `sourceId` to be null and an explicit
+`projectionId`, and the public source-oriented job creation route rejects it. Product, projection,
+ownership/category, eligibility, structural integrity, and one-export-per-projection checks occur
+before RUNNING. READY and READY_WITH_WARNINGS projections can produce packages; BLOCKED is rejected.
+
+Objects are saved before immutable result metadata, and successful jobs reference
+`catalog-export-results/{exportId}`. Failures after RUNNING attempt FAILED and compensate partial
+objects. A completion failure retains a valid package/result and logs a consistency risk. No
+execution endpoint, retry, scheduling, external publication, or Product mutation is introduced.

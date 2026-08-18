@@ -1439,3 +1439,91 @@ class PublishingReadinessStatusTransitionNotAllowedError(PublishingReadinessErro
 class ProductAlreadyReadyToPublishError(PublishingReadinessError):
     code = "PRODUCT_ALREADY_READY_TO_PUBLISH"
     safe_message = "The product is already ready to publish."
+
+
+class CatalogExportError(Exception):
+    code = "CATALOG_EXPORT_ENGINE_FAILED"
+    safe_message = "The catalog export could not be completed."
+
+
+class InvalidCatalogExportJobError(CatalogExportError):
+    code = "INVALID_CATALOG_EXPORT_JOB"
+    safe_message = "The processing job is not eligible for catalog export."
+
+
+class CatalogExportProductRequiredError(CatalogExportError):
+    code = "CATALOG_EXPORT_PRODUCT_REQUIRED"
+    safe_message = "The catalog export Product is unavailable."
+
+
+class CatalogExportProjectionRequiredError(CatalogExportError):
+    code = "CATALOG_EXPORT_PROJECTION_REQUIRED"
+    safe_message = "The required catalog projection is unavailable."
+
+
+class CatalogExportCrossProductProjectionError(CatalogExportError):
+    code = "CATALOG_EXPORT_CROSS_PRODUCT_PROJECTION"
+    safe_message = "The catalog projection does not belong to the export Product."
+
+
+class CatalogExportProjectionBlockedError(CatalogExportError):
+    code = "CATALOG_EXPORT_PROJECTION_BLOCKED"
+    safe_message = "A blocked catalog projection cannot be exported."
+
+
+class CatalogExportLineageInvalidError(CatalogExportError):
+    code = "CATALOG_EXPORT_LINEAGE_INVALID"
+    safe_message = "Catalog export lineage is inconsistent."
+
+
+class CatalogExportAlreadyExistsError(CatalogExportError):
+    code = "CATALOG_EXPORT_ALREADY_EXISTS"
+    safe_message = "An authoritative export already exists for this catalog projection."
+
+
+class CatalogExportAttributeLimitExceededError(CatalogExportError):
+    code = "CATALOG_EXPORT_ATTRIBUTE_LIMIT_EXCEEDED"
+    safe_message = "Catalog export attributes exceed the configured limit."
+
+
+class CatalogExportJsonSizeLimitExceededError(CatalogExportError):
+    code = "CATALOG_EXPORT_JSON_SIZE_LIMIT_EXCEEDED"
+    safe_message = "The canonical JSON export exceeds the configured limit."
+
+
+class CatalogExportCsvSizeLimitExceededError(CatalogExportError):
+    code = "CATALOG_EXPORT_CSV_SIZE_LIMIT_EXCEEDED"
+    safe_message = "The catalog CSV export exceeds the configured limit."
+
+
+class CatalogExportManifestSizeLimitExceededError(CatalogExportError):
+    code = "CATALOG_EXPORT_MANIFEST_SIZE_LIMIT_EXCEEDED"
+    safe_message = "The catalog export manifest exceeds the configured limit."
+
+
+class CatalogExportSerializationError(CatalogExportError):
+    code = "CATALOG_EXPORT_SERIALIZATION_FAILED"
+    safe_message = "A catalog export artifact could not be serialized."
+
+
+class CatalogExportStorageError(CatalogExportError):
+    code = "CATALOG_EXPORT_STORAGE_FAILED"
+    safe_message = "Catalog export artifacts could not be stored."
+
+
+class CatalogExportResultItemTooLargeError(CatalogExportError):
+    code = "CATALOG_EXPORT_RESULT_ITEM_TOO_LARGE"
+    safe_message = "A catalog export result record exceeds the safe persistence size."
+
+
+class CatalogExportResultStorageError(CatalogExportError):
+    code = "CATALOG_EXPORT_RESULT_STORAGE_FAILED"
+    safe_message = "Catalog export result metadata could not be stored."
+
+
+class CatalogExportRepositoryError(Exception):
+    """Base catalog-export result persistence failure."""
+
+
+class CatalogExportResultSerializationError(CatalogExportRepositoryError):
+    """Raised when a catalog-export result partition is malformed or incomplete."""

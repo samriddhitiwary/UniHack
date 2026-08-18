@@ -291,3 +291,18 @@ The command independently checks the caller's Product version and the projection
 snapshot before DynamoDB atomically checks both version and source status. READY_WITH_WARNINGS is
 eligible and retains warnings; BLOCKED is never applied. READY_TO_PUBLISH remains internal—there is
 no external publisher, marketplace, export, new job, new table, AI, frontend, or deployment work.
+
+SPEC-033 consumes one explicit eligible catalog projection and creates an immutable local export
+package:
+
+```text
+CatalogExportService -> explicit catalog projection + Product coherence check
+                     -> deterministic JSON/CSV/manifest package builder
+                     -> ObjectStorage + catalog-export-results
+```
+
+The package preserves projection identity, reviewed attributes, warnings, and lineage. Exact stored
+bytes are SHA-256 hashed, conditional persistence enforces one export per projection, and partial
+storage/result failures trigger compensation. A stale Product version is allowed because export is
+an immutable projection snapshot. No Product state changes, external publication, marketplace,
+download API, S3, AI, frontend, or deployment behavior is added.

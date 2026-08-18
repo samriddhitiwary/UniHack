@@ -1,10 +1,12 @@
 """Processing-job DynamoDB mapping tests."""
 
 from decimal import Decimal
+from uuid import uuid4
 
 import pytest
 
 from app.core.exceptions import ProcessingJobSerializationError, ProductSerializationError
+from app.domain.processing_jobs import ProcessingJob, ProcessingJobType
 from app.utils.dynamodb import (
     deserialize_item,
     processing_job_from_item,
@@ -12,7 +14,8 @@ from app.utils.dynamodb import (
     serialize_item,
     to_dynamodb_compatible,
 )
-from tests.fixtures.processing_jobs import make_processing_job
+from tests.fixtures.processing_jobs import JOB_CREATED_AT, make_processing_job
+from tests.fixtures.products import PRODUCT_ID
 
 
 def test_job_round_trip_preserves_uuid_enums_timestamps_and_optional_values() -> None:
@@ -28,6 +31,20 @@ def test_job_round_trip_preserves_uuid_enums_timestamps_and_optional_values() ->
 def test_generic_serializer_still_rejects_python_float() -> None:
     with pytest.raises(ProductSerializationError):
         to_dynamodb_compatible({"progress": 1.5})
+
+
+def test_catalog_export_projection_lineage_round_trips() -> None:
+    projection_id = uuid4()
+    job = ProcessingJob.create(
+        product_id=PRODUCT_ID,
+        source_id=None,
+        job_type=ProcessingJobType.CATALOG_EXPORT,
+        projection_id=projection_id,
+        now=JOB_CREATED_AT,
+    )
+    item = processing_job_to_item(job)
+    assert item["projectionId"] == projection_id
+    assert processing_job_from_item(deserialize_item(serialize_item(item))) == job
 
 
 @pytest.mark.parametrize(

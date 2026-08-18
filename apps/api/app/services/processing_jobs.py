@@ -64,6 +64,7 @@ class ProcessingJobService:
             ProcessingJobType.ATTRIBUTE_SELECTION,
             ProcessingJobType.REVIEWED_ATTRIBUTE_MATERIALIZATION,
             ProcessingJobType.CATALOG_PROJECTION,
+            ProcessingJobType.CATALOG_EXPORT,
         }:
             raise ProcessingJobTypeNotSupportedForSourceError(
                 source.source_type.value,

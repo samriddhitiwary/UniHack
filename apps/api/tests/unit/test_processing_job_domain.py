@@ -61,6 +61,31 @@ def test_attribute_normalization_job_is_product_scoped_with_explicit_extraction(
             source_id=None,
             job_type=ProcessingJobType.ATTRIBUTE_NORMALIZATION,
         )
+
+
+def test_catalog_export_job_is_product_scoped_with_explicit_projection() -> None:
+    projection_id = uuid4()
+    job = ProcessingJob.create(
+        product_id=PRODUCT_ID,
+        source_id=None,
+        job_type=ProcessingJobType.CATALOG_EXPORT,
+        projection_id=projection_id,
+        now=JOB_CREATED_AT,
+    )
+    assert job.source_id is None and job.projection_id == projection_id
+    with pytest.raises(ValueError):
+        ProcessingJob.create(
+            product_id=PRODUCT_ID,
+            source_id=None,
+            job_type=ProcessingJobType.CATALOG_EXPORT,
+        )
+    with pytest.raises(ValueError):
+        ProcessingJob.create(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            job_type=ProcessingJobType.CATALOG_EXPORT,
+            projection_id=projection_id,
+        )
     with pytest.raises(ValueError):
         ProcessingJob.create(
             product_id=PRODUCT_ID,

@@ -321,6 +321,19 @@ never overwrite. Projection, job, and materialization lookups use queries only a
 incomplete partitions. The 390,000-byte item guard and configured attribute/value/reason/Product
 text limits apply.
 
+## Catalog export results table
+
+The catalog-export-results table uses `exportId` and `recordKey`. META stores job, Product,
+projection/version, category/schema, eligibility status, warnings, artifact count, engine/version,
+and creation time. Exactly three `ARTIFACT#CANONICAL_JSON`, `ARTIFACT#CATALOG_CSV`, and
+`ARTIFACT#MANIFEST_JSON` records store fixed filename, media type, safe object key, exact size,
+SHA-256, and timestamp.
+
+Only META carries `jobId`, `projectionId`, and `createdAt`, making `JobIdIndex` and
+`ProjectionIdIndex` sparse. A conditional `PROJECTION#{projectionId}` / `CATALOG_EXPORT` guard
+enforces one package per projection without entering either index. Export, job, and projection
+lookups use queries only and reject incomplete partitions. Every item has a 390,000-byte guard.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -334,7 +347,7 @@ extraction-results, table-extraction-results, csv-processing-results, image-anal
 image-ocr-results, product-classification-results, category-attribute-schemas,
 attribute-normalization-results, attribute-conflict-detection-results, and
 attribute-completeness-results, attribute-validation-results, attribute-selection-results,
-product-reviews, reviewed-attribute-results, and catalog-projection-results tables with their
+product-reviews, reviewed-attribute-results, catalog-projection-results, and catalog-export-results tables with their
 documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 
