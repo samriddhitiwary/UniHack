@@ -61,6 +61,7 @@ class ProcessingJobService:
             ProcessingJobType.ATTRIBUTE_CONFLICT_DETECTION,
             ProcessingJobType.ATTRIBUTE_COMPLETENESS,
             ProcessingJobType.ATTRIBUTE_VALIDATION,
+            ProcessingJobType.ATTRIBUTE_SELECTION,
         }:
             raise ProcessingJobTypeNotSupportedForSourceError(
                 source.source_type.value,

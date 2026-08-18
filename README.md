@@ -134,6 +134,13 @@ invalid and not-validatable evidence while candidates and upstream conflicts rem
 does not select or generate values, resolve conflicts, mutate products, or expose an API. See the
 [attribute-validation architecture](docs/architecture/attribute-validation.md).
 
+The attribute-selection engine combines explicitly linked normalization, conflict, completeness,
+and validation results from one exact lineage. It auto-selects only warning-free, corroborated
+agreement above a configured confidence threshold; single-source evidence, warnings, conflicts,
+indeterminate evidence, and unresolved required fields are prepared for review. Ranking is stable
+and never overrides conflict. Proposed values remain separate artifacts and are not written to
+Product records. See the [attribute-selection architecture](docs/architecture/attribute-selection.md).
+
 ## Documentation
 
 - [SPEC-001](docs/specs/SPEC-001-project-repository-foundation.md)
@@ -163,6 +170,7 @@ does not select or generate values, resolve conflicts, mutate products, or expos
 - [SPEC-025](docs/specs/SPEC-025-candidate-agreement-and-conflict-detection-engine.md)
 - [SPEC-026](docs/specs/SPEC-026-missing-required-attribute-and-completeness-detection-engine.md)
 - [SPEC-027](docs/specs/SPEC-027-attribute-validation-engine.md)
+- [SPEC-028](docs/specs/SPEC-028-final-attribute-candidate-selection-and-review-preparation-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -181,6 +189,7 @@ does not select or generate values, resolve conflicts, mutate products, or expos
 - [Candidate agreement and conflict detection](docs/architecture/attribute-conflict-detection.md)
 - [Attribute completeness](docs/architecture/attribute-completeness.md)
 - [Attribute validation](docs/architecture/attribute-validation.md)
+- [Attribute selection](docs/architecture/attribute-selection.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

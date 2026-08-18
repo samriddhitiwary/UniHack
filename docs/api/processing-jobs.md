@@ -52,6 +52,9 @@ compatibility error. SPEC-021 adds no classification execution or result endpoin
 `ATTRIBUTE_VALIDATION` is internal and product-level with one explicit
 `attributeNormalizationId`; this public source-scoped endpoint also rejects it.
 
+`ATTRIBUTE_SELECTION` is internal and product-level with explicit normalization, conflict,
+completeness, and validation result identifiers; this public source-scoped endpoint rejects it.
+
 ## Retrieve a job
 
 `GET /api/v1/processing-jobs/{job_id}` returns the camel-case safe record with HTTP 200.

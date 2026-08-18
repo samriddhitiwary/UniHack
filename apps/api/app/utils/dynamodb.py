@@ -262,6 +262,10 @@ def processing_job_to_item(job: ProcessingJob) -> dict[str, object]:
         item["attributeNormalizationId"] = job.attribute_normalization_id
     if job.attribute_conflict_detection_id is not None:
         item["attributeConflictDetectionId"] = job.attribute_conflict_detection_id
+    if job.attribute_validation_id is not None:
+        item["attributeValidationId"] = job.attribute_validation_id
+    if job.attribute_completeness_id is not None:
+        item["attributeCompletenessId"] = job.attribute_completeness_id
     return item
 
 
@@ -295,6 +299,16 @@ def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
             attribute_conflict_detection_id=(
                 UUID(str(item["attributeConflictDetectionId"]))
                 if "attributeConflictDetectionId" in item
+                else None
+            ),
+            attribute_validation_id=(
+                UUID(str(item["attributeValidationId"]))
+                if "attributeValidationId" in item
+                else None
+            ),
+            attribute_completeness_id=(
+                UUID(str(item["attributeCompletenessId"]))
+                if "attributeCompletenessId" in item
                 else None
             ),
             job_type=ProcessingJobType(str(item["jobType"])),

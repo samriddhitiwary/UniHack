@@ -40,6 +40,8 @@ class ProcessingJob:
     attribute_extraction_id: UUID | None = None
     attribute_normalization_id: UUID | None = None
     attribute_conflict_detection_id: UUID | None = None
+    attribute_validation_id: UUID | None = None
+    attribute_completeness_id: UUID | None = None
     job_type: ProcessingJobType
     status: ProcessingJobStatus
     attempt: int
@@ -67,6 +69,7 @@ class ProcessingJob:
             ProcessingJobType.ATTRIBUTE_CONFLICT_DETECTION,
             ProcessingJobType.ATTRIBUTE_COMPLETENESS,
             ProcessingJobType.ATTRIBUTE_VALIDATION,
+            ProcessingJobType.ATTRIBUTE_SELECTION,
         }:
             if self.source_id is not None:
                 raise ValueError("product-level jobs must not have a source_id")
@@ -87,6 +90,7 @@ class ProcessingJob:
         if self.job_type in {
             ProcessingJobType.ATTRIBUTE_CONFLICT_DETECTION,
             ProcessingJobType.ATTRIBUTE_VALIDATION,
+            ProcessingJobType.ATTRIBUTE_SELECTION,
         }:
             if not isinstance(self.attribute_normalization_id, UUID):
                 raise ValueError(
@@ -96,15 +100,27 @@ class ProcessingJob:
             raise ValueError(
                 "attribute_normalization_id is only valid for conflict-detection or validation jobs"
             )
-        if self.job_type is ProcessingJobType.ATTRIBUTE_COMPLETENESS:
+        if self.job_type in {
+            ProcessingJobType.ATTRIBUTE_COMPLETENESS,
+            ProcessingJobType.ATTRIBUTE_SELECTION,
+        }:
             if not isinstance(self.attribute_conflict_detection_id, UUID):
                 raise ValueError(
                     "ATTRIBUTE_COMPLETENESS jobs require an attribute_conflict_detection_id"
                 )
         elif self.attribute_conflict_detection_id is not None:
             raise ValueError(
-                "attribute_conflict_detection_id is only valid for ATTRIBUTE_COMPLETENESS jobs"
+                "attribute_conflict_detection_id is only valid for completeness or selection jobs"
             )
+        if self.job_type is ProcessingJobType.ATTRIBUTE_SELECTION:
+            if not isinstance(self.attribute_validation_id, UUID) or not isinstance(
+                self.attribute_completeness_id, UUID
+            ):
+                raise ValueError(
+                    "ATTRIBUTE_SELECTION jobs require validation and completeness identifiers"
+                )
+        elif self.attribute_validation_id is not None or self.attribute_completeness_id is not None:
+            raise ValueError("selection lineage identifiers are only valid for ATTRIBUTE_SELECTION")
         if not isinstance(self.status, ProcessingJobStatus):
             raise ValueError("status must be a ProcessingJobStatus")
         if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
@@ -184,6 +200,8 @@ class ProcessingJob:
         attribute_extraction_id: UUID | None = None,
         attribute_normalization_id: UUID | None = None,
         attribute_conflict_detection_id: UUID | None = None,
+        attribute_validation_id: UUID | None = None,
+        attribute_completeness_id: UUID | None = None,
         attempt: int = 1,
         now: datetime | None = None,
     ) -> Self:
@@ -196,6 +214,8 @@ class ProcessingJob:
             attribute_extraction_id=attribute_extraction_id,
             attribute_normalization_id=attribute_normalization_id,
             attribute_conflict_detection_id=attribute_conflict_detection_id,
+            attribute_validation_id=attribute_validation_id,
+            attribute_completeness_id=attribute_completeness_id,
             job_type=job_type,
             status=ProcessingJobStatus.PENDING,
             attempt=attempt,

@@ -1002,3 +1002,80 @@ class AttributeValidationResultAlreadyExistsError(AttributeValidationRepositoryE
 
 class AttributeValidationSerializationError(AttributeValidationRepositoryError):
     """Raised when a validation partition is incomplete or malformed."""
+
+
+class AttributeSelectionError(Exception):
+    code = "ATTRIBUTE_SELECTION_ENGINE_FAILED"
+    safe_message = "Attribute selection could not be completed."
+
+
+class InvalidAttributeSelectionJobError(AttributeSelectionError):
+    code = "INVALID_ATTRIBUTE_SELECTION_JOB"
+    safe_message = "The processing job is not eligible for attribute selection."
+
+
+class AttributeSelectionConflictResultRequiredError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_CONFLICT_RESULT_REQUIRED"
+    safe_message = "The required conflict result is unavailable."
+
+
+class AttributeSelectionValidationResultRequiredError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_VALIDATION_RESULT_REQUIRED"
+    safe_message = "The required validation result is unavailable."
+
+
+class AttributeSelectionCompletenessResultRequiredError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_COMPLETENESS_RESULT_REQUIRED"
+    safe_message = "The required completeness result is unavailable."
+
+
+class AttributeSelectionNormalizationRequiredError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_NORMALIZATION_REQUIRED"
+    safe_message = "The required normalization result is unavailable."
+
+
+class AttributeSelectionCrossProductLineageError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_CROSS_PRODUCT_LINEAGE"
+    safe_message = "Selection inputs do not belong to the same product."
+
+
+class AttributeSelectionLineageMismatchError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_LINEAGE_MISMATCH"
+    safe_message = "Selection input lineage does not match."
+
+
+class AttributeSelectionAttributeLimitExceededError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_ATTRIBUTE_LIMIT_EXCEEDED"
+    safe_message = "Selection attributes exceed the configured limit."
+
+
+class AttributeSelectionCandidateLimitExceededError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_CANDIDATE_LIMIT_EXCEEDED"
+    safe_message = "Selection candidate identifiers exceed the configured limit."
+
+
+class AttributeSelectionReasonLimitExceededError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_REASON_LIMIT_EXCEEDED"
+    safe_message = "Selection reason codes exceed the configured limit."
+
+
+class AttributeSelectionResultItemTooLargeError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_RESULT_ITEM_TOO_LARGE"
+    safe_message = "An attribute selection record exceeds the safe storage limit."
+
+
+class AttributeSelectionResultStorageError(AttributeSelectionError):
+    code = "ATTRIBUTE_SELECTION_STORAGE_FAILED"
+    safe_message = "The attribute selection result could not be stored."
+
+
+class AttributeSelectionRepositoryError(Exception):
+    """Base error for attribute-selection persistence failures."""
+
+
+class AttributeSelectionResultAlreadyExistsError(AttributeSelectionRepositoryError):
+    """Raised when conditional creation finds an existing result."""
+
+
+class AttributeSelectionSerializationError(AttributeSelectionRepositoryError):
+    """Raised when a selection partition is incomplete or malformed."""

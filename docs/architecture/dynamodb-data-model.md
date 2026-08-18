@@ -268,6 +268,16 @@ SUMMARY records contain attribute-level counts only. META alone carries `jobId` 
 sparse `JobIdIndex`. Conditional writes, consistent paginated reads, complete reconstruction, and
 the 390,000-byte guard apply; no scan or selected value exists.
 
+## Attribute selection results table
+
+The attribute-selection-results table uses `selectionId` and `recordKey`. META stores exact
+normalization/conflict/completeness/validation lineage, overall review status, aggregate counts,
+review-summary counts, warnings, engine/version, and creation time. Ordered ATTRIBUTE records store
+proposal/review state, candidate ID arrays, consensus metadata, confidence, and reason codes. META
+alone carries `jobId`/`createdAt` for sparse `JobIdIndex`. Conditional writes, consistent paginated
+reads, complete reconstruction, configured limits, and the 390,000-byte guard apply. No scan,
+published Product value, or human decision exists.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -280,7 +290,8 @@ or `make dynamodb-create-tables`. The script creates products, sources, processi
 extraction-results, table-extraction-results, csv-processing-results, image-analysis-results,
 image-ocr-results, product-classification-results, category-attribute-schemas,
 attribute-normalization-results, attribute-conflict-detection-results, and
-attribute-completeness-results and attribute-validation-results tables with their documented
+attribute-completeness-results, attribute-validation-results, and attribute-selection-results
+tables with their documented
 indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 

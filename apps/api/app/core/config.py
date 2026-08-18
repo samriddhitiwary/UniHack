@@ -89,6 +89,11 @@ class Settings(BaseSettings):
     attribute_validation_max_pattern_characters: int = Field(default=500, gt=0)
     attribute_validation_max_issues_per_candidate: int = Field(default=20, gt=0)
     attribute_validation_max_total_issues: int = Field(default=10_000, gt=0)
+    attribute_selection_auto_select_min_confidence_bp: int = Field(default=9_000, ge=0, le=10_000)
+    attribute_selection_min_distinct_sources: int = Field(default=2, gt=0)
+    attribute_selection_max_attributes: int = Field(default=100, gt=0)
+    attribute_selection_max_candidate_ids_per_attribute: int = Field(default=100, gt=0)
+    attribute_selection_max_reason_codes_per_attribute: int = Field(default=20, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

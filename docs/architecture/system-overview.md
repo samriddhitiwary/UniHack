@@ -234,3 +234,9 @@ SPEC-024 normalization result. Decimal type/range checks, exact allowed values, 
 patterns, and canonical-unit compatibility produce immutable assessments and attribute summaries.
 Invalid candidates remain evidence; conflict and completeness results are untouched. No winner,
 generated value, API, or frontend behavior is added.
+
+SPEC-028 adds conservative proposed selection and review preparation across exact SPEC-024 through
+SPEC-027 lineage. Multi-source, warning-free agreement may yield a proposed normalized value;
+single-source, warning, conflict, indeterminate, missing, and invalid-only conditions remain explicit
+review states. Ranking only orders equivalent evidence and never resolves conflict. Results remain
+separate from Product records, publication, human decisions, APIs, and frontend behavior.
