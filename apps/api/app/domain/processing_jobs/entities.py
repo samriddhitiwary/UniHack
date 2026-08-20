@@ -76,6 +76,7 @@ class ProcessingJob:
             ProcessingJobType.REVIEWED_ATTRIBUTE_MATERIALIZATION,
             ProcessingJobType.CATALOG_PROJECTION,
             ProcessingJobType.CATALOG_EXPORT,
+            ProcessingJobType.AI_CATALOG_ENRICHMENT,
         }:
             if self.source_id is not None:
                 raise ValueError("product-level jobs must not have a source_id")
@@ -139,11 +140,14 @@ class ProcessingJob:
             raise ValueError(
                 "reviewed_attribute_materialization_id is only valid for catalog projection jobs"
             )
-        if self.job_type is ProcessingJobType.CATALOG_EXPORT:
+        if self.job_type in {
+            ProcessingJobType.CATALOG_EXPORT,
+            ProcessingJobType.AI_CATALOG_ENRICHMENT,
+        }:
             if not isinstance(self.projection_id, UUID):
-                raise ValueError("catalog export jobs require a projection identifier")
+                raise ValueError("catalog projection consumer jobs require a projection identifier")
         elif self.projection_id is not None:
-            raise ValueError("projection_id is only valid for catalog export jobs")
+            raise ValueError("projection_id is only valid for catalog projection consumer jobs")
         if not isinstance(self.status, ProcessingJobStatus):
             raise ValueError("status must be a ProcessingJobStatus")
         if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:

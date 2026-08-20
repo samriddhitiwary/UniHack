@@ -95,6 +95,31 @@ def test_catalog_export_job_is_product_scoped_with_explicit_projection() -> None
         )
 
 
+def test_ai_catalog_enrichment_job_is_product_scoped_with_explicit_projection() -> None:
+    projection_id = uuid4()
+    job = ProcessingJob.create(
+        product_id=PRODUCT_ID,
+        source_id=None,
+        job_type=ProcessingJobType.AI_CATALOG_ENRICHMENT,
+        projection_id=projection_id,
+        now=JOB_CREATED_AT,
+    )
+    assert job.source_id is None and job.projection_id == projection_id
+    with pytest.raises(ValueError):
+        ProcessingJob.create(
+            product_id=PRODUCT_ID,
+            source_id=None,
+            job_type=ProcessingJobType.AI_CATALOG_ENRICHMENT,
+        )
+    with pytest.raises(ValueError):
+        ProcessingJob.create(
+            product_id=PRODUCT_ID,
+            source_id=SOURCE_ID,
+            job_type=ProcessingJobType.AI_CATALOG_ENRICHMENT,
+            projection_id=projection_id,
+        )
+
+
 def test_job_is_immutable() -> None:
     with pytest.raises(FrozenInstanceError):
         make_processing_job().status = ProcessingJobStatus.RUNNING  # type: ignore[misc]

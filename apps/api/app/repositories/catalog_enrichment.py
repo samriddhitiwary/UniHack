@@ -1,0 +1,13 @@
+"""Catalog enrichment result repository contract."""
+
+from typing import Protocol
+from uuid import UUID
+
+from app.domain.catalog_enrichment import CatalogEnrichmentResult
+
+
+class CatalogEnrichmentResultRepository(Protocol):
+    def create(self, result: CatalogEnrichmentResult) -> CatalogEnrichmentResult: ...
+    def get_by_id(self, enrichment_id: UUID) -> CatalogEnrichmentResult | None: ...
+    def get_by_job_id(self, job_id: UUID) -> CatalogEnrichmentResult | None: ...
+    def get_by_projection_id(self, projection_id: UUID) -> tuple[CatalogEnrichmentResult, ...]: ...

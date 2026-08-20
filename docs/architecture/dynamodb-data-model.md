@@ -334,6 +334,19 @@ Only META carries `jobId`, `projectionId`, and `createdAt`, making `JobIdIndex` 
 enforces one package per projection without entering either index. Export, job, and projection
 lookups use queries only and reject incomplete partitions. Every item has a 390,000-byte guard.
 
+## Catalog enrichment results table
+
+The catalog-enrichment-results table uses `enrichmentId` and `recordKey`. META stores job/Product/
+projection and schema lineage, content counts, trusted/referenced fact counts, basis-point quality
+metadata, warnings, provider/model, prompt version/hash, attempt count, engine/version, and creation
+time. TITLE, DESCRIPTION, and TECHNICAL_SUMMARY records contain text/fact IDs; ordered BULLET and
+KEYWORD records additionally contain sequence.
+
+Only META carries `jobId`, `projectionId`, and `createdAt`, making JobIdIndex and ProjectionIdIndex
+sparse. A conditional `ENRICHMENT_INPUT#{sha256(projection|prompt|provider|model)}` / `RESULT` guard
+enforces exact-input uniqueness without entering either index. ID, job, and bounded projection-history
+reads use queries only and reject incomplete partitions. Every item has a 390,000-byte guard.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -347,7 +360,8 @@ extraction-results, table-extraction-results, csv-processing-results, image-anal
 image-ocr-results, product-classification-results, category-attribute-schemas,
 attribute-normalization-results, attribute-conflict-detection-results, and
 attribute-completeness-results, attribute-validation-results, attribute-selection-results,
-product-reviews, reviewed-attribute-results, catalog-projection-results, and catalog-export-results tables with their
+product-reviews, reviewed-attribute-results, catalog-projection-results, catalog-export-results, and
+catalog-enrichment-results tables with their
 documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 

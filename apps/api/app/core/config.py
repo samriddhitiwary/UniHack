@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -110,6 +110,24 @@ class Settings(BaseSettings):
     catalog_export_max_csv_bytes: int = Field(default=2_000_000, gt=0)
     catalog_export_max_manifest_bytes: int = Field(default=200_000, gt=0)
     catalog_export_max_attributes: int = Field(default=100, gt=0)
+    ai_enrichment_provider: Literal["openai"] = "openai"
+    ai_enrichment_model: str = ""
+    ai_enrichment_api_key: SecretStr | None = None
+    ai_enrichment_temperature: float = Field(default=0, ge=0, le=2)
+    ai_enrichment_max_output_tokens: int = Field(default=1_500, gt=0)
+    ai_enrichment_timeout_seconds: float = Field(default=30, gt=0)
+    ai_enrichment_max_trusted_facts: int = Field(default=200, gt=0)
+    ai_enrichment_max_fact_value_characters: int = Field(default=10_000, gt=0)
+    ai_enrichment_max_title_characters: int = Field(default=200, gt=0)
+    ai_enrichment_max_description_characters: int = Field(default=2_000, gt=0)
+    ai_enrichment_max_feature_bullets: int = Field(default=8, ge=3)
+    ai_enrichment_max_bullet_characters: int = Field(default=300, gt=0)
+    ai_enrichment_max_search_keywords: int = Field(default=20, gt=0)
+    ai_enrichment_max_keyword_characters: int = Field(default=100, gt=0)
+    ai_enrichment_max_technical_summary_characters: int = Field(default=1_000, gt=0)
+    ai_enrichment_max_fact_references_per_item: int = Field(default=50, gt=0)
+    ai_enrichment_max_total_fact_references: int = Field(default=500, gt=0)
+    ai_enrichment_max_generation_attempts: int = Field(default=2, ge=1, le=2)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")
@@ -117,6 +135,14 @@ class Settings(BaseSettings):
     def empty_string_is_none(cls, value: object) -> object:
         """Treat blank optional environment values as absent."""
         return None if value == "" else value
+
+    @field_validator("ai_enrichment_model")
+    @classmethod
+    def enrichment_model_is_bounded(cls, value: str) -> str:
+        normalized = value.strip()
+        if len(normalized) > 200:
+            raise ValueError("ai_enrichment_model must contain at most 200 characters")
+        return normalized
 
     @field_validator("cors_allowed_origins", mode="before")
     @classmethod

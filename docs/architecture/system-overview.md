@@ -306,3 +306,18 @@ bytes are SHA-256 hashed, conditional persistence enforces one export per projec
 storage/result failures trigger compensation. A stale Product version is allowed because export is
 an immutable projection snapshot. No Product state changes, external publication, marketplace,
 download API, S3, AI, frontend, or deployment behavior is added.
+
+SPEC-034 adds grounded AI content generation from an explicit immutable catalog projection:
+
+```text
+CatalogEnrichmentService -> trusted projection facts + deterministic prompt
+                         -> provider-independent LLM boundary
+                         -> strict parser + deterministic hallucination guards
+                         -> immutable catalog-enrichment-results
+```
+
+Every generated component retains stable fact references. Numeric/unit claims and high-risk
+certification, warranty, material, performance, and use-case language are deterministically checked;
+unsafe output may retry once and is never persisted. Generated content remains separate from Product,
+reviewed materialization, projection, and export artifacts. No publishing, web search, frontend, S3,
+authentication, or deployment behavior is added.

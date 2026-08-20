@@ -42,3 +42,15 @@ Objects are saved before immutable result metadata, and successful jobs referenc
 `catalog-export-results/{exportId}`. Failures after RUNNING attempt FAILED and compensate partial
 objects. A completion failure retains a valid package/result and logs a consistency risk. No
 execution endpoint, retry, scheduling, external publication, or Product mutation is introduced.
+
+## AI catalog enrichment
+
+SPEC-034 adds product-level `AI_CATALOG_ENRICHMENT` with a required explicit `projectionId` and no
+source. Public source-oriented job creation rejects it. Product/projection ownership, eligible
+projection status, structural/fact limits, deterministic prompt preparation, and exact-input
+idempotency are checked before RUNNING. The provider is called only after RUNNING.
+
+Validated results persist before COMPLETED and use
+`catalog-enrichment-results/{enrichmentId}`. Provider, parser, grounding, limits, and persistence
+failures attempt FAILED. Completion failure retains the valid result and logs a consistency risk.
+There is no executor endpoint, scheduler, Product mutation, publication, or retry queue.

@@ -981,6 +981,62 @@ def create_catalog_export_results_table() -> bool:
     return created
 
 
+def create_catalog_enrichment_results_table() -> bool:
+    """Create the immutable catalog enrichment result table idempotently."""
+    settings = get_settings()
+    if not settings.dynamodb_endpoint_url:
+        raise RuntimeError("DYNAMODB_ENDPOINT_URL is required for local table creation")
+    client = create_dynamodb_client(settings)
+    wait_for_dynamodb(client)
+    table_name = settings.table_name("catalog-enrichment-results")
+    created = False
+    try:
+        client.create_table(
+            TableName=table_name,
+            AttributeDefinitions=[
+                {"AttributeName": "enrichmentId", "AttributeType": "S"},
+                {"AttributeName": "recordKey", "AttributeType": "S"},
+                {"AttributeName": "jobId", "AttributeType": "S"},
+                {"AttributeName": "projectionId", "AttributeType": "S"},
+                {"AttributeName": "createdAt", "AttributeType": "S"},
+            ],
+            KeySchema=[
+                {"AttributeName": "enrichmentId", "KeyType": "HASH"},
+                {"AttributeName": "recordKey", "KeyType": "RANGE"},
+            ],
+            GlobalSecondaryIndexes=[
+                {
+                    "IndexName": "JobIdIndex",
+                    "KeySchema": [
+                        {"AttributeName": "jobId", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+                {
+                    "IndexName": "ProjectionIdIndex",
+                    "KeySchema": [
+                        {"AttributeName": "projectionId", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        created = True
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") != "ResourceInUseException":
+            raise
+    client.get_waiter("table_exists").wait(TableName=table_name)
+    logger.info(
+        "Catalog-enrichment-results table %s is %s",
+        table_name,
+        "created" if created else "already present",
+    )
+    return created
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     create_products_table()
@@ -1003,6 +1059,7 @@ def main() -> int:
     create_reviewed_attribute_results_table()
     create_catalog_projection_results_table()
     create_catalog_export_results_table()
+    create_catalog_enrichment_results_table()
     return 0
 
 

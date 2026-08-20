@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-033: Structured Catalog Export and Publication Package Engine**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-034: AI Catalog Enrichment and Commerce Content Generation Engine**.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection and local JSON/CSV/manifest package export, human-review APIs, and catalog/readiness APIs. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code and store evidence separately. Content/file replacement, bulk deletion, restore, download, external publishing, hosted AI, S3, workers, frontend processing UI, authentication, real AWS resources, and deployment remain unavailable.
+The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, local JSON/CSV/manifest package export, and grounded AI commerce-content artifacts, plus human-review and catalog/readiness APIs. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code and store evidence separately. Content/file replacement, bulk deletion, restore, download, external publishing, web enrichment, S3, workers, frontend processing UI, authentication, real AWS resources, and deployment remain unavailable.
 
 ## Product API
 
@@ -165,6 +165,14 @@ object storage. It preserves snapshot lineage, hashes exact bytes, enforces one 
 projection, and compensates incomplete writes. It does not publish or expose downloads. See the
 [catalog export architecture](docs/architecture/catalog-export.md).
 
+The grounded AI enrichment engine consumes one explicit READY or READY_WITH_WARNINGS projection and
+generates a separate immutable title, description, feature bullets, keywords, and technical summary.
+Stable fact IDs, strict JSON parsing, numeric/unit checks, and conservative high-risk claim guards
+prevent unsafe output from being stored. Provider credentials remain configuration-only; generated
+content does not mutate Product or publish externally. See the
+[AI enrichment architecture](docs/architecture/catalog-ai-enrichment.md) and
+[grounding controls](docs/architecture/catalog-ai-grounding.md).
+
 The catalog API returns an explicit immutable projection and calculates its current readiness
 against the Product. A separate POST command may atomically transition only REVIEW_REQUIRED to
 READY_TO_PUBLISH when both caller and projection versions are current. This status is internal;
@@ -206,6 +214,7 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [SPEC-031](docs/specs/SPEC-031-commerce-catalog-projection-and-product-publishing-readiness-engine.md)
 - [SPEC-032](docs/specs/SPEC-032-product-publishing-readiness-application-and-catalog-read-api.md)
 - [SPEC-033](docs/specs/SPEC-033-structured-catalog-export-and-publication-package-engine.md)
+- [SPEC-034](docs/specs/SPEC-034-ai-catalog-enrichment-and-commerce-content-generation-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -231,6 +240,8 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [Reviewed attribute materialization](docs/architecture/reviewed-attribute-materialization.md)
 - [Commerce catalog projection](docs/architecture/catalog-projection.md)
 - [Structured catalog export](docs/architecture/catalog-export.md)
+- [Grounded AI catalog enrichment](docs/architecture/catalog-ai-enrichment.md)
+- [Catalog AI grounding](docs/architecture/catalog-ai-grounding.md)
 - [Product domain and lifecycle](docs/architecture/product-domain.md)
 - [Publishing readiness application](docs/architecture/publishing-readiness-application.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)

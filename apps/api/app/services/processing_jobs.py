@@ -65,6 +65,7 @@ class ProcessingJobService:
             ProcessingJobType.REVIEWED_ATTRIBUTE_MATERIALIZATION,
             ProcessingJobType.CATALOG_PROJECTION,
             ProcessingJobType.CATALOG_EXPORT,
+            ProcessingJobType.AI_CATALOG_ENRICHMENT,
         }:
             raise ProcessingJobTypeNotSupportedForSourceError(
                 source.source_type.value,

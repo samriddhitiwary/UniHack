@@ -1527,3 +1527,111 @@ class CatalogExportRepositoryError(Exception):
 
 class CatalogExportResultSerializationError(CatalogExportRepositoryError):
     """Raised when a catalog-export result partition is malformed or incomplete."""
+
+
+class CatalogEnrichmentError(Exception):
+    code = "AI_ENRICHMENT_ENGINE_FAILED"
+    safe_message = "Catalog enrichment could not be completed."
+
+
+class InvalidCatalogEnrichmentJobError(CatalogEnrichmentError):
+    code = "INVALID_AI_CATALOG_ENRICHMENT_JOB"
+    safe_message = "The processing job is not eligible for catalog enrichment."
+
+
+class CatalogEnrichmentProductRequiredError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_PRODUCT_REQUIRED"
+    safe_message = "The catalog enrichment Product is unavailable."
+
+
+class CatalogEnrichmentProjectionRequiredError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_PROJECTION_REQUIRED"
+    safe_message = "The required catalog projection is unavailable."
+
+
+class CatalogEnrichmentCrossProductProjectionError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_CROSS_PRODUCT_PROJECTION"
+    safe_message = "The catalog projection does not belong to the enrichment Product."
+
+
+class CatalogEnrichmentProjectionBlockedError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_PROJECTION_BLOCKED"
+    safe_message = "A blocked catalog projection cannot be enriched."
+
+
+class CatalogEnrichmentLineageInvalidError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_LINEAGE_INVALID"
+    safe_message = "Catalog enrichment lineage is inconsistent."
+
+
+class CatalogEnrichmentTrustedFactLimitError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_TRUSTED_FACT_LIMIT_EXCEEDED"
+    safe_message = "Trusted catalog facts exceed the configured limit."
+
+
+class CatalogEnrichmentAlreadyExistsError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_ALREADY_EXISTS"
+    safe_message = "An enrichment already exists for this projection, prompt, provider, and model."
+
+
+class CatalogEnrichmentProviderUnavailableError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_PROVIDER_UNAVAILABLE"
+    safe_message = "The configured catalog enrichment provider is unavailable."
+
+
+class CatalogEnrichmentProviderTimeoutError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_PROVIDER_TIMEOUT"
+    safe_message = "The catalog enrichment provider timed out."
+
+
+class CatalogEnrichmentProviderRateLimitedError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_PROVIDER_RATE_LIMITED"
+    safe_message = "The catalog enrichment provider rate limit was reached."
+
+
+class CatalogEnrichmentProviderFailedError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_PROVIDER_FAILED"
+    safe_message = "The catalog enrichment provider request failed."
+
+
+class CatalogEnrichmentResponseInvalidError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_RESPONSE_INVALID"
+    safe_message = "The catalog enrichment provider returned an invalid structured response."
+
+
+class CatalogEnrichmentGroundingFailedError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_GROUNDING_FAILED"
+    safe_message = "Generated catalog content failed deterministic grounding checks."
+
+
+class CatalogEnrichmentUnsupportedNumericClaimError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_UNSUPPORTED_NUMERIC_CLAIM"
+    safe_message = "Generated catalog content contains an unsupported numeric claim."
+
+
+class CatalogEnrichmentUnsupportedFactualClaimError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_UNSUPPORTED_FACTUAL_CLAIM"
+    safe_message = "Generated catalog content contains an unsupported factual claim."
+
+
+class CatalogEnrichmentOutputLimitError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_OUTPUT_LIMIT_EXCEEDED"
+    safe_message = "Generated catalog content exceeds a configured safety limit."
+
+
+class CatalogEnrichmentResultItemTooLargeError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_RESULT_ITEM_TOO_LARGE"
+    safe_message = "A catalog enrichment record exceeds the safe persistence size."
+
+
+class CatalogEnrichmentStorageError(CatalogEnrichmentError):
+    code = "AI_ENRICHMENT_STORAGE_FAILED"
+    safe_message = "Catalog enrichment result metadata could not be stored."
+
+
+class CatalogEnrichmentRepositoryError(Exception):
+    """Base catalog-enrichment persistence failure."""
+
+
+class CatalogEnrichmentResultSerializationError(CatalogEnrichmentRepositoryError):
+    """Raised when an enrichment partition is malformed or incomplete."""

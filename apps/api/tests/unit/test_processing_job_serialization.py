@@ -47,6 +47,20 @@ def test_catalog_export_projection_lineage_round_trips() -> None:
     assert processing_job_from_item(deserialize_item(serialize_item(item))) == job
 
 
+def test_ai_enrichment_projection_lineage_round_trips() -> None:
+    projection_id = uuid4()
+    job = ProcessingJob.create(
+        product_id=PRODUCT_ID,
+        source_id=None,
+        job_type=ProcessingJobType.AI_CATALOG_ENRICHMENT,
+        projection_id=projection_id,
+        now=JOB_CREATED_AT,
+    )
+    item = processing_job_to_item(job)
+    assert item["projectionId"] == projection_id
+    assert processing_job_from_item(deserialize_item(serialize_item(item))) == job
+
+
 @pytest.mark.parametrize(
     "mutation",
     [
