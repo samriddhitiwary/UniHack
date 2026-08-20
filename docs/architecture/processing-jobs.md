@@ -67,3 +67,11 @@ The deterministic result persists before COMPLETED and uses
 `product-intelligence-score-results/{scoreId}`. Failures after RUNNING attempt FAILED; a completion
 failure retains the score and logs a consistency risk. No public score API, executor, scheduler,
 Product/upstream mutation, provider call, frontend, or deployment behavior is introduced.
+
+## Catalog Intelligence orchestration
+
+SPEC-037 creates lineage-bound existing ProcessingJob types behind one fixed workflow. PDF, table,
+CSV, image, and OCR jobs remain source-scoped child jobs; classification through scoring remain
+Product-level jobs. The workflow persists their identifiers and logical result references, reuses
+only compatible completed jobs with extant results, and never duplicates result payloads. Human
+review and publishing readiness are workflow stages but not new ProcessingJob types.

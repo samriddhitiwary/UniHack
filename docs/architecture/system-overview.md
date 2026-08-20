@@ -340,3 +340,14 @@ Optional enrichment contributes grounding quality only when explicitly supplied 
 otherwise it is NOT_EVALUATED and its weight is redistributed. Score and publishing readiness are
 orthogonal, so coherent BLOCKED projections can receive diagnostics. There is no AI scoring, public
 API, Product/upstream mutation, frontend, network call, S3, authentication, or deployment work.
+
+SPEC-037 composes those capabilities into one synchronous Product-scoped workflow:
+
+```text
+source-aware processing -> classification -> attribute pipeline -> mandatory review pause
+-> reviewed materialization -> projection/readiness -> optional export/enrichment/score
+```
+
+Durable META/STAGE records, optimistic versions, an active-Product guard, and exact lineage make the
+workflow observable and resumable without a generic DAG or background infrastructure. See
+[Catalog Intelligence workflows](catalog-intelligence-workflows.md).

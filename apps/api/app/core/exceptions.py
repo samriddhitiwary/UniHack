@@ -1748,3 +1748,66 @@ class ProductIntelligenceScoreNotFoundError(ProductIntelligenceReadError):
         self.product_id = str(product_id)
         self.score_id = str(score_id)
         super().__init__(self.safe_message)
+
+
+class CatalogWorkflowError(Exception):
+    """Base class for safe workflow API failures."""
+
+    status_code = 503
+    code = "CATALOG_WORKFLOW_STORAGE_UNAVAILABLE"
+    safe_message = "Catalog workflow storage is temporarily unavailable."
+
+    def __init__(self, message: str | None = None) -> None:
+        super().__init__(message or self.safe_message)
+
+
+class CatalogWorkflowNotFoundError(CatalogWorkflowError):
+    status_code = 404
+    code = "CATALOG_WORKFLOW_NOT_FOUND"
+    safe_message = "The requested catalog workflow does not exist."
+
+
+class CatalogWorkflowAlreadyActiveError(CatalogWorkflowError):
+    status_code = 409
+    code = "WORKFLOW_ALREADY_ACTIVE"
+    safe_message = "A catalog workflow is already active for this Product."
+
+
+class CatalogWorkflowVersionConflictError(CatalogWorkflowError):
+    status_code = 409
+    code = "WORKFLOW_VERSION_CONFLICT"
+    safe_message = "The catalog workflow was modified by another request."
+
+
+class CatalogWorkflowResumeNotAllowedError(CatalogWorkflowError):
+    status_code = 409
+    code = "WORKFLOW_RESUME_NOT_ALLOWED"
+    safe_message = "The catalog workflow cannot be resumed from its current state."
+
+
+class CatalogWorkflowReviewNotCompletedError(CatalogWorkflowError):
+    status_code = 409
+    code = "WORKFLOW_REVIEW_NOT_COMPLETED"
+    safe_message = "The exact Product review must be completed before resuming."
+
+
+class CatalogWorkflowNoProductSourcesError(CatalogWorkflowError):
+    status_code = 409
+    code = "WORKFLOW_NO_PRODUCT_SOURCES"
+    safe_message = "At least one Product source is required to start a workflow."
+
+
+class CatalogWorkflowSourceLimitExceededError(CatalogWorkflowError):
+    status_code = 409
+    code = "WORKFLOW_SOURCE_LIMIT_EXCEEDED"
+    safe_message = "The Product has too many sources for one workflow."
+
+
+class InvalidCatalogWorkflowCursorError(CatalogWorkflowError):
+    status_code = 400
+    code = "INVALID_CURSOR"
+    safe_message = "The catalog workflow cursor is invalid."
+
+
+class CatalogWorkflowRepositoryError(CatalogWorkflowError):
+    """Raised for controlled workflow persistence failures."""

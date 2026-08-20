@@ -85,6 +85,33 @@ def test_sources_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> N
     assert client.get_waiter.return_value.wait.call_count == 2
 
 
+def test_catalog_workflow_table_uses_composite_records_and_product_history_index(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-catalog-intelligence-workflows"
+    client = MagicMock()
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+
+    assert create_tables.create_catalog_intelligence_workflows_table() is True
+    request = client.create_table.call_args.kwargs
+    assert request["KeySchema"] == [
+        {"AttributeName": "workflowId", "KeyType": "HASH"},
+        {"AttributeName": "recordKey", "KeyType": "RANGE"},
+    ]
+    assert request["GlobalSecondaryIndexes"] == [
+        {
+            "IndexName": "ProductCreatedAtIndex",
+            "KeySchema": [
+                {"AttributeName": "productId", "KeyType": "HASH"},
+                {"AttributeName": "createdAt", "KeyType": "RANGE"},
+            ],
+            "Projection": {"ProjectionType": "ALL"},
+        }
+    ]
+
+
 def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     products = MagicMock()
     sources = MagicMock()
@@ -108,6 +135,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     catalog_export_results = MagicMock()
     catalog_enrichment_results = MagicMock()
     product_intelligence_results = MagicMock()
+    catalog_workflows = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
@@ -170,6 +198,9 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
         "create_product_intelligence_score_results_table",
         product_intelligence_results,
     )
+    monkeypatch.setattr(
+        create_tables, "create_catalog_intelligence_workflows_table", catalog_workflows
+    )
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
@@ -193,6 +224,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     catalog_export_results.assert_called_once_with()
     catalog_enrichment_results.assert_called_once_with()
     product_intelligence_results.assert_called_once_with()
+    catalog_workflows.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:

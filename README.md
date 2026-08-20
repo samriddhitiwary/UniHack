@@ -249,6 +249,8 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [Catalog AI grounding](docs/architecture/catalog-ai-grounding.md)
 - [Product Intelligence Score](docs/architecture/product-intelligence-score.md)
 - [Product Intelligence scoring methodology](docs/architecture/product-intelligence-scoring-methodology.md)
+- [Catalog Intelligence workflows](docs/architecture/catalog-intelligence-workflows.md)
+- [Catalog workflow API](docs/api/catalog-workflows.md)
 - [Product domain and lifecycle](docs/architecture/product-domain.md)
 - [Publishing readiness application](docs/architecture/publishing-readiness-application.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)

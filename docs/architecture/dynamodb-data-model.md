@@ -373,6 +373,15 @@ guard hashes projection, enrichment-or-NONE, and policy. Conditional transaction
 overwrite. ID, job, and opaque-cursor Product history reads use queries only; incomplete partitions
 fail controlled reconstruction. Every item has a 390,000-byte guard.
 
+## Catalog Intelligence workflows table
+
+The catalog-intelligence-workflows table uses `workflowId` and `recordKey`. `META` stores compact
+workflow/configuration/source-snapshot state and exact result identifiers; fixed `STAGE#...` records
+store job references and safe transition metadata. Only META enters sparse ProductCreatedAtIndex.
+Transactional version checks protect every state change, and an `ACTIVE_PRODUCT#{productId}` guard
+prevents concurrent non-terminal workflows. Product history and full partitions use queries only;
+each item has a 390,000-byte guard.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -387,7 +396,8 @@ image-ocr-results, product-classification-results, category-attribute-schemas,
 attribute-normalization-results, attribute-conflict-detection-results, and
 attribute-completeness-results, attribute-validation-results, attribute-selection-results,
 product-reviews, reviewed-attribute-results, catalog-projection-results, catalog-export-results, and
-catalog-enrichment-results and product-intelligence-score-results tables with their
+catalog-enrichment-results, product-intelligence-score-results, and
+catalog-intelligence-workflows tables with their
 documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 

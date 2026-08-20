@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from app.core.exceptions import (
     CatalogProjectionRepositoryError,
     CatalogSearchError,
+    CatalogWorkflowError,
     InvalidProcessingJobCursorError,
     InvalidProductCursorError,
     InvalidProductSourceCursorError,
@@ -44,6 +45,7 @@ logger = logging.getLogger(__name__)
 
 def register_exception_handlers(application: FastAPI) -> None:
     application.add_exception_handler(ProductNotFoundError, product_not_found_handler)
+    application.add_exception_handler(CatalogWorkflowError, catalog_workflow_error_handler)
     application.add_exception_handler(ProductAlreadyExistsError, product_already_exists_handler)
     application.add_exception_handler(InvalidProductCursorError, invalid_product_cursor_handler)
     application.add_exception_handler(ProductVersionConflictError, product_version_conflict_handler)
@@ -121,6 +123,22 @@ async def product_not_found_handler(request: Request, exc: Exception) -> JSONRes
         code="PRODUCT_NOT_FOUND",
         message="The requested product does not exist.",
         details={"productId": error.product_id},
+    )
+
+
+async def catalog_workflow_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    error = _expect_exception(exc, CatalogWorkflowError)
+    if error.status_code >= 500:
+        logger.error(
+            "event=catalog_workflow.request_failed request_id=%s error_type=%s",
+            _request_id(request),
+            type(exc).__name__,
+        )
+    return _error_response(
+        request,
+        status_code=error.status_code,
+        code=error.code,
+        message=error.safe_message,
     )
 
 
