@@ -347,6 +347,19 @@ sparse. A conditional `ENRICHMENT_INPUT#{sha256(projection|prompt|provider|model
 enforces exact-input uniqueness without entering either index. ID, job, and bounded projection-history
 reads use queries only and reject incomplete partitions. Every item has a 390,000-byte guard.
 
+## Product Intelligence Score results table
+
+The product-intelligence-score-results table uses `scoreId` and `recordKey`. META preserves exact
+projection and full upstream/enrichment lineage, readiness status, overall integer score/grade,
+bounded metrics/reason codes, policy/engine, and `createdAt`. Six `COMPONENT#{component}` records
+persist status, raw/base/normalized basis points, contribution, metrics, and reasons; the absent-AI
+case is explicitly stored as NOT_EVALUATED.
+
+Only META enters sparse JobIdIndex, ProductCreatedAtIndex, and ProjectionIdIndex. An exact-input
+guard hashes projection, enrichment-or-NONE, and policy. Conditional transactional writes prevent
+overwrite. ID, job, and opaque-cursor Product history reads use queries only; incomplete partitions
+fail controlled reconstruction. Every item has a 390,000-byte guard.
+
 ## Local creation
 
 After starting DynamoDB Local, run:
@@ -361,7 +374,7 @@ image-ocr-results, product-classification-results, category-attribute-schemas,
 attribute-normalization-results, attribute-conflict-detection-results, and
 attribute-completeness-results, attribute-validation-results, attribute-selection-results,
 product-reviews, reviewed-attribute-results, catalog-projection-results, catalog-export-results, and
-catalog-enrichment-results tables with their
+catalog-enrichment-results and product-intelligence-score-results tables with their
 documented indexes. It waits for each table and
 exits successfully without altering data when a table is already present.
 

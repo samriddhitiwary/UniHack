@@ -1635,3 +1635,71 @@ class CatalogEnrichmentRepositoryError(Exception):
 
 class CatalogEnrichmentResultSerializationError(CatalogEnrichmentRepositoryError):
     """Raised when an enrichment partition is malformed or incomplete."""
+
+
+class ProductIntelligenceScoreError(Exception):
+    code = "PRODUCT_INTELLIGENCE_SCORE_ENGINE_FAILED"
+    safe_message = "The Product Intelligence Score could not be completed."
+
+
+class InvalidProductIntelligenceScoreJobError(ProductIntelligenceScoreError):
+    code = "INVALID_PRODUCT_INTELLIGENCE_SCORE_JOB"
+    safe_message = "The processing job is not eligible for Product Intelligence scoring."
+
+
+class ProductIntelligenceProjectionRequiredError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_PROJECTION_REQUIRED"
+    safe_message = "The required catalog projection is unavailable."
+
+
+class ProductIntelligenceCrossProductLineageError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_CROSS_PRODUCT_LINEAGE"
+    safe_message = "Product Intelligence Score lineage belongs to another Product."
+
+
+class ProductIntelligenceLineageMismatchError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_LINEAGE_MISMATCH"
+    safe_message = "Product Intelligence Score lineage is inconsistent."
+
+
+class ProductIntelligenceEnrichmentMismatchError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_ENRICHMENT_MISMATCH"
+    safe_message = "The enrichment is incompatible with the catalog projection."
+
+
+class ProductIntelligenceRequiredComponentInvalidError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_REQUIRED_COMPONENT_INVALID"
+    safe_message = "A required Product Intelligence component is structurally invalid."
+
+
+class ProductIntelligenceWeightInvalidError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_WEIGHT_INVALID"
+    safe_message = "Product Intelligence component weights are invalid."
+
+
+class ProductIntelligenceLimitExceededError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_LIMIT_EXCEEDED"
+    safe_message = "Product Intelligence Score data exceeds a configured limit."
+
+
+class ProductIntelligenceAlreadyExistsError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_ALREADY_EXISTS"
+    safe_message = "A Product Intelligence Score already exists for these exact inputs."
+
+
+class ProductIntelligenceResultItemTooLargeError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_RESULT_ITEM_TOO_LARGE"
+    safe_message = "A Product Intelligence Score record exceeds the safe persistence size."
+
+
+class ProductIntelligenceStorageError(ProductIntelligenceScoreError):
+    code = "PRODUCT_INTELLIGENCE_SCORE_STORAGE_FAILED"
+    safe_message = "Product Intelligence Score metadata could not be stored."
+
+
+class ProductIntelligenceScoreRepositoryError(Exception):
+    """Base Product Intelligence Score persistence failure."""
+
+
+class ProductIntelligenceScoreSerializationError(ProductIntelligenceScoreRepositoryError):
+    """Raised when a score partition is malformed or incomplete."""

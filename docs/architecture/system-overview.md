@@ -321,3 +321,17 @@ certification, warranty, material, performance, and use-case language are determ
 unsafe output may retry once and is never persisted. Generated content remains separate from Product,
 reviewed materialization, projection, and export artifacts. No publishing, web search, frontend, S3,
 authentication, or deployment behavior is added.
+
+SPEC-035 evaluates catalog-information quality from that immutable lineage:
+
+```text
+ProductIntelligenceScoreService -> explicit projection + exact upstream artifacts
+                                -> six deterministic integer component scorers
+                                -> normalized weights + grade + stable explanations
+                                -> immutable product-intelligence-score-results
+```
+
+Optional enrichment contributes grounding quality only when explicitly supplied and compatible;
+otherwise it is NOT_EVALUATED and its weight is redistributed. Score and publishing readiness are
+orthogonal, so coherent BLOCKED projections can receive diagnostics. There is no AI scoring, public
+API, Product/upstream mutation, frontend, network call, S3, authentication, or deployment work.

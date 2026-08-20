@@ -128,6 +128,10 @@ class Settings(BaseSettings):
     ai_enrichment_max_fact_references_per_item: int = Field(default=50, gt=0)
     ai_enrichment_max_total_fact_references: int = Field(default=500, gt=0)
     ai_enrichment_max_generation_attempts: int = Field(default=2, ge=1, le=2)
+    product_intelligence_score_max_components: int = Field(default=6, ge=6, le=6)
+    product_intelligence_score_max_reason_codes: int = Field(default=100, gt=0)
+    product_intelligence_score_max_top_improvements: int = Field(default=5, ge=1, le=5)
+    product_intelligence_score_max_metric_entries: int = Field(default=100, gt=0)
     log_level: str = "INFO"
 
     @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")

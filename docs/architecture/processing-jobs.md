@@ -54,3 +54,16 @@ Validated results persist before COMPLETED and use
 `catalog-enrichment-results/{enrichmentId}`. Provider, parser, grounding, limits, and persistence
 failures attempt FAILED. Completion failure retains the valid result and logs a consistency risk.
 There is no executor endpoint, scheduler, Product mutation, publication, or retry queue.
+
+## Product Intelligence Score
+
+SPEC-035 adds product-level `PRODUCT_INTELLIGENCE_SCORE` with required explicit `projectionId`,
+optional explicit `enrichmentId`, and no source. The public source-oriented creation route rejects
+it. Product ownership, exact projection-derived lineage, structural integrity, limits, optional
+enrichment coherence, and exact-input idempotency are verified before RUNNING. BLOCKED projections
+remain scoreable when structurally coherent.
+
+The deterministic result persists before COMPLETED and uses
+`product-intelligence-score-results/{scoreId}`. Failures after RUNNING attempt FAILED; a completion
+failure retains the score and logs a consistency risk. No public score API, executor, scheduler,
+Product/upstream mutation, provider call, frontend, or deployment behavior is introduced.

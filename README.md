@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-034: AI Catalog Enrichment and Commerce Content Generation Engine**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-035: Product Intelligence Score and Catalog Quality Evaluation Engine**.
 
 ## Prerequisites
 
@@ -215,6 +215,7 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [SPEC-032](docs/specs/SPEC-032-product-publishing-readiness-application-and-catalog-read-api.md)
 - [SPEC-033](docs/specs/SPEC-033-structured-catalog-export-and-publication-package-engine.md)
 - [SPEC-034](docs/specs/SPEC-034-ai-catalog-enrichment-and-commerce-content-generation-engine.md)
+- [SPEC-035](docs/specs/SPEC-035-product-intelligence-score-and-catalog-quality-evaluation-engine.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)
@@ -242,6 +243,8 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [Structured catalog export](docs/architecture/catalog-export.md)
 - [Grounded AI catalog enrichment](docs/architecture/catalog-ai-enrichment.md)
 - [Catalog AI grounding](docs/architecture/catalog-ai-grounding.md)
+- [Product Intelligence Score](docs/architecture/product-intelligence-score.md)
+- [Product Intelligence scoring methodology](docs/architecture/product-intelligence-scoring-methodology.md)
 - [Product domain and lifecycle](docs/architecture/product-domain.md)
 - [Publishing readiness application](docs/architecture/publishing-readiness-application.md)
 - [AWS serverless architecture](docs/architecture/aws-serverless-architecture.md)

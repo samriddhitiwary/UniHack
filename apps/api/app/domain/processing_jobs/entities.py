@@ -45,6 +45,7 @@ class ProcessingJob:
     review_id: UUID | None = None
     reviewed_attribute_materialization_id: UUID | None = None
     projection_id: UUID | None = None
+    enrichment_id: UUID | None = None
     job_type: ProcessingJobType
     status: ProcessingJobStatus
     attempt: int
@@ -77,6 +78,7 @@ class ProcessingJob:
             ProcessingJobType.CATALOG_PROJECTION,
             ProcessingJobType.CATALOG_EXPORT,
             ProcessingJobType.AI_CATALOG_ENRICHMENT,
+            ProcessingJobType.PRODUCT_INTELLIGENCE_SCORE,
         }:
             if self.source_id is not None:
                 raise ValueError("product-level jobs must not have a source_id")
@@ -143,11 +145,17 @@ class ProcessingJob:
         if self.job_type in {
             ProcessingJobType.CATALOG_EXPORT,
             ProcessingJobType.AI_CATALOG_ENRICHMENT,
+            ProcessingJobType.PRODUCT_INTELLIGENCE_SCORE,
         }:
             if not isinstance(self.projection_id, UUID):
                 raise ValueError("catalog projection consumer jobs require a projection identifier")
         elif self.projection_id is not None:
             raise ValueError("projection_id is only valid for catalog projection consumer jobs")
+        if self.job_type is ProcessingJobType.PRODUCT_INTELLIGENCE_SCORE:
+            if self.enrichment_id is not None and not isinstance(self.enrichment_id, UUID):
+                raise ValueError("enrichment_id must be a UUID when supplied")
+        elif self.enrichment_id is not None:
+            raise ValueError("enrichment_id is only valid for Product Intelligence Score jobs")
         if not isinstance(self.status, ProcessingJobStatus):
             raise ValueError("status must be a ProcessingJobStatus")
         if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
@@ -232,6 +240,7 @@ class ProcessingJob:
         review_id: UUID | None = None,
         reviewed_attribute_materialization_id: UUID | None = None,
         projection_id: UUID | None = None,
+        enrichment_id: UUID | None = None,
         attempt: int = 1,
         now: datetime | None = None,
     ) -> Self:
@@ -249,6 +258,7 @@ class ProcessingJob:
             review_id=review_id,
             reviewed_attribute_materialization_id=reviewed_attribute_materialization_id,
             projection_id=projection_id,
+            enrichment_id=enrichment_id,
             job_type=job_type,
             status=ProcessingJobStatus.PENDING,
             attempt=attempt,

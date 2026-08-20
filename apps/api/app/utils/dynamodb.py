@@ -272,6 +272,8 @@ def processing_job_to_item(job: ProcessingJob) -> dict[str, object]:
         item["reviewedAttributeMaterializationId"] = job.reviewed_attribute_materialization_id
     if job.projection_id is not None:
         item["projectionId"] = job.projection_id
+    if job.enrichment_id is not None:
+        item["enrichmentId"] = job.enrichment_id
     return item
 
 
@@ -324,6 +326,7 @@ def processing_job_from_item(item: Mapping[str, object]) -> ProcessingJob:
                 else None
             ),
             projection_id=(UUID(str(item["projectionId"])) if "projectionId" in item else None),
+            enrichment_id=(UUID(str(item["enrichmentId"])) if "enrichmentId" in item else None),
             job_type=ProcessingJobType(str(item["jobType"])),
             status=ProcessingJobStatus(str(item["status"])),
             attempt=_integer(item["attempt"], "attempt"),

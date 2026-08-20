@@ -81,6 +81,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     catalog_projection_results = MagicMock()
     catalog_export_results = MagicMock()
     catalog_enrichment_results = MagicMock()
+    product_intelligence_results = MagicMock()
     monkeypatch.setattr(create_tables, "create_products_table", products)
     monkeypatch.setattr(create_tables, "create_sources_table", sources)
     monkeypatch.setattr(create_tables, "create_processing_jobs_table", jobs)
@@ -138,6 +139,11 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         create_tables, "create_catalog_enrichment_results_table", catalog_enrichment_results
     )
+    monkeypatch.setattr(
+        create_tables,
+        "create_product_intelligence_score_results_table",
+        product_intelligence_results,
+    )
     assert create_tables.main() == 0
     products.assert_called_once_with()
     sources.assert_called_once_with()
@@ -160,6 +166,7 @@ def test_main_keeps_products_table_creation(monkeypatch: MonkeyPatch) -> None:
     catalog_projection_results.assert_called_once_with()
     catalog_export_results.assert_called_once_with()
     catalog_enrichment_results.assert_called_once_with()
+    product_intelligence_results.assert_called_once_with()
 
 
 def test_processing_jobs_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
@@ -529,5 +536,24 @@ def test_catalog_enrichment_results_table_definition(monkeypatch: MonkeyPatch) -
     ]
     assert [item["IndexName"] for item in request["GlobalSecondaryIndexes"]] == [
         "JobIdIndex",
+        "ProjectionIdIndex",
+    ]
+
+
+def test_product_intelligence_score_results_table_definition(monkeypatch: MonkeyPatch) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-product-intelligence-score-results"
+    client = MagicMock()
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+    assert create_tables.create_product_intelligence_score_results_table() is True
+    request = client.create_table.call_args.kwargs
+    assert request["KeySchema"] == [
+        {"AttributeName": "scoreId", "KeyType": "HASH"},
+        {"AttributeName": "recordKey", "KeyType": "RANGE"},
+    ]
+    assert [item["IndexName"] for item in request["GlobalSecondaryIndexes"]] == [
+        "JobIdIndex",
+        "ProductCreatedAtIndex",
         "ProjectionIdIndex",
     ]

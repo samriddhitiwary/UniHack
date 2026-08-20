@@ -66,6 +66,7 @@ class ProcessingJobService:
             ProcessingJobType.CATALOG_PROJECTION,
             ProcessingJobType.CATALOG_EXPORT,
             ProcessingJobType.AI_CATALOG_ENRICHMENT,
+            ProcessingJobType.PRODUCT_INTELLIGENCE_SCORE,
         }:
             raise ProcessingJobTypeNotSupportedForSourceError(
                 source.source_type.value,
