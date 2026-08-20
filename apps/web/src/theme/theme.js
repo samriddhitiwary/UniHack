@@ -1,18 +1,38 @@
 import { createTheme } from '@mui/material/styles'
 
+import { componentOverrides } from './componentOverrides'
+import { tokens } from './tokens'
+import { typography } from './typography'
+
 export const theme = createTheme({
   palette: {
-    primary: { main: '#0b6e69', dark: '#064e4a', contrastText: '#ffffff' },
-    secondary: { main: '#f59e0b' },
-    background: { default: '#f4f7f9', paper: '#ffffff' },
-    text: { primary: '#102a43', secondary: '#486581' },
+    mode: 'light',
+    primary: {
+      main: tokens.color.brand[600],
+      dark: tokens.color.brand[700],
+      light: tokens.color.brand[100],
+      contrastText: '#fff',
+    },
+    background: { default: tokens.color.slate[50], paper: '#fff' },
+    text: {
+      primary: tokens.color.slate[900],
+      secondary: tokens.color.slate[600],
+    },
+    divider: tokens.color.slate[200],
+    success: { main: tokens.color.success.main },
+    warning: { main: tokens.color.warning.main },
+    error: { main: tokens.color.error.main },
+    info: { main: tokens.color.info.main },
   },
-  typography: {
-    fontFamily:
-      'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    h1: { fontWeight: 700, letterSpacing: '-0.03em' },
-    h2: { fontWeight: 700, letterSpacing: '-0.02em' },
-    button: { fontWeight: 700, textTransform: 'none' },
-  },
-  shape: { borderRadius: 12 },
+  typography,
+  shape: { borderRadius: tokens.radius.card },
+  spacing: 4,
+  shadows: [
+    'none',
+    tokens.shadow.card,
+    tokens.shadow.card,
+    tokens.shadow.raised,
+    ...Array(21).fill(tokens.shadow.raised),
+  ],
+  components: componentOverrides,
 })

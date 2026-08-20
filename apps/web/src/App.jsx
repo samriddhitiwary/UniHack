@@ -1,13 +1,11 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { CssBaseline, ThemeProvider } from '@mui/material'
 import { BrowserRouter } from 'react-router-dom'
 
 import { AppRoutes } from './routes/AppRoutes'
+import { NotificationProvider } from './components/feedback/NotificationProvider'
+import { queryClient } from './api/queryClient'
 import { theme } from './theme/theme'
-
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
-})
 
 export function App() {
   return (
@@ -15,7 +13,9 @@ export function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
-          <AppRoutes />
+          <NotificationProvider>
+            <AppRoutes />
+          </NotificationProvider>
         </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>
