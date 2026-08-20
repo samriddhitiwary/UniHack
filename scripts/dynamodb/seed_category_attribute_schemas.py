@@ -13,7 +13,9 @@ from app.services.category_schemas import CategoryAttributeSchemaService
 def seed_category_attribute_schemas() -> int:
     settings = get_settings()
     if settings.app_env == "production" or not settings.dynamodb_endpoint_url:
-        raise RuntimeError("category schema seeding is limited to configured local development")
+        raise RuntimeError(
+            "category schema seeding is limited to configured local development"
+        )
     client = create_dynamodb_client(settings)
     repository = DynamoDBCategoryAttributeSchemaRepository(
         client, settings.table_name("category-attribute-schemas")
@@ -21,10 +23,14 @@ def seed_category_attribute_schemas() -> int:
     service = CategoryAttributeSchemaService(
         repository,
         max_attributes=settings.category_attribute_schema_max_attributes,
-        max_aliases_per_attribute=(settings.category_attribute_schema_max_aliases_per_attribute),
+        max_aliases_per_attribute=(
+            settings.category_attribute_schema_max_aliases_per_attribute
+        ),
     )
     seeded = service.seed_builtins()
-    logging.getLogger(__name__).info("Seeded %s category attribute schemas", len(seeded))
+    logging.getLogger(__name__).info(
+        "Seeded %s category attribute schemas", len(seeded)
+    )
     return len(seeded)
 
 

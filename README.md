@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-035: Product Intelligence Score and Catalog Quality Evaluation Engine**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-036: Catalog Search, Filtering, Intelligence Summary, and Quality Read API**.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, local JSON/CSV/manifest package export, and grounded AI commerce-content artifacts, plus human-review and catalog/readiness APIs. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code and store evidence separately. Content/file replacement, bulk deletion, restore, download, external publishing, web enrichment, S3, workers, frontend processing UI, authentication, real AWS resources, and deployment remain unavailable.
+The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, local JSON/CSV/manifest package export, grounded AI commerce-content artifacts, and read-only indexed catalog quality/search APIs. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code and store evidence separately. Content/file replacement, bulk deletion, restore, download, external publishing, web enrichment, S3, workers, frontend processing UI, authentication, real AWS resources, and deployment remain unavailable.
 
 ## Product API
 
@@ -79,6 +79,10 @@ POST /api/v1/products/{product_id}/sources/{source_id}/jobs
 GET  /api/v1/processing-jobs/{job_id}
 GET  /api/v1/products/{product_id}/processing-jobs?limit=20
 GET  /api/v1/products/{product_id}/sources/{source_id}/jobs?limit=20
+GET  /api/v1/catalog/products?limit=20&category=INDUCTION_MOTOR
+GET  /api/v1/products/{product_id}/catalog-summary
+GET  /api/v1/products/{product_id}/intelligence-scores?limit=20
+GET  /api/v1/products/{product_id}/intelligence-scores/{score_id}
 ```
 
 Create returns HTTP 201; list, retrieve, and update return HTTP 200; delete returns an empty HTTP 204. PATCH and DELETE use the client’s current positive version for optimistic concurrency. The list limit defaults to 20 and is bounded at 100, and continuation cursors are opaque. Requests and responses use camelCase JSON. See the [Product API documentation](docs/api/products.md) for examples and stable error codes.

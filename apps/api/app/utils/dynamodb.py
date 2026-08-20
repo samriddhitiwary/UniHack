@@ -24,6 +24,7 @@ from app.core.exceptions import (
     ProductSerializationError,
     ProductSourceSerializationError,
 )
+from app.domain.catalog_search import normalize_catalog_search_text
 from app.domain.category_schemas import (
     AttributeDataType,
     AttributeDefinition,
@@ -144,9 +145,11 @@ def deserialize_item(item: Mapping[str, AttributeValue]) -> dict[str, Any]:
 
 
 def product_to_item(product: Product) -> dict[str, object]:
-    return {
+    item: dict[str, object] = {
         "productId": product.product_id,
         "entityType": "PRODUCT",
+        "normalizedName": normalize_catalog_search_text(product.name),
+        "categoryStatusKey": f"{product.category.value}#{product.status.value}",
         "name": product.name,
         "manufacturer": product.manufacturer,
         "modelNumber": product.model_number,
@@ -158,6 +161,11 @@ def product_to_item(product: Product) -> dict[str, object]:
         "createdAt": product.created_at,
         "updatedAt": product.updated_at,
     }
+    if product.manufacturer is not None:
+        item["normalizedManufacturer"] = normalize_catalog_search_text(product.manufacturer)
+    if product.model_number is not None:
+        item["normalizedModelNumber"] = normalize_catalog_search_text(product.model_number)
+    return item
 
 
 def product_from_item(item: Mapping[str, object]) -> Product:

@@ -29,6 +29,7 @@ from app.utils.dynamodb import AttributeValue, WireItem, deserialize_item, parse
 
 JOB_ID_INDEX = "JobIdIndex"
 MATERIALIZATION_ID_INDEX = "MaterializationIdIndex"
+PRODUCT_CREATED_AT_INDEX = "ProductCreatedAtIndex"
 MAX_SAFE_ITEM_BYTES = 390_000
 
 
@@ -122,6 +123,9 @@ class DynamoDBCommerceCatalogProjectionRepository:
         self, materialization_id: UUID
     ) -> CommerceCatalogProjection | None:
         return self._get_by_index(MATERIALIZATION_ID_INDEX, "materializationId", materialization_id)
+
+    def get_latest_by_product_id(self, product_id: UUID) -> CommerceCatalogProjection | None:
+        return self._get_by_index(PRODUCT_CREATED_AT_INDEX, "productId", product_id)
 
     def _get_by_index(self, index: str, key: str, value: UUID) -> CommerceCatalogProjection | None:
         try:

@@ -11,6 +11,7 @@ from app.core.exceptions import (
 from app.repositories.dynamodb_catalog_projection import (
     JOB_ID_INDEX,
     MATERIALIZATION_ID_INDEX,
+    PRODUCT_CREATED_AT_INDEX,
     DynamoDBCommerceCatalogProjectionRepository,
 )
 from app.utils.dynamodb import serialize_item
@@ -73,6 +74,7 @@ def test_meta_attribute_round_trip_and_incomplete_partition_detection() -> None:
             "materializationId",
             "materialization_id",
         ),
+        ("get_latest_by_product_id", PRODUCT_CREATED_AT_INDEX, "productId", "product_id"),
     ],
 )
 def test_sparse_index_lookup_loads_full_partition(method, index, key, field) -> None:

@@ -115,6 +115,22 @@ class DynamoDBCatalogEnrichmentResultRepository:
     def get_by_projection_id(self, projection_id: UUID) -> tuple[CatalogEnrichmentResult, ...]:
         return self._query_index(PROJECTION_ID_INDEX, "projectionId", projection_id, 100)
 
+    def exists_for_projection(self, projection_id: UUID) -> bool:
+        try:
+            response = self._client.query(
+                TableName=self._table_name,
+                IndexName=PROJECTION_ID_INDEX,
+                KeyConditionExpression="#key=:value",
+                ExpressionAttributeNames={"#key": "projectionId"},
+                ExpressionAttributeValues=serialize_item({":value": projection_id}),
+                ScanIndexForward=False,
+                Limit=1,
+                Select="COUNT",
+            )
+            return int(response.get("Count", 0)) > 0
+        except (BotoCoreError, ClientError, KeyError, TypeError, ValueError) as exc:
+            raise CatalogEnrichmentRepositoryError() from exc
+
     def _query_index(
         self, index: str, key: str, value: UUID, limit: int
     ) -> tuple[CatalogEnrichmentResult, ...]:

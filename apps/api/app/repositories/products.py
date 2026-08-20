@@ -3,7 +3,7 @@
 from typing import Protocol
 from uuid import UUID
 
-from app.domain.products import Product, ProductPage, ProductStatus
+from app.domain.products import Product, ProductCategory, ProductPage, ProductStatus
 
 
 class ProductRepository(Protocol):
@@ -27,6 +27,31 @@ class ProductRepository(Protocol):
 
     def list_by_status(
         self, status: ProductStatus, *, limit: int = 25, cursor: str | None = None
+    ) -> ProductPage: ...
+
+    def list_created(self, *, limit: int = 20, cursor: str | None = None) -> ProductPage: ...
+    def search_by_status(
+        self, status: ProductStatus, *, limit: int = 20, cursor: str | None = None
+    ) -> ProductPage: ...
+    def list_by_category(
+        self, category: ProductCategory, *, limit: int = 20, cursor: str | None = None
+    ) -> ProductPage: ...
+    def list_by_category_status(
+        self,
+        category: ProductCategory,
+        status: ProductStatus,
+        *,
+        limit: int = 20,
+        cursor: str | None = None,
+    ) -> ProductPage: ...
+    def list_by_manufacturer(
+        self, normalized_manufacturer: str, *, limit: int = 20, cursor: str | None = None
+    ) -> ProductPage: ...
+    def list_by_model_number(
+        self, normalized_model_number: str, *, limit: int = 20, cursor: str | None = None
+    ) -> ProductPage: ...
+    def list_by_name_prefix(
+        self, normalized_prefix: str, *, limit: int = 20, cursor: str | None = None
     ) -> ProductPage: ...
 
     def delete(self, product_id: UUID, expected_version: int) -> None: ...

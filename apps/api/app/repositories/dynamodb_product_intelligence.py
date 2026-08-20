@@ -1,6 +1,7 @@
 """Immutable DynamoDB Product Intelligence Score persistence."""
 
 import base64
+import binascii
 import hashlib
 import json
 from collections.abc import Mapping
@@ -11,6 +12,7 @@ from botocore.client import BaseClient
 from botocore.exceptions import BotoCoreError, ClientError
 
 from app.core.exceptions import (
+    InvalidProductIntelligenceCursorError,
     ProductIntelligenceAlreadyExistsError,
     ProductIntelligenceResultItemTooLargeError,
     ProductIntelligenceScoreRepositoryError,
@@ -120,6 +122,8 @@ class DynamoDBProductIntelligenceScoreRepository:
                 else None
             )
         except ProductIntelligenceScoreRepositoryError:
+            raise
+        except InvalidProductIntelligenceCursorError:
             raise
         except (BotoCoreError, ClientError, KeyError, TypeError, ValueError) as exc:
             raise ProductIntelligenceScoreRepositoryError() from exc
@@ -353,10 +357,29 @@ class DynamoDBProductIntelligenceScoreRepository:
 
     @staticmethod
     def _decode_cursor(cursor: str, product_id: UUID) -> dict[str, Any]:
+        if not cursor or len(cursor) > 4_096:
+            raise InvalidProductIntelligenceCursorError()
         try:
-            payload = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)))
-            if payload["p"] != str(product_id) or not isinstance(payload["k"], dict):
+            raw = base64.b64decode(cursor + "=" * (-len(cursor) % 4), altchars=b"-_", validate=True)
+            payload = json.loads(raw.decode("utf-8"))
+            if (
+                not isinstance(payload, dict)
+                or set(payload) != {"p", "k"}
+                or payload["p"] != str(product_id)
+                or not isinstance(payload["k"], dict)
+                or not payload["k"]
+                or not all(
+                    isinstance(name, str) and isinstance(value, dict)
+                    for name, value in payload["k"].items()
+                )
+            ):
                 raise ValueError
             return cast(dict[str, Any], payload["k"])
-        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-            raise ValueError("invalid Product Intelligence Score cursor") from exc
+        except (
+            binascii.Error,
+            UnicodeDecodeError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as exc:
+            raise InvalidProductIntelligenceCursorError() from exc

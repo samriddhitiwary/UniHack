@@ -62,6 +62,8 @@ class MemoryDynamo:
                 for item in self.items.values()
                 if str(deserialize_item(item).get(field, "")) == wanted
             ]
+            if request.get("Select") == "COUNT":
+                return {"Count": len(matching[: request["Limit"]])}
             return {"Items": matching[: request["Limit"]]}
         matching = [item for (partition, _), item in self.items.items() if partition == wanted]
         return {"Items": matching}
@@ -84,6 +86,7 @@ def test_conditional_create_and_query_access_patterns_round_trip() -> None:
     assert subject.get_by_id(result.enrichment_id) == result
     assert subject.get_by_job_id(result.job_id) == result
     assert subject.get_by_projection_id(result.projection_id) == (result,)
+    assert subject.exists_for_projection(result.projection_id) is True
     assert "scan" not in client.calls
 
 

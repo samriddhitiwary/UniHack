@@ -1,5 +1,10 @@
 # System Overview
 
+SPEC-036 exposes read-only scan-free catalog discovery, Product quality summaries, and persisted
+Product Intelligence Score detail/history. It aggregates existing Product, projection, enrichment,
+export, and score artifacts without executing workflow steps or mutating state. See
+[catalog search and quality reads](catalog-search-and-quality-read.md).
+
 The foundation has three independently runnable parts:
 
 ```text

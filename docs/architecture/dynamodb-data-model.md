@@ -21,6 +21,10 @@ The structured-attribute-extraction-results table uses `extractionId` and `recor
   "name": "PX-400 Centrifugal Pump",
   "manufacturer": "ABC Industries",
   "modelNumber": "PX-400",
+  "normalizedName": "px-400 centrifugal pump",
+  "normalizedManufacturer": "abc industries",
+  "normalizedModelNumber": "px-400",
+  "categoryStatusKey": "CENTRIFUGAL_PUMP#DRAFT",
   "category": "CENTRIFUGAL_PUMP",
   "status": "DRAFT",
   "description": null,
@@ -43,8 +47,16 @@ The table partition key is `productId` (String). Product identity and `createdAt
 | Delete by product ID | Conditional `DeleteItem`; item and expected version must match |
 | List newest products | Query `CreatedAtIndex` with `entityType = PRODUCT` |
 | List newest products in a status | Query `StatusCreatedAtIndex` with the status enum value |
+| List newest products in a category | Query `CategoryCreatedAtIndex` |
+| List newest products by category and status | Query `CategoryStatusCreatedAtIndex` |
+| Exact normalized manufacturer | Query `ManufacturerCreatedAtIndex` |
+| Exact normalized model number | Query `ModelNumberCreatedAtIndex` |
+| Normalized name prefix | Query `NameSearchIndex` with `begins_with` |
 
-`CreatedAtIndex` uses `entityType` as its partition key and `createdAt` as its sort key. `StatusCreatedAtIndex` uses `status` and `createdAt`. Both project all product fields. These are the only indexes because they map directly to approved access patterns. Manufacturer, model, category, and free-text access are deferred.
+Each index maps to one approved scan-free plan. Created/status/category/manufacturer/model indexes use
+their named value as partition key and `createdAt` as sort key. The category-status index uses the
+derived exact pair. `NameSearchIndex` uses `entityType` and `normalizedName` and supports prefix only.
+All project Product fields. Derived normalized keys are maintained atomically with Product writes.
 
 Listings never scan the table, are bounded to 1–100 items, and request descending sort order. DynamoDB `LastEvaluatedKey` values are encoded as URL-safe base64 JSON cursors and validated before reuse; repository consumers never receive raw keys.
 
@@ -314,10 +326,11 @@ identity/version snapshot, exact SPEC-030 and upstream/schema lineage, readiness
 blocking/warning arrays, counts, engine/version, and timestamp. Ordered `ATTRIBUTE#000001` records
 store compact reviewed values and decision/candidate/source lineage without raw evidence.
 
-Only META carries `jobId`, `materializationId`, and `createdAt`, making `JobIdIndex` and
-`MaterializationIdIndex` sparse. A conditional `MATERIALIZATION#{materializationId}` /
+Only META carries `jobId`, `materializationId`, `productId`, and `createdAt`, making `JobIdIndex`,
+`MaterializationIdIndex`, and `ProductCreatedAtIndex` sparse. The Product index supports a bounded
+latest-projection query. A conditional `MATERIALIZATION#{materializationId}` /
 `CATALOG_PROJECTION` item enforces uniqueness without entering either GSI. Conditional writes
-never overwrite. Projection, job, and materialization lookups use queries only and reject
+never overwrite. Projection, job, materialization, and latest-Product lookups use queries only and reject
 incomplete partitions. The 390,000-byte item guard and configured attribute/value/reason/Product
 text limits apply.
 

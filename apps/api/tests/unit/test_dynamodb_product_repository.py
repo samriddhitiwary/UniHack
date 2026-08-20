@@ -8,6 +8,7 @@ from botocore.client import BaseClient
 from botocore.stub import Stubber
 
 from app.core.exceptions import (
+    InvalidCatalogSearchCursorError,
     InvalidProductCursorError,
     ProductAlreadyExistsError,
     ProductNotFoundError,
@@ -16,7 +17,9 @@ from app.core.exceptions import (
 )
 from app.domain.products import Product, ProductStatus
 from app.repositories.dynamodb_products import (
+    CATEGORY_STATUS_CREATED_AT_INDEX,
     CREATED_AT_INDEX,
+    NAME_SEARCH_INDEX,
     STATUS_CREATED_AT_INDEX,
     DynamoDBProductRepository,
 )
@@ -188,6 +191,73 @@ def test_list_by_status_uses_status_index(dynamodb_client: BaseClient) -> None:
     assert page.items == (product,)
 
 
+def test_catalog_category_status_query_uses_dedicated_index(
+    dynamodb_client: BaseClient,
+) -> None:
+    product = make_product(status=ProductStatus.DRAFT)
+    expected = _query_request(
+        index_name=CATEGORY_STATUS_CREATED_AT_INDEX,
+        key_name="categoryStatusKey",
+        key_value="CENTRIFUGAL_PUMP#DRAFT",
+        limit=20,
+    )
+    with Stubber(dynamodb_client) as stubber:
+        stubber.add_response(
+            "query", {"Items": [serialize_item(product_to_item(product))]}, expected
+        )
+        repository = DynamoDBProductRepository(dynamodb_client, TABLE_NAME)
+        page = repository.list_by_category_status(product.category, product.status)
+    assert page.items == (product,)
+
+
+def test_catalog_name_prefix_uses_begins_with_query(dynamodb_client: BaseClient) -> None:
+    product = make_product()
+    expected = {
+        "TableName": TABLE_NAME,
+        "IndexName": NAME_SEARCH_INDEX,
+        "KeyConditionExpression": ("#partition = :partition AND begins_with(#sort, :prefix)"),
+        "ExpressionAttributeNames": {
+            "#partition": "entityType",
+            "#sort": "normalizedName",
+        },
+        "ExpressionAttributeValues": serialize_item({":partition": "PRODUCT", ":prefix": "px-400"}),
+        "ScanIndexForward": True,
+        "Limit": 20,
+    }
+    with Stubber(dynamodb_client) as stubber:
+        stubber.add_response(
+            "query", {"Items": [serialize_item(product_to_item(product))]}, expected
+        )
+        repository = DynamoDBProductRepository(dynamodb_client, TABLE_NAME)
+        assert repository.list_by_name_prefix("  PX-400 ").items == (product,)
+
+
+def test_catalog_cursor_cannot_be_reused_for_another_filter(
+    dynamodb_client: BaseClient,
+) -> None:
+    product = make_product()
+    last_key = serialize_item(
+        {"productId": product.product_id, "status": product.status, "createdAt": product.created_at}
+    )
+    expected = _query_request(
+        index_name=STATUS_CREATED_AT_INDEX,
+        key_name="status",
+        key_value=product.status.value,
+        limit=1,
+    )
+    with Stubber(dynamodb_client) as stubber:
+        stubber.add_response(
+            "query",
+            {"Items": [serialize_item(product_to_item(product))], "LastEvaluatedKey": last_key},
+            expected,
+        )
+        repository = DynamoDBProductRepository(dynamodb_client, TABLE_NAME)
+        cursor = repository.search_by_status(product.status, limit=1).next_cursor
+        assert cursor is not None
+        with pytest.raises(InvalidCatalogSearchCursorError):
+            repository.search_by_status(ProductStatus.FAILED, limit=1, cursor=cursor)
+
+
 def test_listing_rejects_invalid_limit_and_wrong_cursor(dynamodb_client: BaseClient) -> None:
     repository = DynamoDBProductRepository(dynamodb_client, TABLE_NAME)
     with pytest.raises(ValueError, match="limit"):
@@ -296,7 +366,10 @@ def _update_request(product: Product, expected_version: int) -> dict[str, object
             "SET #name = :name, #manufacturer = :manufacturer, "
             "#modelNumber = :modelNumber, #category = :category, #status = :status, "
             "#description = :description, #sourceCount = :sourceCount, "
-            "#updatedAt = :updatedAt, #version = :newVersion"
+            "#updatedAt = :updatedAt, #version = :newVersion, "
+            "#normalizedName = :normalizedName, #categoryStatusKey = :categoryStatusKey, "
+            "#normalizedManufacturer = :normalizedManufacturer, "
+            "#normalizedModelNumber = :normalizedModelNumber"
         ),
         "ConditionExpression": "attribute_exists(#productId) AND #version = :expectedVersion",
         "ExpressionAttributeNames": {
@@ -310,6 +383,10 @@ def _update_request(product: Product, expected_version: int) -> dict[str, object
             "#sourceCount": "sourceCount",
             "#updatedAt": "updatedAt",
             "#version": "version",
+            "#normalizedName": "normalizedName",
+            "#normalizedManufacturer": "normalizedManufacturer",
+            "#normalizedModelNumber": "normalizedModelNumber",
+            "#categoryStatusKey": "categoryStatusKey",
         },
         "ExpressionAttributeValues": serialize_item(
             {
@@ -323,6 +400,10 @@ def _update_request(product: Product, expected_version: int) -> dict[str, object
                 ":updatedAt": UPDATED_AT,
                 ":newVersion": expected_version + 1,
                 ":expectedVersion": expected_version,
+                ":normalizedName": "px-400 centrifugal pump",
+                ":normalizedManufacturer": "abc industries",
+                ":normalizedModelNumber": "px-400",
+                ":categoryStatusKey": "CENTRIFUGAL_PUMP#DRAFT",
             }
         ),
         "ReturnValues": "ALL_NEW",

@@ -1703,3 +1703,48 @@ class ProductIntelligenceScoreRepositoryError(Exception):
 
 class ProductIntelligenceScoreSerializationError(ProductIntelligenceScoreRepositoryError):
     """Raised when a score partition is malformed or incomplete."""
+
+
+class CatalogSearchError(Exception):
+    status_code = 422
+    code = "CATALOG_SEARCH_FILTER_COMBINATION_UNSUPPORTED"
+    safe_message = "The requested catalog search filter combination is unsupported."
+
+
+class InvalidCatalogSearchCursorError(CatalogSearchError):
+    status_code = 400
+    code = "INVALID_CURSOR"
+    safe_message = "The catalog search cursor is invalid."
+
+
+class CatalogSearchFilterCombinationUnsupportedError(CatalogSearchError):
+    """Raised when no deliberate DynamoDB query plan supports the requested filters."""
+
+
+class CatalogSearchStorageUnavailableError(CatalogSearchError):
+    status_code = 503
+    code = "CATALOG_SEARCH_STORAGE_UNAVAILABLE"
+    safe_message = "Catalog search storage is temporarily unavailable."
+
+
+class ProductIntelligenceReadError(Exception):
+    status_code = 503
+    code = "PRODUCT_INTELLIGENCE_SCORE_STORAGE_UNAVAILABLE"
+    safe_message = "Product Intelligence Score storage is temporarily unavailable."
+
+
+class InvalidProductIntelligenceCursorError(ProductIntelligenceReadError):
+    status_code = 400
+    code = "INVALID_CURSOR"
+    safe_message = "The Product Intelligence Score history cursor is invalid."
+
+
+class ProductIntelligenceScoreNotFoundError(ProductIntelligenceReadError):
+    status_code = 404
+    code = "PRODUCT_INTELLIGENCE_SCORE_NOT_FOUND"
+    safe_message = "The requested Product Intelligence Score does not exist."
+
+    def __init__(self, product_id: UUID, score_id: UUID) -> None:
+        self.product_id = str(product_id)
+        self.score_id = str(score_id)
+        super().__init__(self.safe_message)

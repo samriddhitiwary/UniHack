@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from app.core.exceptions import (
+    InvalidCatalogSearchCursorError,
     InvalidProcessingJobCursorError,
     InvalidProductCursorError,
     InvalidProductReviewCursorError,
@@ -17,6 +18,60 @@ PRODUCT_SOURCE_CURSOR_SCOPE = "product_sources"
 PROCESSING_JOBS_BY_PRODUCT_SCOPE = "processing_jobs_by_product"
 PROCESSING_JOBS_BY_SOURCE_SCOPE = "processing_jobs_by_source"
 REVIEW_DECISIONS_SCOPE = "review_decisions"
+CATALOG_SEARCH_SCOPE = "catalog_product_search"
+
+
+def encode_catalog_search_cursor(
+    access_pattern: str,
+    filter_fingerprint: str,
+    key: dict[str, Any] | None,
+) -> str | None:
+    if not key:
+        return None
+    envelope = {
+        "version": 1,
+        "scope": CATALOG_SEARCH_SCOPE,
+        "accessPattern": access_pattern,
+        "filterFingerprint": filter_fingerprint,
+        "key": key,
+    }
+    try:
+        payload = json.dumps(envelope, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise InvalidCatalogSearchCursorError() from exc
+    return base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+
+
+def decode_catalog_search_cursor(
+    cursor: str | None,
+    access_pattern: str,
+    filter_fingerprint: str,
+) -> dict[str, Any] | None:
+    if cursor is None:
+        return None
+    if not cursor or len(cursor) > 4_096:
+        raise InvalidCatalogSearchCursorError()
+    try:
+        padding = "=" * (-len(cursor) % 4)
+        raw = base64.b64decode(cursor + padding, altchars=b"-_", validate=True)
+        decoded = json.loads(raw.decode("utf-8"))
+    except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise InvalidCatalogSearchCursorError() from exc
+    if (
+        not isinstance(decoded, dict)
+        or set(decoded) != {"version", "scope", "accessPattern", "filterFingerprint", "key"}
+        or decoded["version"] != 1
+        or decoded["scope"] != CATALOG_SEARCH_SCOPE
+        or decoded["accessPattern"] != access_pattern
+        or decoded["filterFingerprint"] != filter_fingerprint
+        or not isinstance(decoded["key"], dict)
+        or not decoded["key"]
+    ):
+        raise InvalidCatalogSearchCursorError()
+    key = decoded["key"]
+    if not all(isinstance(name, str) and isinstance(value, dict) for name, value in key.items()):
+        raise InvalidCatalogSearchCursorError()
+    return key
 
 
 def encode_review_decision_cursor(review_id: UUID, key: dict[str, Any] | None) -> str | None:

@@ -29,6 +29,32 @@ def _resource_in_use() -> ClientError:
     )
 
 
+def test_products_table_contains_only_documented_search_indexes(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
+    settings.table_name.return_value = "catalogiq-test-products"
+    client = MagicMock()
+    monkeypatch.setattr(create_tables, "get_settings", lambda: settings)
+    monkeypatch.setattr(create_tables, "create_dynamodb_client", lambda _: client)
+
+    assert create_tables.create_products_table() is True
+    request = client.create_table.call_args.kwargs
+    assert [index["IndexName"] for index in request["GlobalSecondaryIndexes"]] == [
+        "CreatedAtIndex",
+        "StatusCreatedAtIndex",
+        "CategoryCreatedAtIndex",
+        "CategoryStatusCreatedAtIndex",
+        "ManufacturerCreatedAtIndex",
+        "ModelNumberCreatedAtIndex",
+        "NameSearchIndex",
+    ]
+    assert all(
+        index["Projection"] == {"ProjectionType": "ALL"}
+        for index in request["GlobalSecondaryIndexes"]
+    )
+
+
 def test_sources_table_definition_and_idempotence(monkeypatch: MonkeyPatch) -> None:
     settings = MagicMock(dynamodb_endpoint_url="http://localhost:8001")
     settings.table_name.return_value = "catalogiq-test-sources"
@@ -501,6 +527,7 @@ def test_catalog_projection_results_table_definition(monkeypatch: MonkeyPatch) -
     assert [item["IndexName"] for item in request["GlobalSecondaryIndexes"]] == [
         "JobIdIndex",
         "MaterializationIdIndex",
+        "ProductCreatedAtIndex",
     ]
 
 

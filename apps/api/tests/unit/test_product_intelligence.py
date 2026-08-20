@@ -11,6 +11,7 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
 from app.core.exceptions import (
+    InvalidProductIntelligenceCursorError,
     ProductIntelligenceAlreadyExistsError,
     ProductIntelligenceEnrichmentMismatchError,
 )
@@ -267,6 +268,17 @@ def test_repository_round_trip_indexes_history_and_exact_input_guard() -> None:
     assert repository.list_by_product(result.product_id, limit=10).items == (result,)
     with pytest.raises(ProductIntelligenceAlreadyExistsError):
         repository.create(replace(result, score_id=uuid4(), job_id=uuid4()))
+
+
+def test_score_history_cursor_is_malformed_and_product_scoped() -> None:
+    product_id = uuid4()
+    with pytest.raises(InvalidProductIntelligenceCursorError):
+        DynamoDBProductIntelligenceScoreRepository._decode_cursor("not-base64!", product_id)
+    cursor = DynamoDBProductIntelligenceScoreRepository._encode_cursor(
+        {"scoreId": {"S": str(uuid4())}}, product_id
+    )
+    with pytest.raises(InvalidProductIntelligenceCursorError):
+        DynamoDBProductIntelligenceScoreRepository._decode_cursor(cursor, uuid4())
 
 
 class SingleRepository:

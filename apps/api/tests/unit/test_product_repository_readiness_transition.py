@@ -45,6 +45,9 @@ def test_transition_conditionally_changes_only_status_version_and_updated_at(
     )
     with Stubber(dynamodb_client) as stubber:
         stubber.add_response(
+            "get_item", {"Item": serialize_item(product_to_item(product))}, _get_request(product)
+        )
+        stubber.add_response(
             "update_item",
             {"Attributes": serialize_item(product_to_item(expected))},
             _transition_request(product),
@@ -75,6 +78,9 @@ def test_conditional_failure_is_classified_with_safe_follow_up_read(
 ) -> None:
     product, _, _ = projected_result()
     with Stubber(dynamodb_client) as stubber:
+        stubber.add_response(
+            "get_item", {"Item": serialize_item(product_to_item(product))}, _get_request(product)
+        )
         stubber.add_client_error(
             "update_item",
             service_error_code="ConditionalCheckFailedException",
@@ -99,6 +105,9 @@ def test_conditional_failure_for_missing_product_is_not_found(
 ) -> None:
     product, _, _ = projected_result()
     with Stubber(dynamodb_client) as stubber:
+        stubber.add_response(
+            "get_item", {"Item": serialize_item(product_to_item(product))}, _get_request(product)
+        )
         stubber.add_client_error(
             "update_item",
             service_error_code="ConditionalCheckFailedException",
@@ -117,6 +126,9 @@ def test_conditional_failure_for_missing_product_is_not_found(
 def test_transition_wraps_storage_failure(dynamodb_client: BaseClient) -> None:
     product, _, _ = projected_result()
     with Stubber(dynamodb_client) as stubber:
+        stubber.add_response(
+            "get_item", {"Item": serialize_item(product_to_item(product))}, _get_request(product)
+        )
         stubber.add_client_error(
             "update_item",
             service_error_code="InternalServerError",
@@ -150,7 +162,8 @@ def _transition_request(product: Product) -> dict[str, object]:
         "TableName": TABLE_NAME,
         "Key": serialize_item({"productId": product.product_id}),
         "UpdateExpression": (
-            "SET #status = :newStatus, #updatedAt = :updatedAt, #version = :newVersion"
+            "SET #status = :newStatus, #categoryStatusKey = :categoryStatusKey, "
+            "#updatedAt = :updatedAt, #version = :newVersion"
         ),
         "ConditionExpression": (
             "attribute_exists(#productId) AND #version = :expectedVersion "
@@ -161,6 +174,7 @@ def _transition_request(product: Product) -> dict[str, object]:
             "#status": "status",
             "#updatedAt": "updatedAt",
             "#version": "version",
+            "#categoryStatusKey": "categoryStatusKey",
         },
         "ExpressionAttributeValues": serialize_item(
             {
@@ -169,6 +183,9 @@ def _transition_request(product: Product) -> dict[str, object]:
                 ":newVersion": 4,
                 ":expectedVersion": 3,
                 ":expectedStatus": ProductStatus.REVIEW_REQUIRED,
+                ":categoryStatusKey": (
+                    f"{product.category.value}#{ProductStatus.READY_TO_PUBLISH.value}"
+                ),
             }
         ),
         "ReturnValues": "ALL_NEW",

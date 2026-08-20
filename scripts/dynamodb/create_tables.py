@@ -3,11 +3,10 @@
 import logging
 import time
 
-from botocore.client import BaseClient
-from botocore.exceptions import BotoCoreError, ClientError
-
 from app.api.dependencies.dynamodb import create_dynamodb_client
 from app.core.config import get_settings
+from botocore.client import BaseClient
+from botocore.exceptions import BotoCoreError, ClientError
 
 CREATED_AT_INDEX = "CreatedAtIndex"
 STATUS_CREATED_AT_INDEX = "StatusCreatedAtIndex"
@@ -34,6 +33,11 @@ def create_products_table() -> bool:
                 {"AttributeName": "entityType", "AttributeType": "S"},
                 {"AttributeName": "createdAt", "AttributeType": "S"},
                 {"AttributeName": "status", "AttributeType": "S"},
+                {"AttributeName": "category", "AttributeType": "S"},
+                {"AttributeName": "categoryStatusKey", "AttributeType": "S"},
+                {"AttributeName": "normalizedManufacturer", "AttributeType": "S"},
+                {"AttributeName": "normalizedModelNumber", "AttributeType": "S"},
+                {"AttributeName": "normalizedName", "AttributeType": "S"},
             ],
             KeySchema=[{"AttributeName": "productId", "KeyType": "HASH"}],
             GlobalSecondaryIndexes=[
@@ -50,6 +54,46 @@ def create_products_table() -> bool:
                     "KeySchema": [
                         {"AttributeName": "status", "KeyType": "HASH"},
                         {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+                {
+                    "IndexName": "CategoryCreatedAtIndex",
+                    "KeySchema": [
+                        {"AttributeName": "category", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+                {
+                    "IndexName": "CategoryStatusCreatedAtIndex",
+                    "KeySchema": [
+                        {"AttributeName": "categoryStatusKey", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+                {
+                    "IndexName": "ManufacturerCreatedAtIndex",
+                    "KeySchema": [
+                        {"AttributeName": "normalizedManufacturer", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+                {
+                    "IndexName": "ModelNumberCreatedAtIndex",
+                    "KeySchema": [
+                        {"AttributeName": "normalizedModelNumber", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+                {
+                    "IndexName": "NameSearchIndex",
+                    "KeySchema": [
+                        {"AttributeName": "entityType", "KeyType": "HASH"},
+                        {"AttributeName": "normalizedName", "KeyType": "RANGE"},
                     ],
                     "Projection": {"ProjectionType": "ALL"},
                 },
@@ -402,7 +446,9 @@ def create_image_ocr_results_table() -> bool:
     return created
 
 
-def wait_for_dynamodb(client: BaseClient, *, attempts: int = 20, delay: float = 0.25) -> None:
+def wait_for_dynamodb(
+    client: BaseClient, *, attempts: int = 20, delay: float = 0.25
+) -> None:
     """Allow a newly started local container a short bounded startup window."""
     for attempt in range(1, attempts + 1):
         try:
@@ -886,6 +932,7 @@ def create_catalog_projection_results_table() -> bool:
                 {"AttributeName": "recordKey", "AttributeType": "S"},
                 {"AttributeName": "jobId", "AttributeType": "S"},
                 {"AttributeName": "materializationId", "AttributeType": "S"},
+                {"AttributeName": "productId", "AttributeType": "S"},
                 {"AttributeName": "createdAt", "AttributeType": "S"},
             ],
             KeySchema=[
@@ -905,6 +952,14 @@ def create_catalog_projection_results_table() -> bool:
                     "IndexName": "MaterializationIdIndex",
                     "KeySchema": [
                         {"AttributeName": "materializationId", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+                {
+                    "IndexName": "ProductCreatedAtIndex",
+                    "KeySchema": [
+                        {"AttributeName": "productId", "KeyType": "HASH"},
                         {"AttributeName": "createdAt", "KeyType": "RANGE"},
                     ],
                     "Projection": {"ProjectionType": "ALL"},

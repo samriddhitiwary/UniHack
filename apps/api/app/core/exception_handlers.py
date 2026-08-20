@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.exceptions import (
     CatalogProjectionRepositoryError,
+    CatalogSearchError,
     InvalidProcessingJobCursorError,
     InvalidProductCursorError,
     InvalidProductSourceCursorError,
@@ -22,6 +23,7 @@ from app.core.exceptions import (
     ProcessingJobRepositoryError,
     ProcessingJobTypeNotSupportedForSourceError,
     ProductAlreadyExistsError,
+    ProductIntelligenceReadError,
     ProductNotFoundError,
     ProductRepositoryError,
     ProductReviewError,
@@ -50,6 +52,10 @@ def register_exception_handlers(application: FastAPI) -> None:
         CatalogProjectionRepositoryError, catalog_projection_repository_handler
     )
     application.add_exception_handler(PublishingReadinessError, publishing_readiness_error_handler)
+    application.add_exception_handler(CatalogSearchError, catalog_search_error_handler)
+    application.add_exception_handler(
+        ProductIntelligenceReadError, product_intelligence_read_error_handler
+    )
     application.add_exception_handler(
         ProductSourceAlreadyExistsError, product_source_already_exists_handler
     )
@@ -188,6 +194,44 @@ async def publishing_readiness_error_handler(request: Request, exc: Exception) -
         code=error.code,
         message=error.safe_message,
         details=error.details,
+    )
+
+
+async def catalog_search_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    error = _expect_exception(exc, CatalogSearchError)
+    if error.status_code == 503:
+        logger.error(
+            "event=catalog_search.storage_failed request_id=%s error_type=%s",
+            _request_id(request),
+            type(exc).__name__,
+        )
+    return _error_response(
+        request,
+        status_code=error.status_code,
+        code=error.code,
+        message=error.safe_message,
+    )
+
+
+async def product_intelligence_read_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    error = _expect_exception(exc, ProductIntelligenceReadError)
+    if error.status_code == 503:
+        logger.error(
+            "event=product_intelligence.storage_failed request_id=%s error_type=%s",
+            _request_id(request),
+            type(exc).__name__,
+        )
+    details: dict[str, Any] = {}
+    if hasattr(error, "product_id"):
+        details["productId"] = error.product_id
+    if hasattr(error, "score_id"):
+        details["scoreId"] = error.score_id
+    return _error_response(
+        request,
+        status_code=error.status_code,
+        code=error.code,
+        message=error.safe_message,
+        details=details,
     )
 
 
