@@ -33,7 +33,11 @@ function formatStatus(value) {
   return value
     .toLowerCase()
     .split('_')
-    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .map((word, index) =>
+      index > 0 && ['to', 'with', 'for'].includes(word)
+        ? word
+        : word[0].toUpperCase() + word.slice(1),
+    )
     .join(' ')
 }
 export function StatusBadge({ status, label }) {

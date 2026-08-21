@@ -86,13 +86,7 @@ describe('shared CatalogIQ components', () => {
   ])('maps %s to a readable label', (status) => {
     renderUi(<StatusBadge status={status} />)
     expect(
-      screen.getByText(
-        status
-          .toLowerCase()
-          .split('_')
-          .map((word) => word[0].toUpperCase() + word.slice(1))
-          .join(' '),
-      ),
+      screen.getByText(new RegExp(status.split('_').join(' '), 'i')),
     ).toBeInTheDocument()
   })
 })

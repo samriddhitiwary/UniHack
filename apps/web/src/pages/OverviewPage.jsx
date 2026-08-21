@@ -29,7 +29,7 @@ export function OverviewPage({
   onRetry,
 }) {
   const navigate = useNavigate()
-  const addProduct = () => navigate('/products')
+  const addProduct = () => navigate('/products?create=1')
   if (state === 'loading') return <PageSkeleton />
   return (
     <Stack spacing={{ xs: 6, md: 8 }}>

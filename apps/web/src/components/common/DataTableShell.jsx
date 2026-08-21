@@ -18,6 +18,7 @@ export function DataTableShell({
   emptyDescription = 'Records will appear here when they are available.',
   pagination,
   getRowKey = (row) => row.id,
+  onRowActivate,
 }) {
   return (
     <Box>
@@ -31,7 +32,11 @@ export function DataTableShell({
             <TableHead>
               <TableRow>
                 {columns.map((column) => (
-                  <TableCell key={column.key} align={column.align}>
+                  <TableCell
+                    key={column.key}
+                    align={column.align}
+                    sx={column.sx}
+                  >
                     {column.label}
                   </TableCell>
                 ))}
@@ -42,10 +47,36 @@ export function DataTableShell({
                 <TableRow
                   key={getRowKey(row)}
                   hover
-                  sx={{ '&:last-child td': { borderBottom: 0 } }}
+                  tabIndex={onRowActivate ? 0 : undefined}
+                  onClick={() => onRowActivate?.(row)}
+                  onKeyDown={(event) => {
+                    if (
+                      onRowActivate &&
+                      (event.key === 'Enter' || event.key === ' ')
+                    ) {
+                      event.preventDefault()
+                      onRowActivate(row)
+                    }
+                  }}
+                  aria-label={onRowActivate ? `Open ${row.name}` : undefined}
+                  sx={{
+                    '&:last-child td': { borderBottom: 0 },
+                    ...(onRowActivate && {
+                      cursor: 'pointer',
+                      '&:focus-visible': {
+                        outline: '3px solid',
+                        outlineColor: 'primary.light',
+                        outlineOffset: -3,
+                      },
+                    }),
+                  }}
                 >
                   {columns.map((column) => (
-                    <TableCell key={column.key} align={column.align}>
+                    <TableCell
+                      key={column.key}
+                      align={column.align}
+                      sx={column.sx}
+                    >
                       {column.render ? column.render(row) : row[column.key]}
                     </TableCell>
                   ))}

@@ -19,3 +19,7 @@ React Router renders one `AppShell`. `/dashboard` is implemented; future-facing 
 ## Dashboard fixtures
 
 No dedicated aggregate endpoint exists. `src/mocks/dashboard.js` is the sole source of Phase 1 visual metrics; components receive data through props and never infer totals from paginated product data. The page exposes deterministic ready, loading, empty, and error modes for future query integration.
+
+## Product catalog server state
+
+`src/api/catalog.js` and `src/api/products.js` are the Product transport boundary. Hooks in `src/hooks` use centralized keys from `queryKeys.js`; catalog keys include the exact supported filter plan and opaque cursor. URL parameters preserve user-facing search/filter state while cursor history remains local. Product creation invalidates the catalog prefix and safely seeds the Product detail cache before navigation. Presentation and compatibility logic live under `components/products`; the real catalog contains no fixtures.

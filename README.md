@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-038: Premium Frontend Foundation, Design System, Dashboard Shell, and Visual Identity**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-039: Premium Product Catalog, Search, Filtering, Pagination, and Product Creation Experience**.
 
 ## Prerequisites
 
@@ -223,8 +223,10 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [SPEC-036](docs/specs/SPEC-036-catalog-search-filtering-intelligence-summary-and-quality-read-api.md)
 - [SPEC-037](docs/specs/SPEC-037-end-to-end-catalog-intelligence-workflow-orchestration-api.md)
 - [SPEC-038](docs/specs/SPEC-038-premium-frontend-foundation-design-system-dashboard-shell-and-visual-identity.md)
+- [SPEC-039](docs/specs/SPEC-039-premium-product-catalog-search-filtering-pagination-and-product-creation-experience.md)
 - [Frontend design system](docs/frontend/design-system.md)
 - [Frontend architecture](docs/frontend/frontend-architecture.md)
+- [Product Catalog and creation](docs/frontend/product-catalog.md)
 - [Product API](docs/api/products.md)
 - [Product Source API](docs/api/product-sources.md)
 - [Processing Job API](docs/api/processing-jobs.md)

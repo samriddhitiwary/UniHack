@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { ComingSoonPage } from '../pages/ComingSoonPage'
 import { OverviewPage } from '../pages/OverviewPage'
+import { ProductDetailPage } from '../pages/ProductDetailPage'
+import { ProductsPage } from '../pages/ProductsPage'
 
 export function AppRoutes() {
   return (
@@ -10,11 +12,8 @@ export function AppRoutes() {
       <Route element={<AppShell />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<OverviewPage />} />
-        <Route path="products" element={<ComingSoonPage title="Products" />} />
-        <Route
-          path="products/:productId"
-          element={<ComingSoonPage title="Product details" />}
-        />
+        <Route path="products" element={<ProductsPage />} />
+        <Route path="products/:productId" element={<ProductDetailPage />} />
         <Route
           path="workflows"
           element={<ComingSoonPage title="Workflows" />}

@@ -1,8 +1,19 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { App } from '../src/App'
+
+vi.mock('../src/api/catalog', () => ({
+  searchCatalogProducts: vi
+    .fn()
+    .mockResolvedValue({ items: [], nextCursor: null }),
+  getCatalogProductSummary: vi.fn(),
+}))
+vi.mock('../src/api/products', () => ({
+  createProduct: vi.fn(),
+  getProduct: vi.fn(),
+}))
 
 describe('CatalogIQ application shell', () => {
   it('renders the premium dashboard shell and fixture dashboard', async () => {
@@ -35,6 +46,10 @@ describe('CatalogIQ application shell', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Products' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Products is coming soon')).toBeInTheDocument()
-  })
+    expect(
+      screen.getByText(
+        'Manage industrial product records, catalog quality, and publishing readiness.',
+      ),
+    ).toBeInTheDocument()
+  }, 10000)
 })

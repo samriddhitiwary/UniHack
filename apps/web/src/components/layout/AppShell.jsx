@@ -53,11 +53,11 @@ export function AppShell() {
       <Box
         component="main"
         sx={{
-          flex: 1,
+          flex: 'none',
           minWidth: 0,
           width: {
-            xs: '100vw',
-            lg: `calc(100vw - ${tokens.layout.sidebarWidth}px)`,
+            xs: '100%',
+            lg: `calc(100% - ${tokens.layout.sidebarWidth}px)`,
           },
           overflowX: 'hidden',
           pt: `${tokens.layout.headerHeight}px`,
