@@ -132,9 +132,19 @@ class Settings(BaseSettings):
     product_intelligence_score_max_reason_codes: int = Field(default=100, gt=0)
     product_intelligence_score_max_top_improvements: int = Field(default=5, ge=1, le=5)
     product_intelligence_score_max_metric_entries: int = Field(default=100, gt=0)
+    unilog_challenge_input_path: Path | None = None
+    unilog_challenge_expected_output_path: Path | None = None
+    unilog_challenge_artifact_path: Path | None = None
     log_level: str = "INFO"
 
-    @field_validator("dynamodb_endpoint_url", "s3_bucket_name", mode="before")
+    @field_validator(
+        "dynamodb_endpoint_url",
+        "s3_bucket_name",
+        "unilog_challenge_input_path",
+        "unilog_challenge_expected_output_path",
+        "unilog_challenge_artifact_path",
+        mode="before",
+    )
     @classmethod
     def empty_string_is_none(cls, value: object) -> object:
         """Treat blank optional environment values as absent."""

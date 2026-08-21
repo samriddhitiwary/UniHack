@@ -1811,3 +1811,38 @@ class InvalidCatalogWorkflowCursorError(CatalogWorkflowError):
 
 class CatalogWorkflowRepositoryError(CatalogWorkflowError):
     """Raised for controlled workflow persistence failures."""
+
+
+class UnilogChallengeError(Exception):
+    """Base class for controlled challenge-adapter failures."""
+
+    code = "UNILOG_CHALLENGE_IMPORT_FAILED"
+    safe_message = "The Unilog challenge data could not be imported."
+
+    def __init__(self, message: str | None = None) -> None:
+        super().__init__(message or self.safe_message)
+
+
+class UnilogChallengeInputNotFoundError(UnilogChallengeError):
+    code = "UNILOG_CHALLENGE_INPUT_NOT_FOUND"
+    safe_message = "The configured Unilog challenge input file does not exist."
+
+
+class UnilogChallengeOutputNotFoundError(UnilogChallengeError):
+    code = "UNILOG_CHALLENGE_OUTPUT_NOT_FOUND"
+    safe_message = "The configured Unilog expected-output file does not exist."
+
+
+class UnilogChallengeInputSchemaInvalidError(UnilogChallengeError):
+    code = "UNILOG_CHALLENGE_INPUT_SCHEMA_INVALID"
+    safe_message = "The Unilog challenge input schema is not supported."
+
+
+class UnilogChallengeOutputSchemaInvalidError(UnilogChallengeError):
+    code = "UNILOG_CHALLENGE_OUTPUT_SCHEMA_INVALID"
+    safe_message = "The Unilog expected-output schema does not match the official contract."
+
+
+class UnilogChallengeRowAlignmentAmbiguousError(UnilogChallengeError):
+    code = "UNILOG_CHALLENGE_ROW_ALIGNMENT_AMBIGUOUS"
+    safe_message = "A labelled output row matches multiple challenge input rows."

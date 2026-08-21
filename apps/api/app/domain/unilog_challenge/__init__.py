@@ -1,0 +1,55 @@
+"""Public Unilog challenge-domain surface."""
+
+from app.domain.unilog_challenge.delivery_schema import UNILOG_DELIVERY_HEADERS
+from app.domain.unilog_challenge.entities import (
+    BrandEvidence,
+    DatasetMetadata,
+    FieldComparison,
+    FieldProvenance,
+    GroundTruthAlignment,
+    ImportStatistics,
+    ManufacturerResolution,
+    ObservedVocabulary,
+    ParsedManufacturer,
+    SourceReferences,
+    UnilogAttributeCandidate,
+    UnilogChallengeImport,
+    UnilogChallengeInputRow,
+    UnilogDeliveryRecord,
+    UnilogGroundTruthRecord,
+)
+from app.domain.unilog_challenge.enums import (
+    AlignmentStatus,
+    ComparisonStatus,
+    DatasetSplit,
+    EvidenceSourceType,
+    EvidenceStrength,
+    ManufacturerParseStatus,
+    ResolutionStatus,
+)
+
+__all__ = [
+    "UNILOG_DELIVERY_HEADERS",
+    "AlignmentStatus",
+    "BrandEvidence",
+    "ComparisonStatus",
+    "DatasetMetadata",
+    "DatasetSplit",
+    "EvidenceSourceType",
+    "EvidenceStrength",
+    "FieldComparison",
+    "FieldProvenance",
+    "GroundTruthAlignment",
+    "ImportStatistics",
+    "ManufacturerParseStatus",
+    "ManufacturerResolution",
+    "ObservedVocabulary",
+    "ParsedManufacturer",
+    "ResolutionStatus",
+    "SourceReferences",
+    "UnilogAttributeCandidate",
+    "UnilogChallengeImport",
+    "UnilogChallengeInputRow",
+    "UnilogDeliveryRecord",
+    "UnilogGroundTruthRecord",
+]
