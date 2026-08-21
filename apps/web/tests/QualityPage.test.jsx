@@ -50,13 +50,20 @@ describe('Challenge Quality dashboard', () => {
     )
     expect(screen.getByText('28 / 134')).toBeInTheDocument()
     expect(screen.getByText('1,000 / 1,000')).toBeInTheDocument()
-    expect(screen.getByText(/not accuracy/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/not accuracy/i)).toHaveLength(2)
     expect(screen.queryByText(/AI Accuracy/i)).not.toBeInTheDocument()
     expect(screen.getByText('Unsupported Fact Violations')).toBeInTheDocument()
     expect(
       screen.getByText('Verified classification coverage'),
     ).toBeInTheDocument()
     expect(screen.getByText('Attribute coverage')).toBeInTheDocument()
+    expect(
+      screen.getByText('Manufacturer and brand resolution'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Manufacturer resolution coverage'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Labelled brand exact')).toBeInTheDocument()
     expect(screen.getByText('Labelled semantic precision')).toBeInTheDocument()
     expect(
       screen.getByText('Reduce evidence ambiguity before auto-approval'),

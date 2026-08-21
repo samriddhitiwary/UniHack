@@ -297,6 +297,27 @@ class UnilogAttributeCoverageMetrics:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class UnilogIdentityResolutionMetrics:
+    total_rows: int
+    manufacturer_resolved: int
+    manufacturer_resolution_coverage_bp: int
+    manufacturer_ambiguous: int
+    brand_resolved: int
+    brand_resolution_coverage_bp: int
+    brand_ambiguous: int
+    supplier_only_rows: int
+    manufacturer_exact_labelled: int
+    brand_exact_labelled: int
+    labelled_rows: int
+    review_reason_counts: tuple[tuple[str, int], ...]
+    evidence_source_counts: tuple[tuple[str, int], ...]
+
+    def __post_init__(self) -> None:
+        _rate(self.manufacturer_resolution_coverage_bp)
+        _rate(self.brand_resolution_coverage_bp)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class UnilogFieldMetric:
     field_name: str
     group: UnilogFieldGroup
@@ -350,6 +371,7 @@ class UnilogEvaluationResult:
     batch_metrics: UnilogBatchQualityMetrics
     classification_metrics: UnilogClassificationMetrics
     attribute_coverage_metrics: UnilogAttributeCoverageMetrics
+    identity_resolution_metrics: UnilogIdentityResolutionMetrics
     field_metrics: tuple[UnilogFieldMetric, ...]
     problems: tuple[UnilogFieldProblem, ...]
     recommendations: tuple[UnilogImprovementRecommendation, ...]

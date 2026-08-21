@@ -47,6 +47,7 @@ def main() -> int:
     metrics = result.accuracy
     batch = result.batch_metrics
     attributes = result.attribute_coverage_metrics
+    identity = result.identity_resolution_metrics
     print(f"Labelled rows: {result.labelled_row_count}")
     print(f"Exact matches: {metrics.exact_match_count}")
     print(f"Normalized matches: {metrics.normalized_match_count}")
@@ -67,6 +68,11 @@ def main() -> int:
     print(f"Attribute conflicts: {attributes.conflicts}")
     print(f"Attribute unit ambiguities: {attributes.unit_ambiguities}")
     print(f"Attribute overflow: {attributes.overflow_count}")
+    print(f"Manufacturers resolved: {identity.manufacturer_resolved}")
+    print(f"Manufacturers ambiguous: {identity.manufacturer_ambiguous}")
+    print(f"Brands resolved: {identity.brand_resolved}")
+    print(f"Brands ambiguous: {identity.brand_ambiguous}")
+    print(f"Supplier-only rows: {identity.supplier_only_rows}")
     return 0
 
 

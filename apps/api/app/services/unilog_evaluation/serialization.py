@@ -21,6 +21,7 @@ def serialize_evaluation_summary(result: UnilogEvaluationResult) -> dict[str, ob
         "groupMetrics": _serialize(result.group_metrics),
         "attributeMetrics": _serialize(result.attribute_metrics),
         "attributeCoverageMetrics": _serialize(result.attribute_coverage_metrics),
+        "identityResolutionMetrics": _serialize(result.identity_resolution_metrics),
         "coverageMetrics": _serialize(result.coverage_metrics),
         "descriptionMetrics": _serialize(result.description_metrics),
         "reviewMetrics": _serialize(result.review_metrics),

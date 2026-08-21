@@ -38,6 +38,7 @@ from app.services.unilog_evaluation.field_comparator import (
     accuracy_metrics,
     compare_delivery_field,
 )
+from app.services.unilog_evaluation.identity_evaluator import evaluate_identity_resolution
 
 
 class UnilogEvaluationService:
@@ -120,6 +121,7 @@ class UnilogEvaluationService:
         descriptions = evaluate_description_compliance(batch)
         review, batch_metrics = evaluate_batch_quality(batch)
         classification = evaluate_classification(batch)
+        identity = evaluate_identity_resolution(batch, tuple(pairs))
         field_metrics = self._field_metrics(comparisons_tuple)
         problems, recommendations = analyze_field_errors(comparisons_tuple, attributes, review)
         generated_fingerprint = self._batch_fingerprint(batch)
@@ -141,6 +143,7 @@ class UnilogEvaluationService:
             review_metrics=review,
             batch_metrics=batch_metrics,
             classification_metrics=classification,
+            identity_resolution_metrics=identity,
             field_metrics=field_metrics,
             problems=problems,
             recommendations=recommendations,

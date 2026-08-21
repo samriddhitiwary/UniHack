@@ -22,7 +22,6 @@ from app.domain.unilog_challenge import (
 )
 from app.services.unilog_attributes.attribute_delivery_mapper import UnilogAttributeDeliveryMapper
 from app.services.unilog_challenge.attribute_extractor import UnilogAttributeExtractor
-from app.services.unilog_challenge.brand_resolver import UnilogChallengeBrandResolver
 from app.services.unilog_challenge.classifier import UnilogChallengeClassifier
 from app.services.unilog_challenge.delivery_assembler import UnilogDeliveryRecordAssembler
 from app.services.unilog_challenge.description_builder import UnilogDescriptionBuilder
@@ -30,10 +29,8 @@ from app.services.unilog_challenge.description_signal_extractor import (
     UnilogDescriptionSignalExtractor,
 )
 from app.services.unilog_challenge.direct_field_mapper import UnilogDirectFieldMapper
-from app.services.unilog_challenge.manufacturer_resolver import (
-    UnilogChallengeManufacturerResolver,
-)
 from app.services.unilog_classification.rule_registry import UnilogProductTypeRuleRegistry
+from app.services.unilog_identity.resolver import UnilogIdentityResolver
 
 _ATTRIBUTE_PRIORITY = (
     "Series",
@@ -61,8 +58,7 @@ class UnilogEnrichmentService:
         now: Callable[[], datetime] | None = None,
         direct_mapper: UnilogDirectFieldMapper | None = None,
         signal_extractor: UnilogDescriptionSignalExtractor | None = None,
-        brand_resolver: UnilogChallengeBrandResolver | None = None,
-        manufacturer_resolver: UnilogChallengeManufacturerResolver | None = None,
+        identity_resolver: UnilogIdentityResolver | None = None,
         classifier: UnilogChallengeClassifier | None = None,
         attribute_extractor: UnilogAttributeExtractor | None = None,
         description_builder: UnilogDescriptionBuilder | None = None,
@@ -71,8 +67,7 @@ class UnilogEnrichmentService:
         self._now = now or (lambda: datetime.now(UTC))
         self._direct = direct_mapper or UnilogDirectFieldMapper()
         self._signals = signal_extractor or UnilogDescriptionSignalExtractor()
-        self._brands = brand_resolver or UnilogChallengeBrandResolver()
-        self._manufacturers = manufacturer_resolver or UnilogChallengeManufacturerResolver()
+        self._identity = identity_resolver or UnilogIdentityResolver()
         self._classifier = classifier or UnilogChallengeClassifier()
         self._attributes = attribute_extractor or UnilogAttributeExtractor()
         self._attribute_delivery = UnilogAttributeDeliveryMapper()
@@ -85,31 +80,30 @@ class UnilogEnrichmentService:
         vocabulary: ObservedVocabulary | None = None,
     ) -> UnilogEnrichmentResult:
         signals = self._signals.extract(input_row)
-        brand = self._brands.resolve(input_row, vocabulary)
-        manufacturer = self._manufacturers.resolve(input_row, brand)
+        identity = self._identity.resolve(input_row, product_type=signals.product_type)
         classification = self._classifier.classify(signals, vocabulary)
         attributes = self._attributes.extract(signals, vocabulary)
         resolutions = list(self._direct.map(input_row))
-        if brand.value is not None and brand.status is ResolutionStatus.RESOLVED:
+        if identity.brand is not None and identity.brand_status is ResolutionStatus.RESOLVED:
             resolutions.append(
                 self._derived_resolution(
                     "BRAND_NAME",
-                    brand.value,
-                    "brand-evidence",
-                    brand.confidence_bp,
+                    identity.brand,
+                    ";".join(identity.brand_evidence),
+                    identity.brand_confidence_bp,
                     strategy=FieldPopulationStrategy.DETERMINISTIC_PARSE,
                 )
             )
         if (
-            manufacturer.candidate_manufacturer is not None
-            and manufacturer.status is ResolutionStatus.RESOLVED
+            identity.manufacturer is not None
+            and identity.manufacturer_status is ResolutionStatus.RESOLVED
         ):
             resolutions.append(
                 self._derived_resolution(
                     "MANUFACTURER_NAME",
-                    manufacturer.candidate_manufacturer,
-                    "manufacturer-evidence",
-                    manufacturer.confidence_bp,
+                    identity.manufacturer,
+                    ";".join(identity.manufacturer_evidence),
+                    identity.manufacturer_confidence_bp,
                     strategy=FieldPopulationStrategy.DETERMINISTIC_PARSE,
                 )
             )
@@ -135,9 +129,9 @@ class UnilogEnrichmentService:
         resolutions.extend(self._dimension_resolutions(signals.product_type, attributes))
         facts = self._description_facts(
             input_row,
-            brand.value if brand.status is ResolutionStatus.RESOLVED else None,
-            manufacturer.candidate_manufacturer
-            if manufacturer.status is ResolutionStatus.RESOLVED
+            identity.brand if identity.brand_status is ResolutionStatus.RESOLVED else None,
+            identity.manufacturer
+            if identity.manufacturer_status is ResolutionStatus.RESOLVED
             else None,
             signals.product_type,
             attributes,
@@ -151,26 +145,40 @@ class UnilogEnrichmentService:
         record = self._assembler.assemble(resolutions)
         populated = sum(value not in (None, "") for value in record.as_dict().values())
         confidences = [item.confidence_bp for item in resolutions if item.value is not None]
+        confidences.extend((identity.manufacturer_confidence_bp, identity.brand_confidence_bp))
         warnings = list(
             dict.fromkeys(
                 issue for description in descriptions for issue in description.validation_issues
             )
         )
-        if manufacturer.review_required:
+        manufacturer_reasons = {
+            reason.value
+            for reason in identity.review_reasons
+            if reason.value.startswith("MANUFACTURER")
+            or reason.value in {"SUPPLIER_ONLY_EVIDENCE", "ORGANIZATION_ROLE_AMBIGUOUS"}
+        }
+        brand_reasons = {
+            reason.value
+            for reason in identity.review_reasons
+            if reason.value.startswith("BRAND")
+            or reason.value in {"DESCRIPTION_BRAND_WEAK", "MPN_PREFIX_WEAK"}
+        }
+        if manufacturer_reasons:
             warnings.append("MANUFACTURER_REVIEW_REQUIRED")
-        if brand.review_required:
+        if brand_reasons:
             warnings.append("BRAND_REVIEW_REQUIRED")
+        warnings.extend(f"IDENTITY:{reason.value}" for reason in identity.review_reasons)
         if classification.review_required:
             warnings.append("CLASSIFICATION_REVIEW_REQUIRED")
             warnings.extend(reason.value for reason in classification.review_reasons)
         if any(item.review_required for item in attributes):
             warnings.append("ATTRIBUTE_CONFLICT_REVIEW_REQUIRED")
         review_required = bool(warnings)
-        identity = hashlib.sha256(
+        enrichment_id = hashlib.sha256(
             f"{input_row.row_id}:{UNILOG_ENRICHMENT_POLICY_VERSION}:deterministic:none:none".encode()
         ).hexdigest()
         return UnilogEnrichmentResult(
-            enrichment_id=identity,
+            enrichment_id=enrichment_id,
             input_row_id=input_row.row_id,
             delivery_record=record,
             field_resolutions=tuple(resolutions),

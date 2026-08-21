@@ -23,11 +23,17 @@ def evaluate_batch_quality(
     bands = Counter(_band(value) for value in confidences)
     reasons: Counter[str] = Counter()
     for enrichment in completed:
-        row_reasons = set()
+        row_reasons: set[str] = set()
+        identity_reasons = {
+            warning.removeprefix("IDENTITY:")
+            for warning in enrichment.warnings
+            if warning.startswith("IDENTITY:")
+        }
+        row_reasons.update(_identity_reason_name(reason) for reason in identity_reasons)
         for warning in enrichment.warnings:
-            if warning == "MANUFACTURER_REVIEW_REQUIRED":
+            if warning == "MANUFACTURER_REVIEW_REQUIRED" and not identity_reasons:
                 row_reasons.add("manufacturerAmbiguity")
-            elif warning == "BRAND_REVIEW_REQUIRED":
+            elif warning == "BRAND_REVIEW_REQUIRED" and not identity_reasons:
                 row_reasons.add("brandAmbiguity")
             elif warning == "CLASSIFICATION_REVIEW_REQUIRED":
                 row_reasons.add("classificationUncertainty")
@@ -67,6 +73,11 @@ def evaluate_batch_quality(
             failure_rate_bp=failed * 10_000 // total if total else 0,
         ),
     )
+
+
+def _identity_reason_name(value: str) -> str:
+    words = value.casefold().split("_")
+    return words[0] + "".join(word.title() for word in words[1:])
 
 
 def _band(confidence_bp: int) -> ConfidenceBand:

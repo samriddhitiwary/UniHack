@@ -125,6 +125,7 @@ def get_batch_quality(
         "reviewMetrics": serialize_value(result.review_metrics),
         "classificationMetrics": serialize_value(result.classification_metrics),
         "attributeCoverageMetrics": serialize_value(result.attribute_coverage_metrics),
+        "identityResolutionMetrics": serialize_value(result.identity_resolution_metrics),
     }
 
 

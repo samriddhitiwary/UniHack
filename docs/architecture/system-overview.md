@@ -1,5 +1,10 @@
 # System Overview
 
+SPEC-046 adds a deterministic manufacturer/brand evidence artifact and indexed resolver that keeps
+supplier organizations separate, resolves manufacturer and brand independently, and reports
+coverage and ambiguity without external lookup. See
+[Unilog manufacturer and brand resolution](unilog-manufacturer-brand-resolution.md).
+
 SPEC-045 adds product-type-aware semantic attributes, exact measurement/UOM normalization, observed
 official-label mapping, conflict handling, and deterministic delivery triples. See
 [Unilog attribute resolution](unilog-attribute-resolution.md).

@@ -73,6 +73,7 @@ def test_create_and_read_evaluation_endpoints_are_explicit_and_bounded(tmp_path:
             assert body["labelledRowCount"] == 1
             assert body["accuracy"]["bothBlankCount"] == 238
             assert body["batchMetrics"]["processingSuccessRateBp"] == 10_000
+            assert body["identityResolutionMetrics"]["totalRows"] == 1
             assert client.get("/api/v1/unilog/evaluations/latest").status_code == 200
             assert client.get(f"/api/v1/unilog/evaluations/{evaluation_id}").status_code == 200
             assert (
@@ -98,9 +99,9 @@ def test_create_and_read_evaluation_endpoints_are_explicit_and_bounded(tmp_path:
                 ]
                 == "ABC"
             )
-            assert (
-                client.get(f"/api/v1/unilog/evaluations/{evaluation_id}/batch").status_code == 200
-            )
+            batch = client.get(f"/api/v1/unilog/evaluations/{evaluation_id}/batch")
+            assert batch.status_code == 200
+            assert "identityResolutionMetrics" in batch.json()
             assert (
                 client.get(f"/api/v1/unilog/evaluations/{evaluation_id}/errors").status_code == 200
             )

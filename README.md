@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-045: Product-Type-Aware Attribute Recall Expansion, Measurement Normalization, and Delivery Attribute Population**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-046: Manufacturer and Brand Evidence Resolution Expansion**.
 
 ## Prerequisites
 
@@ -113,6 +113,18 @@ uv run --project apps/api python scripts/build_unilog_attribute_vocabulary.py `
 
 Semantic candidates enter official attribute triples only through observed or explicitly approved
 label mappings. Unknown labels remain internal; the artifact is not a complete LOV or UOM master.
+
+Build the deterministic manufacturer and brand evidence artifact explicitly:
+
+```powershell
+uv run --project apps/api python scripts/build_unilog_manufacturer_brand_evidence.py `
+  --input path/to/official-input.csv `
+  --ground-truth path/to/official-expected-output.csv `
+  --artifact apps/api/app/reference_data/unilog_manufacturer_brand_v1.json
+```
+
+Supplier/source organizations remain distinct from manufacturers. Runtime resolution uses only the
+challenge-observed artifact and performs no crawl, external lookup, or startup rebuild.
 
 The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and `make build-web`. See [local development](docs/development/local-setup.md) for service lifecycle and troubleshooting.
 
@@ -289,6 +301,9 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [SPEC-041](docs/specs/SPEC-041-unilog-challenge-dataset-adapter-and-enrichment-foundation.md)
 - [SPEC-042](docs/specs/SPEC-042-evidence-grounded-unilog-product-enrichment-and-delivery-record-generation.md)
 - [SPEC-043](docs/specs/SPEC-043-unilog-ground-truth-evaluation-and-challenge-dashboard.md)
+- [SPEC-044](docs/specs/SPEC-044-verified-product-classification-and-classpath-resolution.md)
+- [SPEC-045](docs/specs/SPEC-045-product-type-aware-attribute-recall-and-normalization.md)
+- [SPEC-046](docs/specs/SPEC-046-manufacturer-brand-evidence-resolution-expansion.md)
 - [Unilog evaluation methodology](docs/challenge/unilog-evaluation-methodology.md)
 - [Challenge Quality dashboard](docs/frontend/challenge-quality-dashboard.md)
 - [Frontend design system](docs/frontend/design-system.md)

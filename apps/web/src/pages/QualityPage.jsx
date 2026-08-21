@@ -18,6 +18,7 @@ import { ImprovementOpportunities } from '../components/quality/ImprovementOppor
 import { LabelledRowComparison } from '../components/quality/LabelledRowComparison'
 import { ClassificationCoverage } from '../components/quality/ClassificationCoverage'
 import { AttributeCoverage } from '../components/quality/AttributeCoverage'
+import { IdentityResolutionCoverage } from '../components/quality/IdentityResolutionCoverage'
 import {
   useCreateUnilogEvaluation,
   useLatestUnilogEvaluation,
@@ -168,6 +169,7 @@ export function QualityPage({
         <CoverageAnalytics coverage={data.coverageMetrics} />
         <ReviewAnalysis metrics={data.reviewMetrics} />
       </Box>
+      <IdentityResolutionCoverage metrics={data.identityResolutionMetrics} />
       <ClassificationCoverage metrics={data.classificationMetrics} />
       <AttributeCoverage
         coverage={data.attributeCoverageMetrics}
