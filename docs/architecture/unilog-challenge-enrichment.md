@@ -1,5 +1,9 @@
 # Unilog Challenge Enrichment Architecture
 
+SPEC-042 implements the evidence-grounded enrichment stage described in
+`docs/architecture/unilog-enrichment-pipeline.md`. The SPEC-041 adapter and exact schema remain the
+foundation; delivery enrichment remains isolated from the generic Product aggregate.
+
 ```text
 Official input CSV
        ↓

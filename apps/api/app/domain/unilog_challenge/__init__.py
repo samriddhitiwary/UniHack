@@ -1,6 +1,24 @@
 """Public Unilog challenge-domain surface."""
 
 from app.domain.unilog_challenge.delivery_schema import UNILOG_DELIVERY_HEADERS
+from app.domain.unilog_challenge.enrichment import (
+    MAX_UNILOG_BATCH_ROWS,
+    UNILOG_ENRICHMENT_POLICY_VERSION,
+    UnilogBatchEnrichmentResult,
+    UnilogBatchRowResult,
+    UnilogBatchStatistics,
+    UnilogBrandResolution,
+    UnilogDescriptionResult,
+    UnilogDescriptionSignals,
+    UnilogEnrichmentRequest,
+    UnilogEnrichmentResult,
+    UnilogFieldResolution,
+    UnilogItemFeature,
+    UnilogMeasurementCandidate,
+    UnilogProductClassification,
+    UnilogResolvedFacts,
+    UnilogSemanticAttributeCandidate,
+)
 from app.domain.unilog_challenge.entities import (
     BrandEvidence,
     DatasetMetadata,
@@ -20,17 +38,23 @@ from app.domain.unilog_challenge.entities import (
 )
 from app.domain.unilog_challenge.enums import (
     AlignmentStatus,
+    BatchRowStatus,
     ComparisonStatus,
     DatasetSplit,
     EvidenceSourceType,
     EvidenceStrength,
+    FieldPopulationStrategy,
+    FieldValidationStatus,
     ManufacturerParseStatus,
     ResolutionStatus,
 )
 
 __all__ = [
+    "MAX_UNILOG_BATCH_ROWS",
     "UNILOG_DELIVERY_HEADERS",
+    "UNILOG_ENRICHMENT_POLICY_VERSION",
     "AlignmentStatus",
+    "BatchRowStatus",
     "BrandEvidence",
     "ComparisonStatus",
     "DatasetMetadata",
@@ -38,7 +62,9 @@ __all__ = [
     "EvidenceSourceType",
     "EvidenceStrength",
     "FieldComparison",
+    "FieldPopulationStrategy",
     "FieldProvenance",
+    "FieldValidationStatus",
     "GroundTruthAlignment",
     "ImportStatistics",
     "ManufacturerParseStatus",
@@ -48,8 +74,22 @@ __all__ = [
     "ResolutionStatus",
     "SourceReferences",
     "UnilogAttributeCandidate",
+    "UnilogBatchEnrichmentResult",
+    "UnilogBatchRowResult",
+    "UnilogBatchStatistics",
+    "UnilogBrandResolution",
     "UnilogChallengeImport",
     "UnilogChallengeInputRow",
     "UnilogDeliveryRecord",
+    "UnilogDescriptionResult",
+    "UnilogDescriptionSignals",
+    "UnilogEnrichmentRequest",
+    "UnilogEnrichmentResult",
+    "UnilogFieldResolution",
     "UnilogGroundTruthRecord",
+    "UnilogItemFeature",
+    "UnilogMeasurementCandidate",
+    "UnilogProductClassification",
+    "UnilogResolvedFacts",
+    "UnilogSemanticAttributeCandidate",
 ]

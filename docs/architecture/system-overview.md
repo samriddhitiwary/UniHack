@@ -1,11 +1,13 @@
 # System Overview
 
-SPEC-041 adds an isolated Unilog challenge adapter around the two official CSV artifacts. It
-preserves raw supplier evidence, validates all 252 delivery headers exactly, aligns the two labelled
-rows without first-match guessing, and exposes provenance-aware enrichment protocols. Imports are
-explicit, bounded, fingerprinted, and stored separately from Product records. No external retrieval,
-final enrichment, delivery writer, frontend feature, or fabricated reference master is introduced.
-See [Unilog challenge enrichment](unilog-challenge-enrichment.md).
+SPEC-042 builds an isolated, evidence-grounded enrichment pipeline on the SPEC-041 challenge
+adapter. It preserves raw supplier evidence, resolves only corroborated manufacturer/brand facts,
+extracts exact description spans and trade fractions, constrains classification to observed official
+taxonomy, builds grounded descriptions, and writes exact 252-column UTF-8 delivery CSVs. Batches are
+bounded to 1,000 ordered rows with isolated failures. Internal confidence, provenance, coverage, and
+review state remain outside CSV and Product records. No external retrieval, evaluation dashboard,
+frontend feature, or fabricated reference master is introduced. See
+[Unilog enrichment pipeline](unilog-enrichment-pipeline.md).
 
 SPEC-036 exposes read-only scan-free catalog discovery, Product quality summaries, and persisted
 Product Intelligence Score detail/history. It aggregates existing Product, projection, enrichment,

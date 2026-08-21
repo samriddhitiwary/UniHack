@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-041: Unilog Challenge Dataset Adapter and Enrichment Foundation**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-042: Evidence-Grounded Unilog Product Enrichment, Description Construction, and Exact Delivery Record Generation**.
 
 ## Prerequisites
 
@@ -65,11 +65,23 @@ uv run --project apps/api python scripts/import_unilog_challenge_data.py `
 The official 252 delivery headers are immutable and validated in their supplied order. The adapter
 does not fabricate missing manufacturer, LOV, UOM, Faucets, or Fittings reference masters.
 
+Create a deterministic partial delivery file without requiring a live model:
+
+```powershell
+uv run --project apps/api python scripts/enrich_unilog.py `
+  --input path/to/official-input.csv `
+  --output path/to/unilog-delivery.csv `
+  --labelled-output path/to/official-expected-output.csv
+```
+
+The optional labelled file contributes only general observed vocabulary. Its row-specific answers
+are never supplied to enrichment. Unsupported facts remain empty CSV cells.
+
 The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and `make build-web`. See [local development](docs/development/local-setup.md) for service lifecycle and troubleshooting.
 
 ## Current scope
 
-The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, local JSON/CSV/manifest package export, grounded AI commerce-content artifacts, read-only indexed catalog quality/search APIs, and an isolated Unilog challenge-data adapter with exact delivery-schema validation. The frontend provides a real Product Catalog and Product Workspace with source upload/text creation/deletion, workflow configuration, live RUNNING-state polling, a human-friendly phase timeline, review-route preparation, resume handling, output summaries, and bounded history. Final Unilog enrichment/export, human-review decisions, detailed intelligence analysis, content editing, export downloads, content/file replacement, bulk deletion, restore, external publishing, S3, workers, authentication, real AWS resources, and deployment remain unavailable.
+The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, local JSON/CSV/manifest package export, grounded AI commerce-content artifacts, read-only indexed catalog quality/search APIs, and isolated evidence-grounded Unilog challenge enrichment with exact 252-column CSV generation. The frontend provides a real Product Catalog and Product Workspace with source upload/text creation/deletion, workflow configuration, live RUNNING-state polling, a human-friendly phase timeline, review-route preparation, resume handling, output summaries, and bounded history. Full Unilog evaluation analytics/dashboard, manufacturer-owned web enrichment, human-review decisions for challenge rows, detailed intelligence analysis, content editing, export downloads, content/file replacement, bulk deletion, restore, external publishing, S3, workers, authentication, real AWS resources, and deployment remain unavailable.
 
 ## Product API
 
