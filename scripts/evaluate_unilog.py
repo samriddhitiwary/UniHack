@@ -46,6 +46,7 @@ def main() -> int:
     )
     metrics = result.accuracy
     batch = result.batch_metrics
+    attributes = result.attribute_coverage_metrics
     print(f"Labelled rows: {result.labelled_row_count}")
     print(f"Exact matches: {metrics.exact_match_count}")
     print(f"Normalized matches: {metrics.normalized_match_count}")
@@ -55,6 +56,17 @@ def main() -> int:
     print(f"Processed: {batch.processed_rows}")
     print(f"Review required: {batch.review_required_rows}")
     print(f"Failed: {batch.failed_rows}")
+    print(f"Semantic attribute candidates: {attributes.semantic_candidates_extracted}")
+    print(f"Official attributes resolved: {attributes.official_attributes_resolved}")
+    print(f"Products with attributes: {attributes.products_with_attributes}")
+    print(
+        "Average official attributes/product: "
+        f"{attributes.average_attributes_per_product_bp / 100:.2f}"
+    )
+    print(f"Unknown semantic labels: {attributes.unknown_semantic_labels}")
+    print(f"Attribute conflicts: {attributes.conflicts}")
+    print(f"Attribute unit ambiguities: {attributes.unit_ambiguities}")
+    print(f"Attribute overflow: {attributes.overflow_count}")
     return 0
 
 

@@ -6,7 +6,9 @@ from app.domain.unilog_challenge import UnilogDeliveryRecord
 from app.services.unilog_challenge.batch_enrichment import UnilogBatchEnrichmentService
 from app.services.unilog_challenge.enrichment_service import UnilogEnrichmentService
 from app.services.unilog_evaluation.attribute_comparator import evaluate_attributes
+from app.services.unilog_evaluation.attribute_coverage_evaluator import evaluate_attribute_coverage
 from app.services.unilog_evaluation.batch_evaluator import evaluate_batch_quality
+from app.services.unilog_evaluation.classification_evaluator import evaluate_classification
 from app.services.unilog_evaluation.coverage_evaluator import evaluate_coverage
 from app.services.unilog_evaluation.description_compliance import (
     evaluate_description_compliance,
@@ -74,7 +76,14 @@ def test_batch_metrics_separate_reliability_review_confidence_and_coverage() -> 
     review, quality = evaluate_batch_quality(batch)
     coverage = evaluate_coverage(batch)
     descriptions = evaluate_description_compliance(batch)
+    classification = evaluate_classification(batch)
+    attribute_coverage = evaluate_attribute_coverage(batch)
     assert quality.total_rows == quality.processed_rows == 2
+    assert classification.total_rows == 2
+    assert classification.resolved_product_type_count == 1
+    assert classification.product_type_coverage_bp == 5_000
+    assert attribute_coverage.total_rows == 2
+    assert attribute_coverage.semantic_candidates_extracted > 0
     assert quality.failed_rows == 0
     assert quality.processing_success_rate_bp == 10_000
     assert review.review_required_count == 2

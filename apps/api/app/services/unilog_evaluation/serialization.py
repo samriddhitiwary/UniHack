@@ -20,10 +20,12 @@ def serialize_evaluation_summary(result: UnilogEvaluationResult) -> dict[str, ob
         "accuracy": _serialize(result.accuracy),
         "groupMetrics": _serialize(result.group_metrics),
         "attributeMetrics": _serialize(result.attribute_metrics),
+        "attributeCoverageMetrics": _serialize(result.attribute_coverage_metrics),
         "coverageMetrics": _serialize(result.coverage_metrics),
         "descriptionMetrics": _serialize(result.description_metrics),
         "reviewMetrics": _serialize(result.review_metrics),
         "batchMetrics": _serialize(result.batch_metrics),
+        "classificationMetrics": _serialize(result.classification_metrics),
         "problems": _serialize(result.problems[:20]),
         "recommendations": _serialize(result.recommendations),
         "labelledRows": [

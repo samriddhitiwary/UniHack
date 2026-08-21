@@ -1,43 +1,44 @@
-"""Observed-taxonomy-constrained challenge classifier."""
+"""Evidence-grounded classification using only reviewed vocabulary and mappings."""
 
 from app.domain.unilog_challenge import (
     ObservedVocabulary,
     UnilogDescriptionSignals,
     UnilogProductClassification,
 )
-
-_DISHWASHER_LEAF = "Built-In Dishwashers"
+from app.services.unilog_classification.classpath_resolver import UnilogClasspathResolver
 
 
 class UnilogChallengeClassifier:
+    def __init__(self, classpath_resolver: UnilogClasspathResolver | None = None) -> None:
+        self._classpaths = classpath_resolver or UnilogClasspathResolver()
+
     def classify(
         self, signals: UnilogDescriptionSignals, vocabulary: ObservedVocabulary | None
     ) -> UnilogProductClassification:
-        product_type = signals.product_type
-        matching = (
-            ()
-            if vocabulary is None or product_type != "Dishwasher"
-            else tuple(
-                path for path in sorted(vocabulary.classpaths) if path.endswith(_DISHWASHER_LEAF)
-            )
+        del vocabulary
+        product = signals.product_type_resolution
+        classpath = self._classpaths.resolve(product)
+        reasons = tuple(dict.fromkeys((*product.review_reasons, *classpath.review_reasons)))
+        evidence: tuple[str, ...] = (
+            (f"description-span:{product.evidence_text}",) if product.evidence_text else ()
         )
-        if len(matching) == 1:
-            return UnilogProductClassification(
-                product_type_candidate=product_type,
-                classpath=matching[0],
-                leaf_node=_DISHWASHER_LEAF,
-                confidence_bp=9_000,
-                evidence=(
-                    "explicit-product-type:Dishwasher",
-                    "official-labelled-classpath-pattern",
-                ),
-                review_required=False,
-            )
+        if classpath.classpath:
+            evidence += (f"verified-classpath:{classpath.mapping_source}",)
+        confidences = [value for value in (product.confidence_bp, classpath.confidence_bp) if value]
         return UnilogProductClassification(
-            product_type_candidate=product_type,
-            classpath=None,
-            leaf_node=None,
-            confidence_bp=8_500 if product_type else 0,
-            evidence=(f"description-product-type:{product_type}",) if product_type else (),
-            review_required=True,
+            product_type_candidate=product.product_type,
+            classpath=classpath.classpath,
+            leaf_node=classpath.classpath.rsplit(">", 1)[-1] if classpath.classpath else None,
+            confidence_bp=min(confidences) if confidences else 0,
+            evidence=evidence,
+            review_required=bool(reasons),
+            product_family=product.product_family,
+            match_method=product.match_method,
+            evidence_span=product.evidence_span,
+            product_type_confidence_bp=product.confidence_bp,
+            classpath_confidence_bp=classpath.confidence_bp,
+            review_reasons=reasons,
+            department=classpath.department,
+            class_name=classpath.class_name,
+            fine=classpath.fine,
         )

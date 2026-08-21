@@ -20,6 +20,7 @@ from app.domain.unilog_challenge import (
     UnilogItemFeature,
     UnilogSemanticAttributeCandidate,
 )
+from app.services.unilog_attributes.attribute_delivery_mapper import UnilogAttributeDeliveryMapper
 from app.services.unilog_challenge.attribute_extractor import UnilogAttributeExtractor
 from app.services.unilog_challenge.brand_resolver import UnilogChallengeBrandResolver
 from app.services.unilog_challenge.classifier import UnilogChallengeClassifier
@@ -32,6 +33,7 @@ from app.services.unilog_challenge.direct_field_mapper import UnilogDirectFieldM
 from app.services.unilog_challenge.manufacturer_resolver import (
     UnilogChallengeManufacturerResolver,
 )
+from app.services.unilog_classification.rule_registry import UnilogProductTypeRuleRegistry
 
 _ATTRIBUTE_PRIORITY = (
     "Series",
@@ -73,6 +75,7 @@ class UnilogEnrichmentService:
         self._manufacturers = manufacturer_resolver or UnilogChallengeManufacturerResolver()
         self._classifier = classifier or UnilogChallengeClassifier()
         self._attributes = attribute_extractor or UnilogAttributeExtractor()
+        self._attribute_delivery = UnilogAttributeDeliveryMapper()
         self._descriptions = description_builder or UnilogDescriptionBuilder()
         self._assembler = assembler or UnilogDeliveryRecordAssembler()
 
@@ -111,14 +114,22 @@ class UnilogEnrichmentService:
                 )
             )
         if classification.classpath is not None:
-            resolutions.append(
+            taxonomy_values = (
+                ("Dept", classification.department),
+                ("Class", classification.class_name),
+                ("Fine", classification.fine),
+                ("Classpath", classification.classpath),
+            )
+            resolutions.extend(
                 self._derived_resolution(
-                    "Classpath",
-                    classification.classpath,
-                    "official-labelled-classpath-pattern",
-                    classification.confidence_bp,
+                    field,
+                    value,
+                    "verified-product-type-classpath-mapping",
+                    classification.classpath_confidence_bp,
                     strategy=FieldPopulationStrategy.OBSERVED_MAPPING,
                 )
+                for field, value in taxonomy_values
+                if value is not None
             )
         resolutions.extend(self._attribute_resolutions(attributes))
         resolutions.extend(self._dimension_resolutions(signals.product_type, attributes))
@@ -151,6 +162,7 @@ class UnilogEnrichmentService:
             warnings.append("BRAND_REVIEW_REQUIRED")
         if classification.review_required:
             warnings.append("CLASSIFICATION_REVIEW_REQUIRED")
+            warnings.extend(reason.value for reason in classification.review_reasons)
         if any(item.review_required for item in attributes):
             warnings.append("ATTRIBUTE_CONFLICT_REVIEW_REQUIRED")
         review_required = bool(warnings)
@@ -165,6 +177,7 @@ class UnilogEnrichmentService:
             attributes=attributes,
             features=features,
             descriptions=descriptions,
+            classification=classification,
             review_required=review_required,
             overall_confidence_bp=sum(confidences) // len(confidences) if confidences else 0,
             populated_field_count=populated,
@@ -217,16 +230,17 @@ class UnilogEnrichmentService:
         self, attributes: tuple[UnilogSemanticAttributeCandidate, ...]
     ) -> tuple[UnilogFieldResolution, ...]:
         ordered = sorted(
-            (item for item in attributes if item.official_label and not item.review_required),
+            self._attribute_delivery.assign_slots(attributes),
             key=lambda item: (
-                _ATTRIBUTE_PRIORITY.index(item.official_label)
-                if item.official_label in _ATTRIBUTE_PRIORITY
+                item[0],
+                _ATTRIBUTE_PRIORITY.index(item[1].official_label)
+                if item[1].official_label in _ATTRIBUTE_PRIORITY
                 else len(_ATTRIBUTE_PRIORITY),
-                item.evidence_span,
+                item[1].evidence_span,
             ),
-        )[:50]
+        )
         resolutions: list[UnilogFieldResolution] = []
-        for index, item in enumerate(ordered, start=1):
+        for index, item in ordered:
             resolutions.append(
                 self._derived_resolution(
                     f"ATTRIBUTE_LABEL {index}",
@@ -260,9 +274,10 @@ class UnilogEnrichmentService:
     def _dimension_resolutions(
         self, product_type: str | None, attributes: tuple[UnilogSemanticAttributeCandidate, ...]
     ) -> tuple[UnilogFieldResolution, ...]:
-        if product_type != "Sanding Belt":
+        expected_dimensions = UnilogProductTypeRuleRegistry.dimension_interpretation(product_type)
+        if expected_dimensions is None:
             return ()
-        dimensions = [item for item in attributes if item.semantic_name in ("Width", "Length")]
+        dimensions = [item for item in attributes if item.semantic_name in expected_dimensions]
         if len(dimensions) != 2 or any(item.review_required for item in dimensions):
             return ()
         resolutions: list[UnilogFieldResolution] = []

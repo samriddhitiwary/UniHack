@@ -26,7 +26,9 @@ from app.repositories.unilog_evaluation import UnilogEvaluationRepository
 from app.services.unilog_challenge.batch_enrichment import UnilogBatchEnrichmentService
 from app.services.unilog_challenge.ground_truth import align_ground_truth, attach_alignments
 from app.services.unilog_evaluation.attribute_comparator import evaluate_attributes
+from app.services.unilog_evaluation.attribute_coverage_evaluator import evaluate_attribute_coverage
 from app.services.unilog_evaluation.batch_evaluator import evaluate_batch_quality
+from app.services.unilog_evaluation.classification_evaluator import evaluate_classification
 from app.services.unilog_evaluation.coverage_evaluator import evaluate_coverage
 from app.services.unilog_evaluation.description_compliance import (
     evaluate_description_compliance,
@@ -113,9 +115,11 @@ class UnilogEvaluationService:
         accuracy = accuracy_metrics(comparisons_tuple)
         groups = self._group_metrics(comparisons_tuple)
         attributes = evaluate_attributes(tuple(pairs))
+        attribute_coverage = evaluate_attribute_coverage(batch)
         coverage = evaluate_coverage(batch)
         descriptions = evaluate_description_compliance(batch)
         review, batch_metrics = evaluate_batch_quality(batch)
+        classification = evaluate_classification(batch)
         field_metrics = self._field_metrics(comparisons_tuple)
         problems, recommendations = analyze_field_errors(comparisons_tuple, attributes, review)
         generated_fingerprint = self._batch_fingerprint(batch)
@@ -131,10 +135,12 @@ class UnilogEvaluationService:
             accuracy=accuracy,
             group_metrics=groups,
             attribute_metrics=attributes,
+            attribute_coverage_metrics=attribute_coverage,
             coverage_metrics=coverage,
             description_metrics=descriptions,
             review_metrics=review,
             batch_metrics=batch_metrics,
+            classification_metrics=classification,
             field_metrics=field_metrics,
             problems=problems,
             recommendations=recommendations,

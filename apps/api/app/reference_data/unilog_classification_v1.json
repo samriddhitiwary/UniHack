@@ -1,0 +1,1887 @@
+{
+  "abbreviations": [
+    {
+      "confidence_bp": 5000,
+      "evidence_examples": [
+        "S3797 4W Incan Cand 27K 2pk",
+        "S4724 4W Incan Cand 27K 4pk",
+        "S4717 6W Incan Cand 27k 2pk"
+      ],
+      "expanded_phrase": "Candelabra",
+      "raw_token": "Cand",
+      "status": "AMBIGUOUS",
+      "support_count": 12
+    },
+    {
+      "confidence_bp": 8500,
+      "evidence_examples": [
+        "48-40-0740 Milw 7-1/4in. 24T - Framing Circ Saw Blade",
+        "D0760UX Diablo 7-1/4\" 60T Circ - Saw Blade",
+        "2834-21HD Milw M18 7-1/4\" Circ - Saw Kit"
+      ],
+      "expanded_phrase": "Circular",
+      "raw_token": "Circ",
+      "status": "VERIFIED_OBSERVED",
+      "support_count": 6
+    },
+    {
+      "confidence_bp": 8500,
+      "evidence_examples": [
+        "1650472900C 15A 125V Cord Conn",
+        "1610472000C 15A 125V Cord Conn"
+      ],
+      "expanded_phrase": "Connector",
+      "raw_token": "Conn",
+      "status": "VERIFIED_OBSERVED",
+      "support_count": 2
+    },
+    {
+      "confidence_bp": 8500,
+      "evidence_examples": [
+        "6068R Gliding Patio Dr 4500 United Blk Ext/WH Int LowE Arg w/J",
+        "6068L Gliding Patio Dr 4500 United Blk Ext/WH Int LowE Arg w/J",
+        "6068L Gliding Patio Dr 4500 United White LowE Arg w/J"
+      ],
+      "expanded_phrase": "Door",
+      "raw_token": "Dr",
+      "status": "VERIFIED_OBSERVED",
+      "support_count": 4
+    },
+    {
+      "confidence_bp": 8500,
+      "evidence_examples": [
+        "3/4x60' Vinyl Elect Tape",
+        "DF7004WE Speed Queen Elect Dryer Wh",
+        "DR7004BE SQ Elect Dryer Bk"
+      ],
+      "expanded_phrase": "Electric",
+      "raw_token": "Elect",
+      "status": "VERIFIED_OBSERVED",
+      "support_count": 9
+    },
+    {
+      "confidence_bp": 8500,
+      "evidence_examples": [
+        "45297BK Kichler Wall Lt",
+        "55155BK Kichler Wall Lt",
+        "55184BK Kichler Wall Lt"
+      ],
+      "expanded_phrase": "Light",
+      "raw_token": "Lt",
+      "status": "VERIFIED_OBSERVED",
+      "support_count": 35
+    }
+  ],
+  "entries": [
+    {
+      "brand_evidence_count": 3,
+      "canonical_product_type": "Adapter",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DSA0250B 1/4\" Square x1/4\" Hex - Socket Adapter",
+        "DSA0375B 3/8\" Square x1/4\" Hex - Socket Adapter",
+        "DSA0500B 1/2\" Square x1/4\" Hex - Socket Adapter"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "adapter",
+      "occurrence_count": 3,
+      "product_family": "Plumbing",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "adapter"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Angle Grinder",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DCG410B Dewalt 20V 4-1/2\"-5\" - Angle Grinder (Bare)",
+        "DCG402B Dewalt 20V 4.5\" Angle Grinder (Bare)"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "angle grinder",
+      "occurrence_count": 2,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "angle grinder"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Angle Impact",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "XLT03Z Makita 3/8\" 18V Angle Impact",
+        "XLT04Z Makita 1/4\" 18V Angle Impact",
+        "XLT05Z Makita 1/2\" 18V Angle Impact"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "angle impact",
+      "occurrence_count": 3,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "angle impact"
+      ]
+    },
+    {
+      "brand_evidence_count": 8,
+      "canonical_product_type": "Baluster",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "6' Wh Select T-Rail Kit Horiz - w/Sq Composite Balusters",
+        "8' Wh Select T-Rail Kit Horiz - w/Sq Composite Balusters",
+        "Finyline Wh 6' Fl Rail Kit Rd - w/Black Alum Balusters"
+      ],
+      "manufacturer_evidence_count": 14,
+      "normalized_key": "baluster",
+      "occurrence_count": 14,
+      "product_family": "Decking and Railing",
+      "source": "OBSERVED_DATASET",
+      "support_count": 14,
+      "variants": [
+        "baluster",
+        "balusters"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Battery Pack",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DCB2108 Dewalt 20V 8Ah Battery - Max XR Powerpack",
+        "DCB2108-2 Dewalt 20V 8Ah 2pk - Battery Max XR Powerpack",
+        "BATT4A Kreg 20V 4ah Battery Pack"
+      ],
+      "manufacturer_evidence_count": 4,
+      "normalized_key": "battery pack",
+      "occurrence_count": 4,
+      "product_family": "Power Tool Accessories",
+      "source": "OBSERVED_DATASET",
+      "support_count": 4,
+      "variants": [
+        "battery pack",
+        "powerpack"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Beverage Center",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "XOU2470BCGS Tall Beverage Center SS",
+        "XOU24BCGSR Beverage Center SS",
+        "XOU24WDZGBR Beverage Center Bk"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "beverage center",
+      "occurrence_count": 3,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "beverage center"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Bit Holder",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "QB22RU Vessel Carrying Bit Holder (Red)",
+        "QB22KU Vessel Carrying Bit Holder (Black)"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "bit holder",
+      "occurrence_count": 2,
+      "product_family": "Power Tool Accessories",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "bit holder"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Bit Set",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "220USB25U Vessel Screwdriver w/25pc Bit Set",
+        "220USBP5U Vessel Screwdriver Plus w/5pc Bit Set"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "bit set",
+      "occurrence_count": 2,
+      "product_family": "Power Tool Accessories",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "bit set"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Blower",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "0887-20 Milw M18 Brushless Precision Blower",
+        "DCBL724B Dewalt 20V Max XR Blower (Bare)"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "blower",
+      "occurrence_count": 2,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "blower"
+      ]
+    },
+    {
+      "brand_evidence_count": 6,
+      "canonical_product_type": "Box Cover",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "4x4 2G GFI Box Cover",
+        "4x4 1G PVC Box Cover",
+        "4x4 2G GFCI Duplex Box Cover"
+      ],
+      "manufacturer_evidence_count": 6,
+      "normalized_key": "box cover",
+      "occurrence_count": 6,
+      "product_family": "Electrical",
+      "source": "OBSERVED_DATASET",
+      "support_count": 6,
+      "variants": [
+        "box cover"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Brad Nailer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "918200 Paslode CT200S24 18Ga ST Brad Nailer",
+        "2541-20 Milw M12 - Compact Brad Nailer (Bare)",
+        "XNB04Z Makita 18V 2\" Brad Nailer 18GA (Bare)"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "brad nailer",
+      "occurrence_count": 3,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "brad nailer"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Carbon Monoxide Alarm",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "1046793 Smoke & CO Alarm",
+        "1046870 Smoke & CO Alarm"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "carbon monoxide alarm",
+      "occurrence_count": 2,
+      "product_family": "Safety",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "co alarm"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Ceiling Light",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "42955BK Kichler Ceiling Lt",
+        "42275BK Kichler Ceiling Lt",
+        "62-1850 11\" Led Ceiling Light"
+      ],
+      "manufacturer_evidence_count": 13,
+      "normalized_key": "ceiling light",
+      "occurrence_count": 13,
+      "product_family": "Lighting",
+      "source": "OBSERVED_DATASET",
+      "support_count": 13,
+      "variants": [
+        "ceiling light",
+        "ceiling lt"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Chandelier",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "44072DBK Kichler Chandelier Lt",
+        "44073NI Kichler Chandelier Lt",
+        "52033BK Kichler Chandelier Lt"
+      ],
+      "manufacturer_evidence_count": 14,
+      "normalized_key": "chandelier",
+      "occurrence_count": 14,
+      "product_family": "Lighting",
+      "source": "OBSERVED_DATASET",
+      "support_count": 14,
+      "variants": [
+        "chandelier"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Charger",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "BCB2A20A Kreg 20V Battery/Charger Starter Kit",
+        "DCB1104 Dewalt 12V/20V Charger - 4 Amp",
+        "48-59-1804 Milw M18 and M12 Rapid Charger"
+      ],
+      "manufacturer_evidence_count": 6,
+      "normalized_key": "charger",
+      "occurrence_count": 6,
+      "product_family": "Power Tool Accessories",
+      "source": "OBSERVED_DATASET",
+      "support_count": 6,
+      "variants": [
+        "charger"
+      ]
+    },
+    {
+      "brand_evidence_count": 4,
+      "canonical_product_type": "Circular Saw",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "48-40-0740 Milw 7-1/4in. 24T - Framing Circ Saw Blade",
+        "D0760UX Diablo 7-1/4\" 60T Circ - Saw Blade",
+        "2834-21HD Milw M18 7-1/4\" Circ - Saw Kit"
+      ],
+      "manufacturer_evidence_count": 7,
+      "normalized_key": "circular saw",
+      "occurrence_count": 7,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 7,
+      "variants": [
+        "circ saw",
+        "circular saw"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Coffee Maker",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "C7CDAAS3PD3 Caf\u00e9 Drip Coffee Maker MB",
+        "C7CDAAS4PW3 Caf\u00e9 Drip Coffee Maker MW",
+        "C7CDABS2RS3 Cafe Coffee Maker"
+      ],
+      "manufacturer_evidence_count": 5,
+      "normalized_key": "coffee maker",
+      "occurrence_count": 5,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 5,
+      "variants": [
+        "coffee maker"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Cooktop",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "PEP9030DTBB 30\" GE Cooktop Bk",
+        "CHP90301TBB Caf\u00e9 Cooktop Bk"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "cooktop",
+      "occurrence_count": 2,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "cooktop"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Cord Connector",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "1650472900C 15A 125V Cord Conn",
+        "1610472000C 15A 125V Cord Conn"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "cord connector",
+      "occurrence_count": 2,
+      "product_family": "Electrical",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "cord conn"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Cord Grip",
+      "confidence_bp": 9000,
+      "example_evidence": [
+        "CG50K 1/2\" Cord Grip Kit"
+      ],
+      "manufacturer_evidence_count": 1,
+      "normalized_key": "cord grip",
+      "occurrence_count": 1,
+      "product_family": "Electrical",
+      "source": "OBSERVED_DATASET",
+      "support_count": 1,
+      "variants": [
+        "cord grip"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Cut and Grind Disc",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "49-94-0803 Milw 4-1/2\"x1/8\"x7/8\" Dual Metal Cut and Grind Disc",
+        "49-94-0903 Milw 4-1/2\"x1/8\"x7/8\"Perform+Dual Metal Cut and Grind Disc",
+        "49-94-0907 Milw 4-1/2\"x1/8\"x5/8-11\"Perform+Dual Metal Cut n Grind Disc"
+      ],
+      "manufacturer_evidence_count": 4,
+      "normalized_key": "cut and grind disc",
+      "occurrence_count": 4,
+      "product_family": "Abrasives",
+      "source": "OBSERVED_DATASET",
+      "support_count": 4,
+      "variants": [
+        "cut and grind disc",
+        "cut n grind disc"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Cut-Off Disc",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DBD090094101F Diablo 9\" - Metal Cut-Off Disc",
+        "DBDS12125A01F Diablo 12\" - Steel Demon Metal Cut-Off Disc",
+        "DBDS12125G01F Diablo 12\"x20mm - Speed Demon Metal Cut-Off Disc"
+      ],
+      "manufacturer_evidence_count": 35,
+      "normalized_key": "cut off disc",
+      "occurrence_count": 35,
+      "product_family": "Abrasives",
+      "source": "OBSERVED_DATASET",
+      "support_count": 35,
+      "variants": [
+        "cut-off disc"
+      ]
+    },
+    {
+      "brand_evidence_count": 120,
+      "canonical_product_type": "Decking",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "1x6-16' Coastline Sq Edge - Vintage Azek PVC Decking",
+        "1x6-20' Coastline Sq Edge - Vintage Azek PVC Decking",
+        "1x6-16' English Walnut Sq Edge - Vintage Azek PVC Decking"
+      ],
+      "manufacturer_evidence_count": 120,
+      "normalized_key": "decking",
+      "occurrence_count": 120,
+      "product_family": "Decking and Railing",
+      "source": "OBSERVED_DATASET",
+      "support_count": 120,
+      "variants": [
+        "decking"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Die Grinder",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "3485-20 Milw M12 1/4\" Right Angle Die Grinder",
+        "DCG420B Dewalt 20V Die Grinder (Bare)",
+        "DCG422B Dewalt 20V Right Angle Die Grinder (Bare)"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "die grinder",
+      "occurrence_count": 3,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "die grinder"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Dimmer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "AYCL-153PH-LA Lutron Dimmer LA",
+        "AYCL-153PH-WH Lutron Dimmer Wh",
+        "D23LPR021RW Plug In Dimmer Wh"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "dimmer",
+      "occurrence_count": 3,
+      "product_family": "Electrical",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "dimmer"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Dishwasher",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "KDFM404KPS Dishwasher SS",
+        "PDSH4816AF Dishwasher SS - Display Only",
+        "PDT715SYVFS Ge Dishwasher SS"
+      ],
+      "manufacturer_evidence_count": 10,
+      "normalized_key": "dishwasher",
+      "occurrence_count": 10,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 10,
+      "variants": [
+        "dishwasher"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Downlight",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "S11828 8\" Led Down Light",
+        "S11860 6\" Downlight White 5 CCT",
+        "S11562 Starfish 6\" D/W Downlight"
+      ],
+      "manufacturer_evidence_count": 9,
+      "normalized_key": "downlight",
+      "occurrence_count": 9,
+      "product_family": "Lighting",
+      "source": "OBSERVED_DATASET",
+      "support_count": 9,
+      "variants": [
+        "down light",
+        "downlight"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Drill",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "55227 Amana Countersink/Stop 1/8\" Drill TB",
+        "D25333K Dewalt Hammer Drill",
+        "DCD803B Dewalt Multi-Head Drill Driver"
+      ],
+      "manufacturer_evidence_count": 10,
+      "normalized_key": "drill",
+      "occurrence_count": 10,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 10,
+      "variants": [
+        "drill"
+      ]
+    },
+    {
+      "brand_evidence_count": 25,
+      "canonical_product_type": "Drive Bit",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DPH12B 2\" #1 Phillips Drive - Bit",
+        "DPH135B 3-1/2\" #1 Phillips - Drive Bit",
+        "DPH21B 1\" #2 Phillips Drive - Bit"
+      ],
+      "manufacturer_evidence_count": 25,
+      "normalized_key": "drive bit",
+      "occurrence_count": 25,
+      "product_family": "Power Tool Accessories",
+      "source": "OBSERVED_DATASET",
+      "support_count": 25,
+      "variants": [
+        "drive bit"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Dryer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DF7004WE Speed Queen Elect Dryer Wh",
+        "DR7004BE SQ Elect Dryer Bk",
+        "DV2000WE SQ Elect Dryer Wh"
+      ],
+      "manufacturer_evidence_count": 13,
+      "normalized_key": "dryer",
+      "occurrence_count": 13,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 13,
+      "variants": [
+        "dryer"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Electric Dryer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DF7004WE Speed Queen Elect Dryer Wh",
+        "DR7004BE SQ Elect Dryer Bk",
+        "DV2000WE SQ Elect Dryer Wh"
+      ],
+      "manufacturer_evidence_count": 5,
+      "normalized_key": "electric dryer",
+      "occurrence_count": 5,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 5,
+      "variants": [
+        "elect dryer"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Electric Range",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "PS960YPFS 30\" GE Electric Range SS - Display Only",
+        "PCFE3080AF 30\" Elect Range SS - Display Only",
+        "SLER30524SS 30\" Elect Range SS"
+      ],
+      "manufacturer_evidence_count": 4,
+      "normalized_key": "electric range",
+      "occurrence_count": 4,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 4,
+      "variants": [
+        "elect range",
+        "electric range"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Electrical Tape",
+      "confidence_bp": 9000,
+      "example_evidence": [
+        "3/4x60' Vinyl Elect Tape"
+      ],
+      "manufacturer_evidence_count": 1,
+      "normalized_key": "electrical tape",
+      "occurrence_count": 1,
+      "product_family": "Electrical",
+      "source": "OBSERVED_DATASET",
+      "support_count": 1,
+      "variants": [
+        "elect tape"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Espresso Machine",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "C7CEBBS2RS3 Cafe Auto Espresso Machine SS",
+        "C7CEBBS4RW3 Caf\u00e9 Auto Espresso Machine Wh",
+        "C7CESAS3RD3 Caf\u00e9 Espresso Machine MB"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "espresso machine",
+      "occurrence_count": 3,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "espresso machine"
+      ]
+    },
+    {
+      "brand_evidence_count": 26,
+      "canonical_product_type": "Fascia",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "1x12-12' Coastline - Vintage Azek PVC Fascia",
+        "1x12-12' Mahogany - Vintage Azek PVC Fascia",
+        "1x12-12' Weathered Teak - Vintage Azek PVC Fascia"
+      ],
+      "manufacturer_evidence_count": 26,
+      "normalized_key": "fascia",
+      "occurrence_count": 26,
+      "product_family": "Decking and Railing",
+      "source": "OBSERVED_DATASET",
+      "support_count": 26,
+      "variants": [
+        "fascia"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Fence",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "XT524 24\" XT XTENDER Fence",
+        "XT536 36\" XT XTENDER Fence",
+        "XT546 46\" XT XTENDER Fence"
+      ],
+      "manufacturer_evidence_count": 9,
+      "normalized_key": "fence",
+      "occurrence_count": 9,
+      "product_family": "Power Tool Accessories",
+      "source": "OBSERVED_DATASET",
+      "support_count": 9,
+      "variants": [
+        "fence"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Fire Extinguisher",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "FEEFX6L Lith Fire Extinguisher",
+        "FEEFX9L Lith Fire Extinguisher"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "fire extinguisher",
+      "occurrence_count": 2,
+      "product_family": "Safety",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "fire extinguisher"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Folding Knife",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DWHT10993 Folding Knife",
+        "DWHT10994 Folding Knife"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "folding knife",
+      "occurrence_count": 2,
+      "product_family": "Hand Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "folding knife"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Framing Nailer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DCN930B Dewalt 20V 30 Degree - Framing Nailer",
+        "DCN930P1 Dewalt 20V 30 Degree - Framing Nailer Kit"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "framing nailer",
+      "occurrence_count": 2,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "framing nailer"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Freezer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "FCM16SLWW 16CF GE Freezer Chest MH",
+        "EUF17CDBW Element 17CF Freezer - Upright",
+        "EUF21CDBW Element 21CF Freezer - Upright"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "freezer",
+      "occurrence_count": 3,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "freezer"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Gas Dryer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "PTD70GBPTDG GE Gas Dryer DG",
+        "PTD70GBSTWS GE Gas Dryer Wh",
+        "DR5004WG SQ Gas Dryer Wh"
+      ],
+      "manufacturer_evidence_count": 8,
+      "normalized_key": "gas dryer",
+      "occurrence_count": 8,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 8,
+      "variants": [
+        "gas dryer"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Gas Range",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "GCFG3661AF 36\" Frigidaire Gas Range SS",
+        "WSGS7530RZ 30\" Gas Range SS - Display Only"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "gas range",
+      "occurrence_count": 2,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "gas range"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "GFCI Outlet",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "R92GFWT10KW 15A GFCI Outlet Wh",
+        "R92GFTA10KW 15A GFCI Outlet Wh"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "gfci outlet",
+      "occurrence_count": 2,
+      "product_family": "Electrical",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "gfci outlet"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Grinder",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DCG410B Dewalt 20V 4-1/2\"-5\" - Angle Grinder (Bare)",
+        "DCG460B Dewalt 60V Grinder - 7-9\"",
+        "DCG402B Dewalt 20V 4.5\" Angle Grinder (Bare)"
+      ],
+      "manufacturer_evidence_count": 6,
+      "normalized_key": "grinder",
+      "occurrence_count": 6,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 6,
+      "variants": [
+        "grinder"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Grinding Wheel",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "49-94-0501 Milw 4\"x1/4\"x5/8\" Metal Grinding Wheel",
+        "49-94-0503 Milw 4-1/2\"x1/4\"x7/8\" Metal Grinding Wheel",
+        "49-94-0523 Milw 6\"x1/4\"x7/8\" Metal Grinding Wheel"
+      ],
+      "manufacturer_evidence_count": 7,
+      "normalized_key": "grinding wheel",
+      "occurrence_count": 7,
+      "product_family": "Abrasives",
+      "source": "OBSERVED_DATASET",
+      "support_count": 7,
+      "variants": [
+        "grinding wheel"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Hammer Drill",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "D25333K Dewalt Hammer Drill",
+        "DCD1007B Dewalt 20V Cordless - 1/2\" Hammer Drill (Bare)"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "hammer drill",
+      "occurrence_count": 2,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "hammer drill"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Heated Glove",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "UTW Pro Heated Glove Blk XS",
+        "UTW Pro Heated Glove Blk SM",
+        "UTW Pro Heated Glove Blk MD"
+      ],
+      "manufacturer_evidence_count": 11,
+      "normalized_key": "heated glove",
+      "occurrence_count": 11,
+      "product_family": "Protective Apparel",
+      "source": "OBSERVED_DATASET",
+      "support_count": 11,
+      "variants": [
+        "heated glove"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Heated Hoodie",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "F200B-21L Milw M12 Womens - BLK Heated Hoodie Kit L",
+        "F200B-21M Milw M12 Womens - BLK Heated Hoodie Kit M",
+        "M200B-21L Milw M12 BLK - Heated Hoodie Kit L"
+      ],
+      "manufacturer_evidence_count": 8,
+      "normalized_key": "heated hoodie",
+      "occurrence_count": 8,
+      "product_family": "Protective Apparel",
+      "source": "OBSERVED_DATASET",
+      "support_count": 8,
+      "variants": [
+        "heated hoodie"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Hedge Trimmer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "3033-20 Milw M18 24\" - Hedge Trimmer",
+        "3033-21 Milw M18 24\" - Hedge Trimmer Kit",
+        "3034-20 Milw M18 30\" - Hedge Trimmer"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "hedge trimmer",
+      "occurrence_count": 3,
+      "product_family": "Outdoor Power Equipment",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "hedge trimmer"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Impact Driver",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DCF860B Dewalt 20V Impact - Driver Drill",
+        "49-66-4567 Milw 6\" Magnetic - Impact Driver Set 6pc",
+        "DCF809D1 Dewalt Atomic 20V 1/4\" Impact Driver Kit"
+      ],
+      "manufacturer_evidence_count": 5,
+      "normalized_key": "impact driver",
+      "occurrence_count": 5,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 5,
+      "variants": [
+        "impact driver"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Impact Wrench",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "3048-20 Milw M12 1/4\" Impact Wrench w/Friction Ring",
+        "3049-20 Milw M12 3/8\" Impact Wrench w/Friction Ring",
+        "2563-20 Milw M12 Stubby 1/2\" Impact Wrench"
+      ],
+      "manufacturer_evidence_count": 5,
+      "normalized_key": "impact wrench",
+      "occurrence_count": 5,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 5,
+      "variants": [
+        "impact wrench"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Laundry Center",
+      "confidence_bp": 9000,
+      "example_evidence": [
+        "WKE100HWA LG Laundry Center Wh - Display"
+      ],
+      "manufacturer_evidence_count": 1,
+      "normalized_key": "laundry center",
+      "occurrence_count": 1,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 1,
+      "variants": [
+        "laundry center"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Load Center",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "HOM3060L225PGC 225 Load Center",
+        "QO612L100RBCP 100A Load Center"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "load center",
+      "occurrence_count": 2,
+      "product_family": "Electrical",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "load center"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Masonry Cut-Off Disc",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "49-94-1900 Milw 4\"x1/8\"x5/8\" Masonry Cut Off Disc",
+        "49-94-1905 Milw 4-1/2\"x1/8\"x7/8\" Masonry Cut Off Disc",
+        "49-94-1915 Milw 6-1/2\"x1/8\"x5/8\" DKO Masonry Cut Off Disc"
+      ],
+      "manufacturer_evidence_count": 7,
+      "normalized_key": "masonry cut off disc",
+      "occurrence_count": 7,
+      "product_family": "Abrasives",
+      "source": "OBSERVED_DATASET",
+      "support_count": 7,
+      "variants": [
+        "masonry cut-off disc"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Mechanics Set",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DWMT45422 Dewalt 1/4\" Drive - 50pc Mechanics Set",
+        "DWMT45424 Dewalt 3/8\" Drive - 84pc Mechanics Set"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "mechanics set",
+      "occurrence_count": 2,
+      "product_family": "Hand Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "mechanics set"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Metal Cut-Off Disc",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DBD090094101F Diablo 9\" - Metal Cut-Off Disc",
+        "DBDS12125A01F Diablo 12\" - Steel Demon Metal Cut-Off Disc",
+        "DBDS12125G01F Diablo 12\"x20mm - Speed Demon Metal Cut-Off Disc"
+      ],
+      "manufacturer_evidence_count": 28,
+      "normalized_key": "metal cut off disc",
+      "occurrence_count": 28,
+      "product_family": "Abrasives",
+      "source": "OBSERVED_DATASET",
+      "support_count": 28,
+      "variants": [
+        "metal cut-off disc"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Microwave",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "MSER2090S LG Microwave SS",
+        "GCST16S1WSS GE Microwave SS",
+        "PCWK15C1WSS GE Microwave"
+      ],
+      "manufacturer_evidence_count": 8,
+      "normalized_key": "microwave",
+      "occurrence_count": 8,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 8,
+      "variants": [
+        "microwave"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Mini Snip",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "AVM6 EV Mini Snip Red",
+        "AVM7 EV Mini Snip Green"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "mini snip",
+      "occurrence_count": 2,
+      "product_family": "Hand Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "mini snip"
+      ]
+    },
+    {
+      "brand_evidence_count": 4,
+      "canonical_product_type": "Nailer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "2909-20 Milw Roofing Nailer - M18",
+        "2909-21 Milw M18 Coil Roofing - Nailer Kit",
+        "918200 Paslode CT200S24 18Ga ST Brad Nailer"
+      ],
+      "manufacturer_evidence_count": 10,
+      "normalized_key": "nailer",
+      "occurrence_count": 10,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 10,
+      "variants": [
+        "nailer"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Orbit Sander",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "2535-20 Milw 3\" Orbit Sander - M12",
+        "KPTRS500A Kreg 20V Ionic 5\" Random Orbit Sander"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "orbit sander",
+      "occurrence_count": 2,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "orbit sander"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Organizer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "T-90043 Deep Medium Organizer",
+        "T-90059 Low Profile Medium - Organizer",
+        "T-90065 Deep Compact Organizer"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "organizer",
+      "occurrence_count": 3,
+      "product_family": "Tool Storage",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "organizer"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Oven",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "WOSP30100SS Beko Wall Oven SS",
+        "C90AAAS2RS3 Cafe Toast Oven SS"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "oven",
+      "occurrence_count": 2,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "oven"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Paper Bag",
+      "confidence_bp": 9000,
+      "example_evidence": [
+        "DWV9401 Dewalt Paper Bag - 5pk"
+      ],
+      "manufacturer_evidence_count": 1,
+      "normalized_key": "paper bag",
+      "occurrence_count": 1,
+      "product_family": "Dust Collection",
+      "source": "OBSERVED_DATASET",
+      "support_count": 1,
+      "variants": [
+        "paper bag"
+      ]
+    },
+    {
+      "brand_evidence_count": 4,
+      "canonical_product_type": "Patio Door",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "6068R Gliding Patio Dr 4500 United Blk Ext/WH Int LowE Arg w/J",
+        "6068L Gliding Patio Dr 4500 United Blk Ext/WH Int LowE Arg w/J",
+        "6068L Gliding Patio Dr 4500 United White LowE Arg w/J"
+      ],
+      "manufacturer_evidence_count": 4,
+      "normalized_key": "patio door",
+      "occurrence_count": 4,
+      "product_family": "Doors and Windows",
+      "source": "OBSERVED_DATASET",
+      "support_count": 4,
+      "variants": [
+        "patio dr"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Pendant Light",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "43913BK Kichler Pendant Lt",
+        "52476AVI Kichler Pendant Lt",
+        "42199BK Kichler Pendant Lt"
+      ],
+      "manufacturer_evidence_count": 15,
+      "normalized_key": "pendant light",
+      "occurrence_count": 15,
+      "product_family": "Lighting",
+      "source": "OBSERVED_DATASET",
+      "support_count": 15,
+      "variants": [
+        "pendant light",
+        "pendant lt"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Planer Knives",
+      "confidence_bp": 9000,
+      "example_evidence": [
+        "794.321 HS Planer Knives 3pc"
+      ],
+      "manufacturer_evidence_count": 1,
+      "normalized_key": "planer knives",
+      "occurrence_count": 1,
+      "product_family": "Cutting Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 1,
+      "variants": [
+        "planer knives"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Post Sleeve",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "Wh 6x6-108 Post Sleeve RDI",
+        "Wh 4x4-108 Post Sleeve RDI",
+        "Clay 4x4-108 Post Sleeve RDI"
+      ],
+      "manufacturer_evidence_count": 6,
+      "normalized_key": "post sleeve",
+      "occurrence_count": 6,
+      "product_family": "Decking and Railing",
+      "source": "OBSERVED_DATASET",
+      "support_count": 6,
+      "variants": [
+        "post sleeve"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Post Trim",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "4x4 Wh Heritage Post Trim RDI",
+        "6x6 Wh Elite Post Trim 4pc RDI",
+        "4x4 Wh Elite Post Trim RDI"
+      ],
+      "manufacturer_evidence_count": 4,
+      "normalized_key": "post trim",
+      "occurrence_count": 4,
+      "product_family": "Decking and Railing",
+      "source": "OBSERVED_DATASET",
+      "support_count": 4,
+      "variants": [
+        "post trim"
+      ]
+    },
+    {
+      "brand_evidence_count": 4,
+      "canonical_product_type": "Rail Kit",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "6' Wh Select T-Rail Kit Horiz - w/Sq Composite Balusters",
+        "8' Wh Select T-Rail Kit Horiz - w/Sq Composite Balusters",
+        "Finyline Wh 6' Fl Rail Kit Sq"
+      ],
+      "manufacturer_evidence_count": 14,
+      "normalized_key": "rail kit",
+      "occurrence_count": 14,
+      "product_family": "Decking and Railing",
+      "source": "OBSERVED_DATASET",
+      "support_count": 14,
+      "variants": [
+        "rail kit"
+      ]
+    },
+    {
+      "brand_evidence_count": 4,
+      "canonical_product_type": "Rail Panel",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "6'x36\" Select Alm w/Sq Bal Hor - Assembled Black Rail Panel",
+        "6'x36\" Select Alm w/Sq Bal Str - Assembled Black Rail Panel",
+        "8'x36\" Select Alm w/Sq Bal Hor - Assembled Black Rail Panel"
+      ],
+      "manufacturer_evidence_count": 4,
+      "normalized_key": "rail panel",
+      "occurrence_count": 4,
+      "product_family": "Decking and Railing",
+      "source": "OBSERVED_DATASET",
+      "support_count": 4,
+      "variants": [
+        "rail panel"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Range",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "CES700P3MD1 Cafe 30\" Range Bk - Display",
+        "PS960YPFS 30\" GE Electric Range SS - Display Only",
+        "PB900YVFS Elect 30\" Range SS"
+      ],
+      "manufacturer_evidence_count": 12,
+      "normalized_key": "range",
+      "occurrence_count": 12,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 12,
+      "variants": [
+        "range"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Refrigerator",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "GDE21EMKES GE 21CF Fridge SL Display Only",
+        "GNE27JYMFS GE Fridge SS",
+        "CVE28DP3ND1 Cafe Fridge Bk"
+      ],
+      "manufacturer_evidence_count": 10,
+      "normalized_key": "refrigerator",
+      "occurrence_count": 10,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 10,
+      "variants": [
+        "fridge"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Roofing Nailer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "2909-20 Milw Roofing Nailer - M18",
+        "2909-21 Milw M18 Coil Roofing - Nailer Kit"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "roofing nailer",
+      "occurrence_count": 2,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "roofing nailer"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Rotary Tool",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "4000-2/32 DREMEL ROTARY TOOL",
+        "3100-1/15 Dremel Rotary Tool - Kit 15pc"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "rotary tool",
+      "occurrence_count": 2,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "rotary tool"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Router Bit",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "6008 Whiteside Router Bit",
+        "6009 Whiteside Router Bit",
+        "3000A Whiteside Router Bit"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "router bit",
+      "occurrence_count": 3,
+      "product_family": "Power Tool Accessories",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "router bit"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Safety Glasses",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "XPAP418 Edge Safety Glasses - Pumori Black Frame",
+        "XDAP419 Edge Safety Glasses - Dawson Black Frame Red Lenses",
+        "XB11PCVS Edge Safety Glasses - Photochromic Lense"
+      ],
+      "manufacturer_evidence_count": 9,
+      "normalized_key": "safety glasses",
+      "occurrence_count": 9,
+      "product_family": "Safety",
+      "source": "OBSERVED_DATASET",
+      "support_count": 9,
+      "variants": [
+        "safety glasses"
+      ]
+    },
+    {
+      "brand_evidence_count": 1,
+      "canonical_product_type": "Sander",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "MID6630201US Deos663XCV Sander",
+        "XVP01Z Makita 18V 3\" Polisher/ 2\" Sander",
+        "2535-20 Milw 3\" Orbit Sander - M12"
+      ],
+      "manufacturer_evidence_count": 8,
+      "normalized_key": "sander",
+      "occurrence_count": 8,
+      "product_family": "Power Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 8,
+      "variants": [
+        "sander"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Sanding Belt",
+      "confidence_bp": 9000,
+      "example_evidence": [
+        "DCB518ASTS06G Diablo 1/2\"x18\" - Sanding Belt 6pc"
+      ],
+      "manufacturer_evidence_count": 1,
+      "normalized_key": "sanding belt",
+      "occurrence_count": 1,
+      "product_family": "Abrasives",
+      "source": "OBSERVED_DATASET",
+      "support_count": 1,
+      "variants": [
+        "sanding belt"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Sanding Sponge",
+      "confidence_bp": 9000,
+      "example_evidence": [
+        "DFBLBLOMFN01G Diablo 220 Grit - Flat Edge Sanding Sponge"
+      ],
+      "manufacturer_evidence_count": 1,
+      "normalized_key": "sanding sponge",
+      "occurrence_count": 1,
+      "product_family": "Abrasives",
+      "source": "OBSERVED_DATASET",
+      "support_count": 1,
+      "variants": [
+        "sanding sponge"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Saw Blade",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "VN56920 10 1/2\" Saw Blade",
+        "D0860X Diablo 8-1/4\" 60 Tooth - Fine Finish Saw Blade",
+        "48-40-0740 Milw 7-1/4in. 24T - Framing Circ Saw Blade"
+      ],
+      "manufacturer_evidence_count": 13,
+      "normalized_key": "saw blade",
+      "occurrence_count": 13,
+      "product_family": "Cutting Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 13,
+      "variants": [
+        "saw blade"
+      ]
+    },
+    {
+      "brand_evidence_count": 3,
+      "canonical_product_type": "Socket Adapter",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DSA0250B 1/4\" Square x1/4\" Hex - Socket Adapter",
+        "DSA0375B 3/8\" Square x1/4\" Hex - Socket Adapter",
+        "DSA0500B 1/2\" Square x1/4\" Hex - Socket Adapter"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "socket adapter",
+      "occurrence_count": 3,
+      "product_family": "Hand Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "socket adapter"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Starter Kit",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DCBP520C Dewalt Starter Kit",
+        "DCB606C Dewalt Flexvolt Starter Kit",
+        "BL1850BDC1 Makita Starter Kit"
+      ],
+      "manufacturer_evidence_count": 6,
+      "normalized_key": "starter kit",
+      "occurrence_count": 6,
+      "product_family": "Power Tool Accessories",
+      "source": "OBSERVED_DATASET",
+      "support_count": 6,
+      "variants": [
+        "starter kit"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Stikit Film",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "3M 775L Stikit Film P150 - Cubitron II 50 Disc/Box",
+        "3M 775L Stikit Film P120 - Cubitron II 50 Disc/Box",
+        "3M 775L Stikit Film P80 - Cubitron II 50 Disc/Box"
+      ],
+      "manufacturer_evidence_count": 6,
+      "normalized_key": "stikit film",
+      "occurrence_count": 6,
+      "product_family": "Abrasives",
+      "source": "OBSERVED_DATASET",
+      "support_count": 6,
+      "variants": [
+        "stikit film"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "String Trimmer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "XRU23SM1 Makita 18V 13\" - String Trimmer Kit",
+        "XRU15PT1 Makita String Trimmer"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "string trimmer",
+      "occurrence_count": 2,
+      "product_family": "Outdoor Power Equipment",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "string trimmer"
+      ]
+    },
+    {
+      "brand_evidence_count": 2,
+      "canonical_product_type": "Strip Light",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "65-1224 4' Led Strip Light",
+        "603571 3' Strip Light Ext"
+      ],
+      "manufacturer_evidence_count": 2,
+      "normalized_key": "strip light",
+      "occurrence_count": 2,
+      "product_family": "Lighting",
+      "source": "OBSERVED_DATASET",
+      "support_count": 2,
+      "variants": [
+        "strip light"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Tile Blade",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "DWA4769 Dewalt Rim Glass Tile - Blade 10\"",
+        "49-93-9204 Milw 4-1/2\" Diamond - Tile Blade",
+        "49-93-9207 Milw 7\" Diamond - Tile Blade"
+      ],
+      "manufacturer_evidence_count": 6,
+      "normalized_key": "tile blade",
+      "occurrence_count": 6,
+      "product_family": "Cutting Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 6,
+      "variants": [
+        "tile blade"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Wall Light",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "45297BK Kichler Wall Lt",
+        "45573BK Kichler Wall Light",
+        "45973BK Kichler Wall Light"
+      ],
+      "manufacturer_evidence_count": 19,
+      "normalized_key": "wall light",
+      "occurrence_count": 19,
+      "product_family": "Lighting",
+      "source": "OBSERVED_DATASET",
+      "support_count": 19,
+      "variants": [
+        "wall light",
+        "wall lt"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Washer",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "FF7011WN Speed Queen Washer Wh",
+        "PTW705BSTWS GE Washer Wh",
+        "MVWP586GW Washer Wh - Display"
+      ],
+      "manufacturer_evidence_count": 8,
+      "normalized_key": "washer",
+      "occurrence_count": 8,
+      "product_family": "Appliances",
+      "source": "OBSERVED_DATASET",
+      "support_count": 8,
+      "variants": [
+        "washer"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Wrap Light",
+      "confidence_bp": 9000,
+      "example_evidence": [
+        "65-1211 4' Led Wrap Light"
+      ],
+      "manufacturer_evidence_count": 1,
+      "normalized_key": "wrap light",
+      "occurrence_count": 1,
+      "product_family": "Lighting",
+      "source": "OBSERVED_DATASET",
+      "support_count": 1,
+      "variants": [
+        "wrap light"
+      ]
+    },
+    {
+      "brand_evidence_count": 0,
+      "canonical_product_type": "Wrench Set",
+      "confidence_bp": 9500,
+      "example_evidence": [
+        "48-22-9483 Milw Packout 15pc - Metric Wrench Set",
+        "48-22-9484 Milw Packout 15pc - SAE Wrench Set",
+        "48-22-9485 Milw Packout 30pc - Metric & SAE Wrench Set"
+      ],
+      "manufacturer_evidence_count": 3,
+      "normalized_key": "wrench set",
+      "occurrence_count": 3,
+      "product_family": "Hand Tools",
+      "source": "OBSERVED_DATASET",
+      "support_count": 3,
+      "variants": [
+        "wrench set"
+      ]
+    }
+  ],
+  "input_sha256": "ed41b50e26c83d0859d563028107fa81a799b5b4b9e3d5743eb846dbd3c7b862",
+  "policy_version": "unilog-classification-policy-v1",
+  "statistics": {
+    "ambiguous_phrases": 1,
+    "candidate_product_phrases": 190,
+    "canonical_product_types": 90,
+    "generic_only_phrases": 0,
+    "input_rows": 1000,
+    "unique_descriptions": 998,
+    "variants": 99,
+    "verified_abbreviations": 5,
+    "verified_classpath_mappings": 1
+  },
+  "unresolved_candidates": [
+    "med k pk",
+    "led med k",
+    "cand k pk",
+    "led k pk",
+    "st19 k pk",
+    "br30 med k",
+    "hp ph v",
+    "incan med k",
+    "mortar type n",
+    "stk smooth s2e",
+    "work glove liners",
+    "a19 med k",
+    "alum post wrap",
+    "dust extractor ct",
+    "kichler bath light",
+    "rib xl black",
+    "rib xl charcoal",
+    "s gr pro",
+    "a15 med k",
+    "alum threshold dbz",
+    "base k pk",
+    "biscayne trex lineage",
+    "br40 med k",
+    "carmel trex lineage",
+    "cord linear foot",
+    "dla w screen",
+    "f gr pro",
+    "flat trex lineage",
+    "hatteras trex lineage",
+    "jasper trex lineage",
+    "led cand pk",
+    "led med pk",
+    "line brd green",
+    "line brd orange",
+    "m gr pro",
+    "mb anisten fan",
+    "med a19 k",
+    "mist trex lineage",
+    "multi cct pk",
+    "oz bottle insulated",
+    "par30l med k",
+    "par38 med k",
+    "r20 med k",
+    "rainier trex lineage",
+    "rib xl white",
+    "w incan k",
+    "wh anisten fan",
+    "wire linear foot",
+    "a 219 120rp abranet x6x6",
+    "a 219 180 abranet x6x6",
+    "a 570 240 abranet x30",
+    "a 570 320 abranet x30",
+    "a gfci plug",
+    "a load cntr",
+    "a outlet br",
+    "a outlet la",
+    "a outlet wh",
+    "a19 bulb pk",
+    "a19 cct pk",
+    "a21 k pk",
+    "ada rail trex",
+    "adjust hanger",
+    "ah lithium battery",
+    "align a saw plate only",
+    "attic access door",
+    "b 332 080 hiolit p80",
+    "b 332 120 hiolit p120",
+    "ba11 k pk",
+    "barrel grip jigsaw",
+    "battery mounts pk",
+    "battery two pack",
+    "bc 12300 bigcal mm",
+    "bc 24600 bigcal mm",
+    "bit assort pc",
+    "black frame polarized",
+    "blank post rdi",
+    "blk yellw replacement",
+    "bluetooth jobsite speaker",
+    "box w bracket",
+    "box w brakcet",
+    "box w hanger",
+    "br30 med pk",
+    "brd green replacement",
+    "brd orange replacement",
+    "cable linear foot",
+    "caf espresso ss",
+    "caf toaster mb",
+    "caf toaster mw",
+    "cafe espresso wh",
+    "cafe toaster ss",
+    "cas vin wrapped",
+    "chalk reel set",
+    "cl3 linear foot",
+    "clip light bk",
+    "cordless vacuum bare",
+    "cover sw outlet",
+    "cross line laser",
+    "crown stapler ga",
+    "d519127 heater kit",
+    "dado pro set"
+  ],
+  "verified_classpath_mappings": [
+    {
+      "class_name": "Large Appliances",
+      "classpath": "Appliances & Consumer Electronics>Kitchen Appliances>Built-In Dishwashers",
+      "confidence_bp": 9500,
+      "department": "Appliances",
+      "fine": "Dishwashers",
+      "mapping_source": "OFFICIAL_LABELLED_OUTPUT",
+      "product_type": "Dishwasher",
+      "support_count": 2,
+      "verified": true
+    }
+  ],
+  "vocabulary_hash": "d51e079cba7af011c286dc0b3c90845194cd26340ba04c602adafe7d6e35d7b1"
+}

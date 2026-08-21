@@ -1,0 +1,601 @@
+{
+  "artifact_hash": "9b256f010d5cd0ebbf24bba923167a4570c2496e2d3bbb8c2a53937557eb54dc",
+  "ground_truth_sha256": "3304b26f4c3fc3cd5d51b32161cf1900c26e6a7fe238578e53f6f7132df7c580",
+  "input_sha256": "ed41b50e26c83d0859d563028107fa81a799b5b4b9e3d5743eb846dbd3c7b862",
+  "normalization_mappings": [
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "in",
+      "raw_uom": "\"",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "in",
+      "raw_uom": "in",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "in",
+      "raw_uom": "in.",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "in",
+      "raw_uom": "inch",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "in",
+      "raw_uom": "inches",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "V",
+      "raw_uom": "V",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "A",
+      "raw_uom": "A",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "dBA",
+      "raw_uom": "dBA",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "ft",
+      "raw_uom": "ft",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "mm",
+      "raw_uom": "mm",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "psi",
+      "raw_uom": "psi",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "HP",
+      "raw_uom": "HP",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "normalized_uom": "Hz",
+      "raw_uom": "Hz",
+      "review_required": false,
+      "source": "HUMAN_APPROVED"
+    }
+  ],
+  "observed_labels": [
+    {
+      "label": "Additional Information",
+      "normalized_label": "additional information",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [
+        "240 kW-hr Annual Energy, 1 to 12 hr Delay Start Hours",
+        "Folding Tines, Leak Detection System, Moisture Repellent Silverware Basket, Normal Cycle, Quick Wash Cycle, Sani Rinse Option, Sensor Cycle, Triple Wash Spray"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Amperage Rating",
+      "normalized_label": "amperage rating",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [
+        "A"
+      ],
+      "observed_values": [
+        "10",
+        "15"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Color",
+      "normalized_label": "color",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [
+        "Stainless Steel"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Depth With Door Open",
+      "normalized_label": "depth with door open",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [
+        "in"
+      ],
+      "observed_values": [
+        "50-1/4",
+        "50-3/16"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Material",
+      "normalized_label": "material",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [
+        "Stainless Steel"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Maximum Height",
+      "normalized_label": "maximum height",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [
+        "10-3/8 in Upper Rack, 13-1/4 in Lower Rack"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Minimum Height",
+      "normalized_label": "minimum height",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [
+        "in"
+      ],
+      "observed_values": [
+        "33-7/16",
+        "8-1/2 in Upper Rack, 11-1/4 in Lower Rack"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Model",
+      "normalized_label": "model",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Mounting Type",
+      "normalized_label": "mounting type",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [
+        "Built-in",
+        "Leg"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Number of Wash Cycles",
+      "normalized_label": "number of wash cycles",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [
+        "5"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Plug Type",
+      "normalized_label": "plug type",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Series",
+      "normalized_label": "series",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [
+        "Eco Series",
+        "Professional Series"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Size",
+      "normalized_label": "size",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [],
+      "observed_values": [
+        "24 in W x 24-1/4 in D",
+        "33-7/16 in H x 23-7/8 in W x 22-5/8 in D"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Sound Level",
+      "normalized_label": "sound level",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [
+        "dBA"
+      ],
+      "observed_values": [
+        "41",
+        "47"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    },
+    {
+      "label": "Voltage Rating",
+      "normalized_label": "voltage rating",
+      "observed_product_types": [
+        "Dishwasher"
+      ],
+      "observed_uoms": [
+        "V"
+      ],
+      "observed_values": [
+        "120"
+      ],
+      "source": "OBSERVED_LABELLED_OUTPUT",
+      "support_count": 2
+    }
+  ],
+  "observed_uoms": [
+    {
+      "confidence_bp": 10000,
+      "normalized_uom": "A",
+      "raw_uom": "A",
+      "review_required": false,
+      "source": "OBSERVED_LABELLED_OUTPUT"
+    },
+    {
+      "confidence_bp": 10000,
+      "normalized_uom": "dBA",
+      "raw_uom": "dBA",
+      "review_required": false,
+      "source": "OBSERVED_LABELLED_OUTPUT"
+    },
+    {
+      "confidence_bp": 10000,
+      "normalized_uom": "in",
+      "raw_uom": "in",
+      "review_required": false,
+      "source": "OBSERVED_LABELLED_OUTPUT"
+    },
+    {
+      "confidence_bp": 10000,
+      "normalized_uom": "V",
+      "raw_uom": "V",
+      "review_required": false,
+      "source": "OBSERVED_LABELLED_OUTPUT"
+    }
+  ],
+  "policy_version": "unilog-attribute-policy-v1",
+  "product_type_rules": [
+    {
+      "dimension_order": [
+        "Width",
+        "Length"
+      ],
+      "map_dimensions_to_size": true,
+      "priority": 100,
+      "product_type": "Sanding Belt",
+      "semantic_attributes": [
+        "Width",
+        "Length",
+        "Grit",
+        "Package Quantity"
+      ],
+      "supports_grit": true,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 95,
+      "product_type": "Stikit Film",
+      "semantic_attributes": [
+        "Grit",
+        "Package Quantity"
+      ],
+      "supports_grit": true,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 90,
+      "product_type": "Sanding Disc",
+      "semantic_attributes": [
+        "Grit",
+        "Package Quantity"
+      ],
+      "supports_grit": true,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 90,
+      "product_type": "Abrasive Disc",
+      "semantic_attributes": [
+        "Grit",
+        "Package Quantity"
+      ],
+      "supports_grit": true,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 85,
+      "product_type": "Sanding Sponge",
+      "semantic_attributes": [
+        "Grit",
+        "Package Quantity"
+      ],
+      "supports_grit": true,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 80,
+      "product_type": "Metal Cut-Off Disc",
+      "semantic_attributes": [
+        "Package Quantity"
+      ],
+      "supports_grit": false,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 80,
+      "product_type": "Masonry Cut-Off Disc",
+      "semantic_attributes": [
+        "Package Quantity"
+      ],
+      "supports_grit": false,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 75,
+      "product_type": "Cut-Off Disc",
+      "semantic_attributes": [
+        "Package Quantity"
+      ],
+      "supports_grit": false,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 75,
+      "product_type": "Cut and Grind Disc",
+      "semantic_attributes": [
+        "Package Quantity"
+      ],
+      "supports_grit": false,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 75,
+      "product_type": "Grinding Wheel",
+      "semantic_attributes": [
+        "Package Quantity"
+      ],
+      "supports_grit": false,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [
+        "Thickness",
+        "Width",
+        "Length"
+      ],
+      "map_dimensions_to_size": true,
+      "priority": 70,
+      "product_type": "Decking",
+      "semantic_attributes": [
+        "Thickness",
+        "Width",
+        "Length",
+        "Package Quantity"
+      ],
+      "supports_grit": false,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [
+        "Thickness",
+        "Width",
+        "Length"
+      ],
+      "map_dimensions_to_size": true,
+      "priority": 70,
+      "product_type": "Fascia",
+      "semantic_attributes": [
+        "Thickness",
+        "Width",
+        "Length",
+        "Package Quantity"
+      ],
+      "supports_grit": false,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [
+        "Width",
+        "Length"
+      ],
+      "map_dimensions_to_size": true,
+      "priority": 65,
+      "product_type": "Rail Panel",
+      "semantic_attributes": [
+        "Width",
+        "Length",
+        "Package Quantity"
+      ],
+      "supports_grit": false,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [
+        "Width",
+        "Length"
+      ],
+      "map_dimensions_to_size": true,
+      "priority": 65,
+      "product_type": "Post Sleeve",
+      "semantic_attributes": [
+        "Width",
+        "Length",
+        "Package Quantity"
+      ],
+      "supports_grit": false,
+      "supports_quantity": true
+    },
+    {
+      "dimension_order": [],
+      "map_dimensions_to_size": false,
+      "priority": 60,
+      "product_type": "Dishwasher",
+      "semantic_attributes": [
+        "Series",
+        "Model",
+        "Number of Wash Cycles",
+        "Voltage Rating",
+        "Amperage Rating",
+        "Mounting Type",
+        "Plug Type",
+        "Size",
+        "Depth With Door Open",
+        "Minimum Height",
+        "Maximum Height",
+        "Sound Level",
+        "Material",
+        "Color",
+        "Additional Information"
+      ],
+      "supports_grit": false,
+      "supports_quantity": false
+    }
+  ],
+  "semantic_mappings": [
+    {
+      "confidence_bp": 9500,
+      "observed_label": "Amperage Rating",
+      "semantic_name": "Amperage Rating",
+      "source": "OBSERVED_LABELLED_OUTPUT"
+    },
+    {
+      "confidence_bp": 9000,
+      "observed_label": "Size",
+      "semantic_name": "Dimensions",
+      "source": "HUMAN_APPROVED"
+    },
+    {
+      "confidence_bp": 9500,
+      "observed_label": "Material",
+      "semantic_name": "Material",
+      "source": "OBSERVED_LABELLED_OUTPUT"
+    },
+    {
+      "confidence_bp": 9500,
+      "observed_label": "Series",
+      "semantic_name": "Series",
+      "source": "OBSERVED_LABELLED_OUTPUT"
+    },
+    {
+      "confidence_bp": 9500,
+      "observed_label": "Sound Level",
+      "semantic_name": "Sound Level",
+      "source": "OBSERVED_LABELLED_OUTPUT"
+    },
+    {
+      "confidence_bp": 9500,
+      "observed_label": "Voltage Rating",
+      "semantic_name": "Voltage Rating",
+      "source": "OBSERVED_LABELLED_OUTPUT"
+    }
+  ],
+  "statistics": {
+    "input_rows": 1000,
+    "labelled_rows": 2,
+    "observed_labels": 15,
+    "observed_uoms": 4,
+    "product_type_rules": 15,
+    "semantic_mappings": 6
+  }
+}

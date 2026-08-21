@@ -16,6 +16,8 @@ import { FieldGroupPerformance } from '../components/quality/FieldGroupPerforman
 import { ProblemFields } from '../components/quality/ProblemFields'
 import { ImprovementOpportunities } from '../components/quality/ImprovementOpportunities'
 import { LabelledRowComparison } from '../components/quality/LabelledRowComparison'
+import { ClassificationCoverage } from '../components/quality/ClassificationCoverage'
+import { AttributeCoverage } from '../components/quality/AttributeCoverage'
 import {
   useCreateUnilogEvaluation,
   useLatestUnilogEvaluation,
@@ -166,6 +168,11 @@ export function QualityPage({
         <CoverageAnalytics coverage={data.coverageMetrics} />
         <ReviewAnalysis metrics={data.reviewMetrics} />
       </Box>
+      <ClassificationCoverage metrics={data.classificationMetrics} />
+      <AttributeCoverage
+        coverage={data.attributeCoverageMetrics}
+        accuracy={data.attributeMetrics}
+      />
       <Box sx={twoColumn}>
         <DescriptionCompliance metrics={data.descriptionMetrics} />
         <FieldGroupPerformance groups={data.groupMetrics} />

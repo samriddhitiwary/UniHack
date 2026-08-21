@@ -48,11 +48,16 @@ describe('Challenge Quality dashboard', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Batch quality metrics cover all 1,000 challenge input rows',
     )
-    expect(screen.getByText('16 / 134')).toBeInTheDocument()
+    expect(screen.getByText('28 / 134')).toBeInTheDocument()
     expect(screen.getByText('1,000 / 1,000')).toBeInTheDocument()
     expect(screen.getByText(/not accuracy/i)).toBeInTheDocument()
     expect(screen.queryByText(/AI Accuracy/i)).not.toBeInTheDocument()
     expect(screen.getByText('Unsupported Fact Violations')).toBeInTheDocument()
+    expect(
+      screen.getByText('Verified classification coverage'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Attribute coverage')).toBeInTheDocument()
+    expect(screen.getByText('Labelled semantic precision')).toBeInTheDocument()
     expect(
       screen.getByText('Reduce evidence ambiguity before auto-approval'),
     ).toBeInTheDocument()

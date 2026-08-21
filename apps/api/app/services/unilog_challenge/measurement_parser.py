@@ -4,15 +4,18 @@ import re
 from fractions import Fraction
 
 from app.domain.unilog_challenge import UnilogMeasurementCandidate
+from app.services.unilog_attributes.unit_normalizer import normalize_observed_uom
 
 _NUMBER = r"(?:\d+-\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)"
 _MEASUREMENT = re.compile(
-    rf"(?<![\w/])(?P<value>{_NUMBER})\s*(?P<unit>\"|in(?:ch(?:es)?)?)",
+    rf"(?<![\w/])(?P<value>{_NUMBER})\s*(?P<unit>\"|in\.?|inch(?:es)?|ft|mm)(?![A-Za-z])",
     re.IGNORECASE,
 )
 _DIMENSION = re.compile(
-    rf"(?<![\w/])(?P<first>{_NUMBER})\s*(?P<first_unit>\")?\s*[xX\u00d7]\s*"
-    rf"(?P<second>{_NUMBER})\s*(?P<second_unit>\")?"
+    rf"(?<![\w/])(?P<first>{_NUMBER})\s*(?P<first_unit>\"|in\.?|ft|mm)?\s*[xX\u00d7]\s*"
+    rf"(?P<second>{_NUMBER})\s*(?P<second_unit>\"|in\.?|ft|mm)?"
+    rf"(?:\s*[xX\u00d7]\s*(?P<third>{_NUMBER})\s*(?P<third_unit>\"|in\.?|ft|mm)?)?",
+    re.IGNORECASE,
 )
 
 
@@ -31,13 +34,18 @@ def parse_measurements(
     candidates: list[UnilogMeasurementCandidate] = []
     occupied: set[tuple[int, int]] = set()
     for match in _DIMENSION.finditer(text):
-        units = (match.group("first_unit"), match.group("second_unit"))
+        names = ("first", "second", "third") if match.group("third") else ("first", "second")
+        units = tuple(match.group(f"{name}_unit") for name in names)
         if not any(units) and implicit_dimension_unit is None:
             continue
-        for name, unit in (("first", units[0]), ("second", units[1])):
+        inherited_unit = next((unit for unit in reversed(units) if unit), None)
+        for name, unit in zip(names, units, strict=True):
             start, end = match.span(name)
             raw = match.group(name)
-            normalized_unit = "in" if unit == '"' else implicit_dimension_unit or "in"
+            raw_unit = unit or inherited_unit or implicit_dimension_unit or ""
+            normalized_unit = normalize_observed_uom(raw_unit)
+            if normalized_unit is None:
+                continue
             candidates.append(
                 UnilogMeasurementCandidate(
                     raw_text=raw + (unit or ""),
@@ -45,21 +53,24 @@ def parse_measurements(
                     raw_unit=unit or "",
                     normalized_unit=normalized_unit,
                     evidence_span=(start, end + len(unit or "")),
-                    confidence_bp=9_500 if unit else 8_500,
+                    confidence_bp=9_500 if unit or inherited_unit else 8_500,
                 )
             )
-            occupied.add((start, end + len(unit or "")))
+        occupied.add(match.span())
     for match in _MEASUREMENT.finditer(text):
         span = match.span()
         if any(start <= span[0] and span[1] <= end for start, end in occupied):
             continue
         unit = match.group("unit")
+        normalized_unit = normalize_observed_uom(unit)
+        if normalized_unit is None:
+            continue
         candidates.append(
             UnilogMeasurementCandidate(
                 raw_text=match.group(0),
                 numeric_value=parse_trade_fraction(match.group("value")),
                 raw_unit=unit,
-                normalized_unit="in",
+                normalized_unit=normalized_unit,
                 evidence_span=span,
                 confidence_bp=9_500,
             )

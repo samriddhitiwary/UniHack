@@ -123,6 +123,8 @@ def get_batch_quality(
         "coverageMetrics": serialize_value(result.coverage_metrics),
         "descriptionMetrics": serialize_value(result.description_metrics),
         "reviewMetrics": serialize_value(result.review_metrics),
+        "classificationMetrics": serialize_value(result.classification_metrics),
+        "attributeCoverageMetrics": serialize_value(result.attribute_coverage_metrics),
     }
 
 

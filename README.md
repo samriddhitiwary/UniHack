@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-043: Unilog Ground-Truth Evaluation, Field Accuracy Metrics, Batch Quality Analytics, and Challenge Dashboard**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-045: Product-Type-Aware Attribute Recall Expansion, Measurement Normalization, and Delivery Attribute Population**.
 
 ## Prerequisites
 
@@ -89,6 +89,30 @@ uv run --project apps/api python scripts/evaluate_unilog.py `
 Ground-truth accuracy uses only the 2 official labelled rows. The 1,000-row metrics describe
 coverage, confidence score, review burden, rule compliance, and processing reliability—not accuracy.
 Run the API evaluation command and open `/quality` for the judge-facing dashboard.
+
+Build the deterministic product-type vocabulary explicitly (never during API startup):
+
+```powershell
+uv run --project apps/api python scripts/build_unilog_classification_vocabulary.py `
+  --input path/to/official-input.csv `
+  --ground-truth path/to/official-expected-output.csv `
+  --artifact apps/api/app/reference_data/unilog_classification_v1.json
+```
+
+Product types are description-supported plain terminology. Official Classpath remains blank unless
+an official-labelled or human-verified general mapping exists; model-only taxonomy is prohibited.
+
+Build the observed attribute vocabulary explicitly:
+
+```powershell
+uv run --project apps/api python scripts/build_unilog_attribute_vocabulary.py `
+  --input path/to/official-input.csv `
+  --ground-truth path/to/official-expected-output.csv `
+  --artifact apps/api/app/reference_data/unilog_attributes_v1.json
+```
+
+Semantic candidates enter official attribute triples only through observed or explicitly approved
+label mappings. Unknown labels remain internal; the artifact is not a complete LOV or UOM master.
 
 The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and `make build-web`. See [local development](docs/development/local-setup.md) for service lifecycle and troubleshooting.
 

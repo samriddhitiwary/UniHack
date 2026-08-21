@@ -234,6 +234,69 @@ class UnilogBatchQualityMetrics:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class UnilogProductTypeFrequency:
+    product_type: str
+    count: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UnilogClassificationMetrics:
+    total_rows: int
+    resolved_product_type_count: int
+    unresolved_product_type_count: int
+    product_type_coverage_bp: int
+    verified_classpath_count: int
+    verified_classpath_coverage_bp: int
+    review_required_count: int
+    review_required_rate_bp: int
+    reason_counts: tuple[tuple[str, int], ...]
+    top_product_types: tuple[UnilogProductTypeFrequency, ...]
+
+    def __post_init__(self) -> None:
+        if self.total_rows != self.resolved_product_type_count + self.unresolved_product_type_count:
+            raise ValueError("classification row counts are inconsistent")
+        _rate(self.product_type_coverage_bp)
+        _rate(self.verified_classpath_coverage_bp)
+        _rate(self.review_required_rate_bp)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UnilogAttributeLabelFrequency:
+    label: str
+    count: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UnilogAttributeCoverageMetrics:
+    total_rows: int
+    products_with_attributes: int
+    attribute_coverage_bp: int
+    official_attributes_resolved: int
+    average_attributes_per_product_bp: int
+    semantic_candidates_extracted: int
+    unknown_semantic_labels: int
+    conflicts: int
+    unit_ambiguities: int
+    overflow_count: int
+    review_reason_counts: tuple[tuple[str, int], ...]
+    top_attribute_labels: tuple[UnilogAttributeLabelFrequency, ...]
+
+    def __post_init__(self) -> None:
+        if (
+            min(
+                self.total_rows,
+                self.products_with_attributes,
+                self.official_attributes_resolved,
+                self.average_attributes_per_product_bp,
+                self.semantic_candidates_extracted,
+            )
+            < 0
+        ):
+            raise ValueError("attribute coverage counts cannot be negative")
+        _rate(self.attribute_coverage_bp)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class UnilogFieldMetric:
     field_name: str
     group: UnilogFieldGroup
@@ -285,6 +348,8 @@ class UnilogEvaluationResult:
     description_metrics: UnilogDescriptionComplianceMetrics
     review_metrics: UnilogReviewMetrics
     batch_metrics: UnilogBatchQualityMetrics
+    classification_metrics: UnilogClassificationMetrics
+    attribute_coverage_metrics: UnilogAttributeCoverageMetrics
     field_metrics: tuple[UnilogFieldMetric, ...]
     problems: tuple[UnilogFieldProblem, ...]
     recommendations: tuple[UnilogImprovementRecommendation, ...]

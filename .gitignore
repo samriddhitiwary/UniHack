@@ -69,6 +69,7 @@ Desktop.ini
 *.orig
 *.rej
 tmp/
+artifacts/
 
 # Local runtime data (keep directories through .gitkeep)
 storage/products/

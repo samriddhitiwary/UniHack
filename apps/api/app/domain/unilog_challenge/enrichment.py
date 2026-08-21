@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from fractions import Fraction
 from types import MappingProxyType
 
+from app.domain.unilog_attributes import AttributeExtractionMethod, AttributeReviewReason
 from app.domain.unilog_challenge.entities import (
     FieldProvenance,
     UnilogChallengeInputRow,
@@ -16,6 +17,11 @@ from app.domain.unilog_challenge.enums import (
     FieldPopulationStrategy,
     FieldValidationStatus,
     ResolutionStatus,
+)
+from app.domain.unilog_classification import (
+    ClassificationReviewReason,
+    ProductTypeMatchMethod,
+    UnilogProductTypeResolution,
 )
 
 UNILOG_ENRICHMENT_POLICY_VERSION = "unilog-enrichment-policy-v1"
@@ -88,6 +94,13 @@ class UnilogSemanticAttributeCandidate:
     official_label: str | None
     confidence_bp: int
     review_required: bool = False
+    raw_uom: str | None = None
+    source_text: str = ""
+    source_start: int | None = None
+    source_end: int | None = None
+    product_type: str | None = None
+    method: AttributeExtractionMethod = AttributeExtractionMethod.EXPLICIT_PATTERN
+    review_reasons: tuple[AttributeReviewReason, ...] = ()
 
     def __post_init__(self) -> None:
         if not all((self.semantic_name, self.raw_value, self.normalized_value, self.fact_id)):
@@ -95,6 +108,13 @@ class UnilogSemanticAttributeCandidate:
         if self.evidence_span[0] < 0 or self.evidence_span[1] <= self.evidence_span[0]:
             raise ValueError("attribute evidence span is invalid")
         _confidence(self.confidence_bp)
+        if (self.source_start is None) != (self.source_end is None):
+            raise ValueError("attribute source offsets must be supplied together")
+        if (
+            self.source_start is not None
+            and (self.source_start, self.source_end) != self.evidence_span
+        ):
+            raise ValueError("attribute source offsets must equal the evidence span")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -105,9 +125,20 @@ class UnilogProductClassification:
     confidence_bp: int
     evidence: tuple[str, ...]
     review_required: bool
+    product_family: str | None = None
+    match_method: ProductTypeMatchMethod = ProductTypeMatchMethod.NOT_FOUND
+    evidence_span: tuple[int, int] | None = None
+    product_type_confidence_bp: int = 0
+    classpath_confidence_bp: int = 0
+    review_reasons: tuple[ClassificationReviewReason, ...] = ()
+    department: str | None = None
+    class_name: str | None = None
+    fine: str | None = None
 
     def __post_init__(self) -> None:
         _confidence(self.confidence_bp)
+        _confidence(self.product_type_confidence_bp)
+        _confidence(self.classpath_confidence_bp)
         if self.classpath is not None and self.leaf_node is None:
             raise ValueError("known classpath requires a leaf node")
 
@@ -181,6 +212,7 @@ class UnilogEnrichmentResult:
     attributes: tuple[UnilogSemanticAttributeCandidate, ...]
     features: tuple[UnilogItemFeature, ...]
     descriptions: tuple[UnilogDescriptionResult, ...]
+    classification: UnilogProductClassification
     review_required: bool
     overall_confidence_bp: int
     populated_field_count: int
@@ -255,6 +287,8 @@ class UnilogDescriptionSignals:
     grit_span: tuple[int, int] | None
     material: str | None
     material_span: tuple[int, int] | None
+    product_type_resolution: UnilogProductTypeResolution
+    source_text: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

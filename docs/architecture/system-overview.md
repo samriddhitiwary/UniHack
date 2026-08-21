@@ -1,5 +1,14 @@
 # System Overview
 
+SPEC-045 adds product-type-aware semantic attributes, exact measurement/UOM normalization, observed
+official-label mapping, conflict handling, and deterministic delivery triples. See
+[Unilog attribute resolution](unilog-attribute-resolution.md).
+
+SPEC-044 adds a persisted, dataset-derived product-type vocabulary to the challenge pipeline. The
+runtime resolver retains exact evidence, variants, abbreviations, confidence, and review reasons,
+while a separate verified mapping layer is the only route to official Classpath fields. See
+[Unilog classification resolution](unilog-classification-resolution.md).
+
 SPEC-042 builds an isolated, evidence-grounded enrichment pipeline on the SPEC-041 challenge
 adapter. It preserves raw supplier evidence, resolves only corroborated manufacturer/brand facts,
 extracts exact description spans and trade fractions, constrains classification to observed official
