@@ -5,15 +5,14 @@ export function PageContainer({ children }) {
     <Box
       sx={{
         width: {
-          xs: 'calc(100vw - 32px)',
-          sm: 'calc(100vw - 48px)',
-          lg: `calc(100vw - ${tokens.layout.sidebarWidth + 64}px)`,
+          xs: 'calc(100% - 32px)',
+          sm: 'calc(100% - 48px)',
+          lg: 'calc(100% - 64px)',
         },
         minWidth: 0,
         boxSizing: 'border-box',
         maxWidth: tokens.layout.contentMaxWidth,
-        ml: { xs: 4, sm: 6, lg: 'auto' },
-        mr: { xs: 0, lg: 'auto' },
+        mx: 'auto',
         py: { xs: 6, md: 8 },
       }}
     >

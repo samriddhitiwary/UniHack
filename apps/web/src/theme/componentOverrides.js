@@ -59,6 +59,9 @@ export const componentOverrides = {
       },
     },
   },
+  MuiAlert: {
+    styleOverrides: { root: { minWidth: 0 }, message: { minWidth: 0 } },
+  },
   MuiMenu: {
     styleOverrides: {
       paper: {

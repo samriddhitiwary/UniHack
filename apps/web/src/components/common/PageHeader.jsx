@@ -42,8 +42,17 @@ export function PageHeader({
         gap={3}
       >
         <Stack spacing={1} minWidth={0}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Typography component="h1" variant="h1">
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+          >
+            <Typography
+              component="h1"
+              variant="h1"
+              minWidth={0}
+              sx={{ overflowWrap: 'anywhere' }}
+            >
               {title}
             </Typography>
             {status}

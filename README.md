@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-039: Premium Product Catalog, Search, Filtering, Pagination, and Product Creation Experience**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-040: Premium Product Workspace, Source Management, Workflow Launch, and Live Workflow Tracking Experience**.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and
 
 ## Current scope
 
-The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, local JSON/CSV/manifest package export, grounded AI commerce-content artifacts, and read-only indexed catalog quality/search APIs. Processing-job APIs create and read records but expose no execution endpoint. Processing engines are invoked directly in backend code and store evidence separately. Content/file replacement, bulk deletion, restore, download, external publishing, web enrichment, S3, workers, frontend processing UI, authentication, real AWS resources, and deployment remain unavailable.
+The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, local JSON/CSV/manifest package export, grounded AI commerce-content artifacts, and read-only indexed catalog quality/search APIs. The frontend provides a real Product Catalog and Product Workspace with source upload/text creation/deletion, workflow configuration, live RUNNING-state polling, a human-friendly phase timeline, review-route preparation, resume handling, output summaries, and bounded history. Human-review decisions, detailed intelligence analysis, content editing, export downloads, content/file replacement, bulk deletion, restore, external publishing, S3, workers, authentication, real AWS resources, and deployment remain unavailable.
 
 ## Product API
 

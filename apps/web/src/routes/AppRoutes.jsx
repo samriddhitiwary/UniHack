@@ -4,6 +4,7 @@ import { AppShell } from '../components/layout/AppShell'
 import { ComingSoonPage } from '../pages/ComingSoonPage'
 import { OverviewPage } from '../pages/OverviewPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
+import { ProductReviewPage } from '../pages/ProductReviewPage'
 import { ProductsPage } from '../pages/ProductsPage'
 
 export function AppRoutes() {
@@ -14,6 +15,10 @@ export function AppRoutes() {
         <Route path="dashboard" element={<OverviewPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="products/:productId" element={<ProductDetailPage />} />
+        <Route
+          path="products/:productId/review/:reviewId"
+          element={<ProductReviewPage />}
+        />
         <Route
           path="workflows"
           element={<ComingSoonPage title="Workflows" />}

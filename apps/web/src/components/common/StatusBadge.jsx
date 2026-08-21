@@ -47,7 +47,7 @@ export function StatusBadge({ status, label }) {
       size="small"
       variant="outlined"
       label={label ?? formatStatus(status)}
-      sx={colors[tone]}
+      sx={{ alignSelf: 'flex-start', ...colors[tone] }}
     />
   )
 }

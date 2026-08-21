@@ -23,3 +23,9 @@ No dedicated aggregate endpoint exists. `src/mocks/dashboard.js` is the sole sou
 ## Product catalog server state
 
 `src/api/catalog.js` and `src/api/products.js` are the Product transport boundary. Hooks in `src/hooks` use centralized keys from `queryKeys.js`; catalog keys include the exact supported filter plan and opaque cursor. URL parameters preserve user-facing search/filter state while cursor history remains local. Product creation invalidates the catalog prefix and safely seeds the Product detail cache before navigation. Presentation and compatibility logic live under `components/products`; the real catalog contains no fixtures.
+
+## Product workspace server state
+
+`src/api/sources.js` and `src/api/workflows.js` mirror the Product-scoped cursor and mutation contracts. Independent Product, summary, sources, history, and selected-workflow queries allow localized loading/failure. Sources and history use infinite cursor queries; source mutations invalidate only the Product source prefix. Workflow start/resume seed detail state and invalidate workflow history, Product identity, and catalog summary. Only a selected RUNNING workflow polls at 2.5 seconds.
+
+Presentation is divided among `components/product-workspace`, `components/sources`, and `components/workflows`. `workflowPhases.js` is the single technical-stage aggregation policy. No raw evidence, review decisions, content editing, or downloads enter the workspace.
