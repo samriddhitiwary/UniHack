@@ -360,3 +360,22 @@ source-aware processing -> classification -> attribute pipeline -> mandatory rev
 Durable META/STAGE records, optimistic versions, an active-Product guard, and exact lineage make the
 workflow observable and resumable without a generic DAG or background infrastructure. See
 [Catalog Intelligence workflows](catalog-intelligence-workflows.md).
+
+SPEC-043 evaluates the separate Unilog challenge pipeline after enrichment has completed:
+
+```text
+official input -> SPEC-042 enrichment -> immutable generated batch
+                                         |
+official expected output ----------------+-> UnilogEvaluationService
+                                             |-> field/attribute comparison
+                                             |-> coverage/compliance/review analytics
+                                             |-> isolated evaluation result repository
+                                             `-> bounded APIs + /quality dashboard
+```
+
+The expected output never enters enrichment. Only the 2 labelled records contribute correctness
+metrics; all 1,000 rows contribute coverage, confidence score, review, compliance, and processing
+reliability metrics. Deterministic IDs bind dataset, generated batch, and policy fingerprints, while
+evaluation artifacts remain separate from the exact 252-column delivery output. See the
+[evaluation architecture](unilog-evaluation.md) and
+[methodology](../challenge/unilog-evaluation-methodology.md).

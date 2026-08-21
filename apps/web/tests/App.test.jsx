@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from '../src/App'
 
@@ -14,8 +14,17 @@ vi.mock('../src/api/products', () => ({
   createProduct: vi.fn(),
   getProduct: vi.fn(),
 }))
+vi.mock('../src/api/unilogEvaluation', () => ({
+  getLatestUnilogEvaluation: vi.fn().mockRejectedValue({ status: 404 }),
+  createUnilogEvaluation: vi.fn(),
+  getUnilogLabelledComparison: vi.fn(),
+}))
 
 describe('CatalogIQ application shell', () => {
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/dashboard')
+  })
+
   it('renders the premium dashboard shell and fixture dashboard', async () => {
     render(<App />)
     expect(
@@ -52,4 +61,20 @@ describe('CatalogIQ application shell', () => {
       ),
     ).toBeInTheDocument()
   }, 10000)
+
+  it('routes sidebar Quality navigation to the real challenge evaluation page', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('heading', { level: 1, name: 'Overview' })
+    const qualityLinks = screen.getAllByRole('link', { name: 'Quality' })
+    await user.click(qualityLinks[0])
+    expect(
+      await screen.findByRole('heading', {
+        name: 'No challenge evaluation yet',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/Catalog Quality is coming soon/),
+    ).not.toBeInTheDocument()
+  })
 })

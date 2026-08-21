@@ -26,3 +26,14 @@ export const workflowKeys = {
     workflowId,
   ],
 }
+
+export const unilogEvaluationKeys = {
+  all: ['unilog-evaluations'],
+  latest: () => [...unilogEvaluationKeys.all, 'latest'],
+  row: (evaluationId, inputRowId) => [
+    ...unilogEvaluationKeys.all,
+    evaluationId,
+    'rows',
+    inputRowId,
+  ],
+}

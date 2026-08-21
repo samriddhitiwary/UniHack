@@ -11,6 +11,7 @@ from app.api.routes.product_intelligence import router as product_intelligence_r
 from app.api.routes.product_sources import router as product_sources_router
 from app.api.routes.products import router as products_router
 from app.api.routes.reviews import router as reviews_router
+from app.api.routes.unilog_evaluation import router as unilog_evaluation_router
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health_router)
@@ -22,3 +23,4 @@ api_router.include_router(product_intelligence_router)
 api_router.include_router(product_sources_router)
 api_router.include_router(processing_jobs_router)
 api_router.include_router(reviews_router)
+api_router.include_router(unilog_evaluation_router)

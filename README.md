@@ -1,6 +1,6 @@
 # CatalogIQ AI
 
-CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-042: Evidence-Grounded Unilog Product Enrichment, Description Construction, and Exact Delivery Record Generation**.
+CatalogIQ AI is a JavaScript React frontend and Python FastAPI backend prepared for a cost-conscious AWS serverless deployment. The repository implements SPEC-001 through **SPEC-043: Unilog Ground-Truth Evaluation, Field Accuracy Metrics, Batch Quality Analytics, and Challenge Dashboard**.
 
 ## Prerequisites
 
@@ -77,11 +77,24 @@ uv run --project apps/api python scripts/enrich_unilog.py `
 The optional labelled file contributes only general observed vocabulary. Its row-specific answers
 are never supplied to enrichment. Unsupported facts remain empty CSV cells.
 
+Evaluate the generated batch only after enrichment and write a reproducible JSON report:
+
+```powershell
+uv run --project apps/api python scripts/evaluate_unilog.py `
+  --input path/to/official-input.csv `
+  --ground-truth path/to/official-expected-output.csv `
+  --report path/to/unilog-evaluation.json
+```
+
+Ground-truth accuracy uses only the 2 official labelled rows. The 1,000-row metrics describe
+coverage, confidence score, review burden, rule compliance, and processing reliability—not accuracy.
+Run the API evaluation command and open `/quality` for the judge-facing dashboard.
+
 The equivalent shortcuts are `make test`, `make lint`, `make typecheck-api`, and `make build-web`. See [local development](docs/development/local-setup.md) for service lifecycle and troubleshooting.
 
 ## Current scope
 
-The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, local JSON/CSV/manifest package export, grounded AI commerce-content artifacts, read-only indexed catalog quality/search APIs, and isolated evidence-grounded Unilog challenge enrichment with exact 252-column CSV generation. The frontend provides a real Product Catalog and Product Workspace with source upload/text creation/deletion, workflow configuration, live RUNNING-state polling, a human-friendly phase timeline, review-route preparation, resume handling, output summaries, and bounded history. Full Unilog evaluation analytics/dashboard, manufacturer-owned web enrichment, human-review decisions for challenge rows, detailed intelligence analysis, content editing, export downloads, content/file replacement, bulk deletion, restore, external publishing, S3, workers, authentication, real AWS resources, and deployment remain unavailable.
+The backend contains the Product/source pipeline, deterministic extraction through reviewed catalog projection, local JSON/CSV/manifest package export, grounded AI commerce-content artifacts, read-only indexed catalog quality/search APIs, isolated evidence-grounded Unilog challenge enrichment with exact 252-column CSV generation, and reproducible challenge evaluation analytics. The frontend provides a real Product Catalog and Product Workspace plus a responsive `/quality` evaluation console with field metrics and labelled-row comparison. Manufacturer-owned web enrichment, human-review decisions for challenge rows, content editing, export downloads, content/file replacement, bulk deletion, restore, external publishing, S3, workers, authentication, real AWS resources, and deployment remain unavailable.
 
 ## Product API
 
@@ -248,6 +261,12 @@ nothing is published externally. See the [catalog API](docs/api/catalog.md) and
 - [SPEC-037](docs/specs/SPEC-037-end-to-end-catalog-intelligence-workflow-orchestration-api.md)
 - [SPEC-038](docs/specs/SPEC-038-premium-frontend-foundation-design-system-dashboard-shell-and-visual-identity.md)
 - [SPEC-039](docs/specs/SPEC-039-premium-product-catalog-search-filtering-pagination-and-product-creation-experience.md)
+- [SPEC-040](docs/specs/SPEC-040-premium-product-workspace-source-management-workflow-launch-and-live-workflow-tracking-experience.md)
+- [SPEC-041](docs/specs/SPEC-041-unilog-challenge-dataset-adapter-and-enrichment-foundation.md)
+- [SPEC-042](docs/specs/SPEC-042-evidence-grounded-unilog-product-enrichment-and-delivery-record-generation.md)
+- [SPEC-043](docs/specs/SPEC-043-unilog-ground-truth-evaluation-and-challenge-dashboard.md)
+- [Unilog evaluation methodology](docs/challenge/unilog-evaluation-methodology.md)
+- [Challenge Quality dashboard](docs/frontend/challenge-quality-dashboard.md)
 - [Frontend design system](docs/frontend/design-system.md)
 - [Frontend architecture](docs/frontend/frontend-architecture.md)
 - [Product Catalog and creation](docs/frontend/product-catalog.md)

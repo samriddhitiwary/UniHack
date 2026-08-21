@@ -6,6 +6,7 @@ import { OverviewPage } from '../pages/OverviewPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
 import { ProductReviewPage } from '../pages/ProductReviewPage'
 import { ProductsPage } from '../pages/ProductsPage'
+import { QualityPage } from '../pages/QualityPage'
 
 export function AppRoutes() {
   return (
@@ -23,10 +24,7 @@ export function AppRoutes() {
           path="workflows"
           element={<ComingSoonPage title="Workflows" />}
         />
-        <Route
-          path="quality"
-          element={<ComingSoonPage title="Catalog Quality" />}
-        />
+        <Route path="quality" element={<QualityPage />} />
         <Route
           path="ai-enrichment"
           element={<ComingSoonPage title="AI Enrichment" />}
